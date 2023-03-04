@@ -12,21 +12,33 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 ## Requirements
 
 - A working installation of [stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
-- Installed [sdweb-merge-block-weighted-gui](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui) extension
+- [sdweb-merge-block-weighted-gui](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui) extension
 
 ## How to use
 
 - Start webui in `--api` mode
 - ...
 
-## Stuff to add
+## To be done
 
-- [ ] wildcards
-- [ ] other prompt manipulation extensions
+- [x] prompter class
+- [x] generator class
+- [ ] merger class (20%)
+- [x] optimiser class
+- [ ] scorer class (10%)
+- [ ] `payload.tmpl.yaml` example (0%)
+
+## Nice to have
+
+- [x] wildcards
+- [ ] additional prompt manipulation extensions
 - [ ] orthogonal sampler
 - [ ] UNET visualisation
+- [ ] proper `requirements.txt`
+- [ ] cli
+- [ ] readme walkthrough and example results
 
-## Stuff to test
+## Experiments
 
 - [ ] Are existing scoring networks tuned towards photorealism?
 - [ ] Can we optimize for prompting style? Are wildcards enough?
