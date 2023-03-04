@@ -75,6 +75,7 @@ def check_payload(payload: dict) -> dict:
 class Prompter:
     def __init__(self, payloads_dir: str, wildcards_dir:str):
         self.find_payloads(payloads_dir)
+        self.load_payloads()
         self.dealer = CardDealer(wildcards_dir)
 
     def find_payloads(self, payloads_dir: str) -> None:

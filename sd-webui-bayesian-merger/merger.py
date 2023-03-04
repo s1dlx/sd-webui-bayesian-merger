@@ -71,20 +71,23 @@ class BayesianOptimisationMerger:
         model_b,
         device,
         output_file,
+        payloads_dir,
+        wildcards_dir,
     ):
         self.generator = Generator(url, batch_size)
         self.merger = Merger(model_a, model_b, device, output_file)
         self.scorer = Scorer()
+        self.prompter = Prompter(payloads_dir, wildcards_dir)
         self.output_file = output_file
 
-    def sd_target_function(self, payloads: [dict], **params):
+    def sd_target_function(self, **params):
         # TODO: in args?
         # skip_position_ids = 0
 
         # TODO: weights and base_alpha from params
         # is the list of floats OK?
         weights = [params[f"block_{i}"] for i in range(25)]
-        base_alpha = params['base_alpha']
+        base_alpha = params["base_alpha"]
 
         self.merger.sd_merge(
             weights,
@@ -96,7 +99,7 @@ class BayesianOptimisationMerger:
 
         # generate images
         images = []
-        for payload in payloads:
+        for payload in self.prompter.render_payloads():
             images.extend(self.generator.batch_generate(payload))
 
         # score images
@@ -105,15 +108,11 @@ class BayesianOptimisationMerger:
         # spit out a single value for optimisation
         return self.scorer.average_score(scores)
 
-    def optimize(self, payloads, init_points, n_iter):
-        partial_sd_target_function = partial(
-            self.sd_target_function,
-            self,
-            payloads,
-        )
+    def optimize(self, init_points, n_iter):
+        partial_sd_target_function = partial(self.sd_target_function, self)
 
         pbounds = {f"block_{i}": (0.0, 1.0) for i in range(25)}
-        pbounds['base_alpha': (0.0, 1.0)]
+        pbounds["base_alpha":(0.0, 1.0)]
 
         # TODO: what if we want to optimise only certain blocks?
 
