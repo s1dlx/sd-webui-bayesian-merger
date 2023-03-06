@@ -1,6 +1,11 @@
+# adapted from
+# bbc-mc/sdweb-merge-block-weighted-gui/scripts/mbw/merge_block_weighted.py
+
 import re
+
 import torch
 import safetensors.torch
+
 from tqdm import tqdm
 
 from sd_webui_bayesian_merger.model import SDModel
@@ -43,18 +48,18 @@ class Merger:
         base_alpha: int,
     ) -> None:
         if len(weights) != NUM_TOTAL_BLOCKS:
-            _err_msg = f"weights value must be {NUM_TOTAL_BLOCKS}."
-            print(_err_msg)
-            return False, _err_msg
+            raise ValueError(f"weights value must be {NUM_TOTAL_BLOCKS}")
 
         theta_0 = SDModel(self.model_a, self.device).load_model()
         theta_1 = SDModel(self.model_b, self.device).load_model()
-        alpha = base_alpha
 
         if not self.output_file:
             model_a_name = self.model_a.stem
             model_b_name = self.model_b.stem
-            self.output_file = f"bbwm-{model_a_name}-{model_b_name}.safetensors"
+            self.output_file = Path(
+                self.mode_a.parent,
+                f"bbwm-{model_a_name}-{model_b_name}.safetensors",
+            )
 
         re_inp = re.compile(r"\.input_blocks\.(\d+)\.")  # 12
         re_mid = re.compile(r"\.middle_block\.(\d+)\.")  # 1
@@ -69,8 +74,7 @@ class Merger:
                         )
                     continue
 
-                current_alpha = alpha
-
+                c_alpha = base_alpha
                 if "model.diffusion_model." in key:
                     weight_index = -1
 
@@ -92,12 +96,9 @@ class Merger:
                         raise ValueError(f"illegal block index {key}")
 
                     if weight_index >= 0:
-                        current_alpha = weights[weight_index]
+                        c_alpha = weights[weight_index]
 
-                theta_0[key] = (1 - current_alpha) * theta_0[
-                    key
-                ] + current_alpha * theta_1[key]
-
+                theta_0[key] = (1 - c_alpha) * theta_0[key] + c_alpha * theta_1[key]
                 theta_0[key] = theta_0[key].half()
 
         for key in tqdm(theta_1.keys(), desc="merging 2/2"):

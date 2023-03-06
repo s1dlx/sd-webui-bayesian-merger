@@ -12,7 +12,6 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 ## Requirements
 
 - A working installation of [stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
-- [sdweb-merge-block-weighted-gui](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui) extension
 
 ## How to use
 
@@ -23,7 +22,7 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 
 - [x] prompter class
 - [x] generator class
-- [ ] merger class (20%)
+- [x] merger class
 - [x] optimiser class
 - [ ] scorer class (10%)
 - [ ] `payload.tmpl.yaml` example (0%)
@@ -38,7 +37,7 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [ ] cli
 - [ ] readme walkthrough and example results
 - [ ] logging
-- [ ] native merge function
+- [x] native merge function
 
 ## Experiments
 
@@ -49,4 +48,5 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 
 ## Inspired by
 
+- [sdweb-merge-block-weighted-gui](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui)
 - [sdweb-auto-MBW](https://github.com/Xerxemi/sdweb-auto-MBW)
