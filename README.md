@@ -37,6 +37,8 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [ ] proper `requirements.txt`
 - [ ] cli
 - [ ] readme walkthrough and example results
+- [ ] logging
+- [ ] native merge function
 
 ## Experiments
 

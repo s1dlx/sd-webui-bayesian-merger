@@ -73,7 +73,7 @@ def check_payload(payload: dict) -> dict:
 
 
 class Prompter:
-    def __init__(self, payloads_dir: str, wildcards_dir:str):
+    def __init__(self, payloads_dir: str, wildcards_dir: str):
         self.find_payloads(payloads_dir)
         self.load_payloads()
         self.dealer = CardDealer(wildcards_dir)
@@ -81,7 +81,11 @@ class Prompter:
     def find_payloads(self, payloads_dir: str) -> None:
         pdir = Path(payloads_dir)
         if pdir.exists():
-            self.raw_payloads = {p.stem: {"path": p} for p in pdir.glob("*.yaml") if not '.tmpl.yaml' in p}
+            self.raw_payloads = {
+                p.stem: {"path": p}
+                for p in pdir.glob("*.yaml")
+                if not ".tmpl.yaml" in p
+            }
         else:
             # TODO: pick a better error
             raise ValueError("payloads directory not found!")
@@ -96,6 +100,6 @@ class Prompter:
         payloads = []
         for p in self.raw_payloads:
             rendered_payload = p.copy()
-            rendered_payload['prompt'] = self.dealer.replace_wildcards(p['prompt'])
+            rendered_payload["prompt"] = self.dealer.replace_wildcards(p["prompt"])
             payloads.append(rendered_payload)
         return payloads
