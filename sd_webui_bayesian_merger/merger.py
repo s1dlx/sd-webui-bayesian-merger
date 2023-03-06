@@ -47,8 +47,8 @@ class Merger:
             print(_err_msg)
             return False, _err_msg
 
-        theta_0 = SDModel(self.model_a, self.device)
-        theta_1 = SDModel(self.model_b, self.device)
+        theta_0 = SDModel(self.model_a, self.device).load_model()
+        theta_1 = SDModel(self.model_b, self.device).load_model()
         alpha = base_alpha
 
         if not self.output_file:
@@ -60,32 +60,18 @@ class Merger:
         re_mid = re.compile(r"\.middle_block\.(\d+)\.")  # 1
         re_out = re.compile(r"\.output_blocks\.(\d+)\.")  # 12
 
-        print("  merging ...")
-        print("-- start Stage 1/2 --")
-        for key in tqdm(theta_0.keys(), desc="Stage 1/2"):
+        for key in tqdm(theta_0.keys(), desc="merging 1/2"):
             if "model" in key and key in theta_1:
                 if KEY_POSITION_IDS in key and self.skip_position_ids in [1, 2]:
-                    if self.skip_position_ids == 1:
-                        print(
-                            f"  modelB: skip 'position_ids' : {theta_0[KEY_POSITION_IDS].dtype}"
-                        )
-                        print(f"{theta_0[KEY_POSITION_IDS]}")
-                    else:
+                    if self.skip_position_ids == 2:
                         theta_0[key] = torch.tensor(
                             [list(range(77))], dtype=torch.int64
                         )
-                        print(
-                            f"  modelA: reset 'position_ids': dtype:{theta_0[KEY_POSITION_IDS].dtype}"
-                        )
-                        print(f"{theta_0[KEY_POSITION_IDS]}")
                     continue
 
-                print(f"  key : {key}")
                 current_alpha = alpha
 
-                # check weighted and U-Net or not
                 if "model.diffusion_model." in key:
-                    # check block index
                     weight_index = -1
 
                     if "time_embed" in key:
@@ -103,12 +89,10 @@ class Merger:
                             )
 
                     if weight_index >= NUM_TOTAL_BLOCKS:
-                        print(f"error. illegal block index: {key}")
-                        # TODO: error instead of return
-                        return False
+                        raise ValueError(f"illegal block index {key}")
+
                     if weight_index >= 0:
                         current_alpha = weights[weight_index]
-                        print(f"weighted '{key}': {current_alpha}")
 
                 theta_0[key] = (1 - current_alpha) * theta_0[
                     key
@@ -116,42 +100,20 @@ class Merger:
 
                 theta_0[key] = theta_0[key].half()
 
-            else:
-                print(f"  key - {key}")
-
-        print("-- start Stage 2/2 --")
-        for key in tqdm(theta_1.keys(), desc="Stage 2/2"):
+        for key in tqdm(theta_1.keys(), desc="merging 2/2"):
             if "model" in key and key not in theta_0:
                 if KEY_POSITION_IDS in key and self.skip_position_ids in [1, 2]:
-                    if self.skip_position_ids == 1:
-                        print(
-                            f"  modelB: skip 'position_ids' : {theta_1[KEY_POSITION_IDS].dtype}"
-                        )
-                        print(f"{theta_1[KEY_POSITION_IDS]}")
-                    else:
+                    if self.skip_position_ids == 2:
                         theta_1[key] = torch.tensor(
                             [list(range(77))], dtype=torch.int64
                         )
-                        print(
-                            f"  modelA: reset 'position_ids': dtype:{theta_1[KEY_POSITION_IDS].dtype}"
-                        )
-                        print(f"{theta_1[KEY_POSITION_IDS]}")
                     continue
-
-                print(f"  key : {key}")
                 theta_0.update({key: theta_1[key]})
-
                 theta_0[key] = theta_0[key].half()
 
-            else:
-                print(f"  key - {key}")
-
-        print("Saving...")
-
+        print(f"Saving {self.output_file}")
         safetensors.torch.save_file(
             theta_0,
             self.output_file,
             metadata={"format": "pt"},
         )
-
-        print("Done!")

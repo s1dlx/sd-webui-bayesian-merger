@@ -6,18 +6,18 @@ import safetensors
 
 class SDModel:
     def __init__(self, model_path: str, device: str) -> None:
-        model_path = Path(model_path)
-        self.model = self.load_model()
+        self.model_path = Path(model_path)
+        self.device = device
 
-    def load_model(self, model_path, device):
-        print(f"loading: {model_path}")
+    def load_model(self):
+        print(f"loading: {self.model_path}")
         if self.model_path.suffix == ".safetensors":
             ckpt = safetensors.torch.load_file(
-                model_path,
-                device=device,
+                self.model_path,
+                device=self.device,
             )
         else:
-            ckpt = torch.load(model_path, map_location=device)
+            ckpt = torch.load(self.model_path, map_location=self.device)
 
         return get_state_dict_from_checkpoint(ckpt)
 
@@ -49,5 +49,5 @@ chckpoint_dict_replacements = {
 def transform_checkpoint_dict_key(k):
     for text, replacement in chckpoint_dict_replacements.items():
         if k.startswith(text):
-            k = replacement + k[len(text) :]
+            k = replacement + k[len(text):]
     return k
