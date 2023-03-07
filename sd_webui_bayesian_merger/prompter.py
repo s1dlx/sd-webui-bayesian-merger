@@ -23,7 +23,7 @@ class CardDealer:
                 encoding="utf-8",
             ) as f:
                 lines = f.readlines()
-                return random.choice(lines)
+                return random.choice(lines).strip()
 
         # TODO raise warning?
         return wildcard_name
@@ -96,7 +96,7 @@ class Prompter:
         for payload_name, payload in self.raw_payloads.items():
             raw_payload = load_yaml(payload["path"])
             checked_payload = check_payload(raw_payload)
-            self.raw_payloads[payload_name]["payload"] = checked_payload
+            self.raw_payloads[payload_name].update(checked_payload)
 
     def render_payloads(self) -> [dict]:
         payloads = []
