@@ -1,3 +1,7 @@
-bayes_opt
-Pillow
+click
 clip
+Pillow
+PyYAML
+safetensors
+torch
+tqdm

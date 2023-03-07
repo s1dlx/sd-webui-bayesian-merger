@@ -4,8 +4,6 @@
 
 An opinionated take on stable-diffusion models-merging automatic-optimisation.
 
-... refs on bayesian optimisation ...
-
 Why not auto-merge extension? Brute force == long time to wait. With this method you can get away with <X> number of runs!
 
 Why opinionated? Because we use webui API and lots of config files to run the show. No GUI. 
@@ -17,8 +15,12 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 
 ## How to use
 
+- I believe you already have a stable-diffusion venv, activate it
 - Start webui in `--api` mode
-- ...
+- `cd` to `sd-webui-bayesian-merger` folder
+- `pip install -r requirements.txt`
+- read `python3 bayesian_merger.py --help` and prepare all the arguments accordingly
+- `python3 bayesian_merger.py --model_a=... `
 
 ## To be done
 
@@ -38,9 +40,11 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [ ] additional prompt manipulation extensions
 - [ ] orthogonal sampler
 - [ ] UNET visualisation
-- [ ] proper `requirements.txt`
-- [ ] cli
-- [ ] readme walkthrough and example results
+- [x] fill in `requirements.txt`
+- [x] click cli
+- [x] simple readme walkthrough
+- [ ] example results
+- [ ] explain what we're doing
 - [ ] logging (really?!?)
 - [x] native merge function
 - [ ] simpler merge function (e.g. no regex)
@@ -57,7 +61,7 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [ ] Shall we use [sd-webui-supermerger](https://github.com/hako-mikan/sd-webui-supermerger) instead?
 - [ ] Negative payloads: we want to minimise the score for these (e.g. target `cartoon`)
 
-## Inspired by
+## With the help of
 
 - [sdweb-merge-block-weighted-gui](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui)
 - [sdweb-auto-MBW](https://github.com/Xerxemi/sdweb-auto-MBW)
