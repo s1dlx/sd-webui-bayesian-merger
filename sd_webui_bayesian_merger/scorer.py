@@ -28,9 +28,9 @@ class AestheticPredictor(nn.Module):
 
 
 class Scorer:
-    def __init__(self, model_path, device):
+    def __init__(self, model_dir, device):
         self.device = device
-        self.model_path = Path(model_path)
+        self.model_dir = Path(model_dir)
         self.get_models()
         self.load_model()
         self.load_clip()
@@ -38,7 +38,7 @@ class Scorer:
     def get_models(self):
         # TODO: let user pick model
         state_name = "sac+logos+ava1-l14-linearMSE.pth"
-        if not Path(self.model_path.name, state_name).is_file():
+        if not Path(self.model_dir, state_name).is_file():
             print(
                 "You do not have an aesthetic model ckpt, let me download that for you"
             )
@@ -48,6 +48,8 @@ class Scorer:
             with open(self.model_path, "wb") as f:
                 print(f"saved into {self.model_path}")
                 f.write(r.content)
+        else:
+            self.model_path = Path(self.model_dir, state_name).absolute()
 
     def load_model(self):
         print("Loading aestetic scorer model")
