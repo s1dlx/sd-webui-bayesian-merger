@@ -13,7 +13,9 @@ from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
 @click.option("--model_out", type=click.Path())
 @click.option("--device", type=str, default="cpu")
 @click.option(
-    "--payloads_dir", type=click.Path(exists=True), default=Path("payloads").absolute()
+    "--payloads_dir",
+    type=click.Path(exists=True),
+    default=Path("payloads").absolute(),
 )
 @click.option(
     "--wildcards_dir",

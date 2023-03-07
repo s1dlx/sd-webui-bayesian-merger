@@ -84,13 +84,12 @@ class Merger:
                         weight_index = NUM_TOTAL_BLOCKS - 1  # after output blocks
                     elif m := re_inp.search(key):
                         weight_index = int(m.groups()[0])
-                    else:
-                        if re_mid.search(key):
-                            weight_index = NUM_INPUT_BLOCKS
-                        elif m := re_out.search(key):
-                            weight_index = (
-                                NUM_INPUT_BLOCKS + NUM_MID_BLOCK + int(m.groups()[0])
-                            )
+                    elif re_mid.search(key):
+                        weight_index = NUM_INPUT_BLOCKS
+                    elif m := re_out.search(key):
+                        weight_index = (
+                            NUM_INPUT_BLOCKS + NUM_MID_BLOCK + int(m.groups()[0])
+                        )
 
                     if weight_index >= NUM_TOTAL_BLOCKS:
                         raise ValueError(f"illegal block index {key}")

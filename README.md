@@ -19,6 +19,7 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - Start webui in `--api` mode
 - `cd` to `sd-webui-bayesian-merger` folder
 - `pip install -r requirements.txt`
+- fill in one or more `payloads/*.yaml` files
 - read `python3 bayesian_merger.py --help` and prepare all the arguments accordingly
 - `python3 bayesian_merger.py --model_a=... `
 

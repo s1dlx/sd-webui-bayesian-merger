@@ -58,8 +58,6 @@ class BayesianOptimiser:
         return self.scorer.average_score(scores)
 
     def optimise(self) -> None:
-        # partial_sd_target_function = partial(self.sd_target_function, self)
-
         # TODO: what if we want to optimise only certain blocks?
         pbounds = {f"block_{i}": (0.0, 1.0) for i in range(25)}
         pbounds["base_alpha"] = (0.0, 1.0)
