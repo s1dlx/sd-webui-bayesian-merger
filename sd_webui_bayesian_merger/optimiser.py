@@ -18,10 +18,11 @@ class BayesianOptimiser:
         output_file,
         payloads_dir,
         wildcards_dir,
+        scorer_model_path,
     ):
         self.generator = Generator(url, batch_size)
         self.merger = Merger(model_a, model_b, device, output_file)
-        self.scorer = Scorer()
+        self.scorer = Scorer(scorer_model_path, device)
         self.prompter = Prompter(payloads_dir, wildcards_dir)
         self.output_file = output_file
 
