@@ -37,4 +37,3 @@ class Generator:
             url=f"{self.url}/sdapi/v1/options",
             json=option_payload,
         )
-        print(response)
