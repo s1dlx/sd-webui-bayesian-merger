@@ -29,7 +29,7 @@ class Generator:
 
     def switch_model(self, ckpt: str) -> None:
         option_payload = {
-            "sd_model_checkpoint": ckpt,
+            "sd_model_checkpoint": ckpt.name,
         }
 
         # TODO: do something with the response?
