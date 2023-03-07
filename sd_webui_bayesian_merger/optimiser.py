@@ -16,7 +16,6 @@ class BayesianOptimiser:
         model_a,
         model_b,
         device,
-        model_out,
         payloads_dir,
         wildcards_dir,
         scorer_model_path,
@@ -24,10 +23,9 @@ class BayesianOptimiser:
         n_iters,
     ):
         self.generator = Generator(url, batch_size)
-        self.merger = Merger(model_a, model_b, device, model_out)
+        self.merger = Merger(model_a, model_b, device)
         self.scorer = Scorer(scorer_model_path, device)
         self.prompter = Prompter(payloads_dir, wildcards_dir)
-        self.output_file = model_out
         self.init_points = init_points
         self.n_iters = n_iters
 
@@ -44,7 +42,7 @@ class BayesianOptimiser:
         )
 
         # TODO: is this forcing the model load despite the same name?
-        self.generator.switch_model(self.output_file)
+        self.generator.switch_model(self.merger.model_out_name)
 
         # generate images
         images = []
@@ -58,6 +56,8 @@ class BayesianOptimiser:
         return self.scorer.average_score(scores)
 
     def optimise(self) -> None:
+        # partial_sd_target_function = partial(self.sd_target_function, self)
+
         # TODO: what if we want to optimise only certain blocks?
         pbounds = {f"block_{i}": (0.0, 1.0) for i in range(25)}
         pbounds["base_alpha"] = (0.0, 1.0)

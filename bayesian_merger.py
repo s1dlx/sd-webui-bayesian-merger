@@ -10,7 +10,6 @@ from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
 @click.option("--batch_size", type=int, default=1)
 @click.option("--model_a", type=click.Path(exists=True), required=True)
 @click.option("--model_b", type=click.Path(exists=True), required=True)
-@click.option("--model_out", type=click.Path())
 @click.option("--device", type=str, default="cpu")
 @click.option(
     "--payloads_dir",
@@ -23,7 +22,7 @@ from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
     default=Path("wildcards").absolute(),
 )
 @click.option(
-    "--scorer_model_path",
+    "--scorer_model_dir",
     type=click.Path(exists=True),
     default=Path("models").absolute(),
 )

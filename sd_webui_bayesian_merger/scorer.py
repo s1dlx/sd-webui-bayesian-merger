@@ -38,7 +38,7 @@ class Scorer:
     def get_models(self):
         # TODO: let user pick model
         state_name = "sac+logos+ava1-l14-linearMSE.pth"
-        if self.model_path.name != state_name:
+        if not Path(self.model_path.name, state_name).is_file():
             print(
                 "You do not have an aesthetic model ckpt, let me download that for you"
             )
