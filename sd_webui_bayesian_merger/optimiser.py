@@ -54,7 +54,7 @@ class BayesianOptimiser:
         # spit out a single value for optimisation
         return self.scorer.average_score(scores)
 
-    def optimize(self, init_points, n_iter):
+    def optimize(self, init_points, n_iter)->None:
         partial_sd_target_function = partial(self.sd_target_function, self)
 
         pbounds = {f"block_{i}": (0.0, 1.0) for i in range(25)}
@@ -72,5 +72,5 @@ class BayesianOptimiser:
         self.optimizer.maximize(init_points=init_points, n_iter=n_iter)
 
     def postprocess(self, optmizer: BayesianOptimization) -> None:
-        # TODO: analyse the results
-        return
+        for i, res in enumerate(self.optimizer.res):
+            print("Iteration {}: \n\t{}".format(i, res))

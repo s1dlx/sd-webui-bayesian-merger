@@ -79,6 +79,7 @@ class Prompter:
         self.dealer = CardDealer(wildcards_dir)
 
     def find_payloads(self, payloads_dir: str) -> None:
+        # TODO: allow for listing payloads instead of taking all of them
         pdir = Path(payloads_dir)
         if pdir.exists():
             self.raw_payloads = {

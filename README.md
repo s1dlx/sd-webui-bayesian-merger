@@ -27,8 +27,9 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [x] merger class
 - [x] optimiser class
 - [x] scorer class
-- [ ] `payload.tmpl.yaml` example (0%)
-- [ ] results postprocessing
+- [x] fill in `payload.tmpl.yaml`
+- [x] results postprocessing
+- [ ] actually test this thing
 
 ## Nice to have
 
@@ -44,6 +45,9 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [x] native merge function
 - [ ] simpler merge function (e.g. no regex)
 - [ ] no need for webui OR proper webui extension, ehe
+- [x] native scorer class (took from SD-Chad)
+- [ ] consisten typing
+- [ ] save optimisation results
 
 ## Experiments
 
@@ -57,4 +61,4 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 
 - [sdweb-merge-block-weighted-gui](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui)
 - [sdweb-auto-MBW](https://github.com/Xerxemi/sdweb-auto-MBW)
-- [SD-Chad](git@github.com:grexzen/SD-Chad.git)
+- [SD-Chad](https://github.com/grexzen/SD-Chad.git)
