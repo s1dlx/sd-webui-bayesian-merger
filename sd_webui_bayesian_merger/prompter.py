@@ -100,7 +100,7 @@ class Prompter:
 
     def render_payloads(self) -> [dict]:
         payloads = []
-        for p in self.raw_payloads:
+        for _, p in self.raw_payloads.items():
             rendered_payload = p.copy()
             rendered_payload["prompt"] = self.dealer.replace_wildcards(p["prompt"])
             payloads.append(rendered_payload)
