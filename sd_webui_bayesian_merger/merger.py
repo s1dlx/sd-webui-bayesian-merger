@@ -60,7 +60,7 @@ class Merger:
             model_b_name = self.model_b.stem
             self.model_out_name = f"bbwm-{model_a_name}-{model_b_name}.safetensors"
             self.output_file = Path(
-                self.model_a.parent, "f{self.model_out_name}.safetensors"
+                self.model_a.parent, f"{self.model_out_name}.safetensors"
             )
 
         re_inp = re.compile(r"\.input_blocks\.(\d+)\.")  # 12
