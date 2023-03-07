@@ -35,8 +35,8 @@ class Merger:
         model_b: str,
         device: str,
     ):
-        self.model_a = model_a
-        self.model_b = model_b
+        self.model_a = Path(model_a)
+        self.model_b = Path(model_b)
         self.output_file = None
         self.device = device
 
@@ -55,6 +55,7 @@ class Merger:
         theta_1 = SDModel(self.model_b, self.device).load_model()
 
         if not self.output_file:
+            print(self.model_a)
             model_a_name = self.model_a.stem
             model_b_name = self.model_b.stem
             self.model_out_name = (f"bbwm-{model_a_name}-{model_b_name}.safetensors",)
