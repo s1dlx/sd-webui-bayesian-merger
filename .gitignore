@@ -138,3 +138,8 @@ dmypy.json
 
 # images
 **/*.png
+
+# wildcards and payloads
+**/*.yaml
+!**/payload.tmpl.yaml
+**/*.txt
