@@ -85,8 +85,9 @@ class Prompter:
             self.raw_payloads = {
                 p.stem: {"path": p}
                 for p in pdir.glob("*.yaml")
-                if not ".tmpl.yaml" in p
+                if ".tmpl.yaml" not in p.name
             }
+
         else:
             # TODO: pick a better error
             raise ValueError("payloads directory not found!")

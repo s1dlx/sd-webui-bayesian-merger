@@ -1,29 +1,37 @@
-# from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
-from sd_webui_bayesian_merger.merger import SDModel
+from pathlib import Path
+
+import click
+
+from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
 
 
-# TODO: clip args
-# if __name__ == "__main__":
-# url = ""
-# batch_size = ""
-# model_a = ""
-# model_b = ""
-# device = ""
-# output_file = ""
-# bo = BayesianOptimiser(
-#     url, batch_size, model_a, model_b, device, output_file
-# )
-
-# # TODO: where are the prompts coming from? add a Prompter class
-# payloads = []
-
-# # TODO: compute total number of generations as batch_size * len(payloads)
-# init_points = 30
-# n_iters = 20
-# bom.optimise(payloads, init_points, n_iters)
-
-sd = SDModel(
-    "/Users/ale/repos/stable-diffusion-webui/models/Stable-diffusion/openjourney-v2.ckpt",
-    "cpu",
+@click.command()
+@click.option("--url", type=str, default="http://127.0.0.1:7860")
+@click.option("--batch_size", type=int, default=1)
+@click.option("--model_a", type=click.Path(exists=True), required=True)
+@click.option("--model_b", type=click.Path(exists=True), required=True)
+@click.option("--model_out", type=click.Path())
+@click.option("--device", type=str, default="cpu")
+@click.option(
+    "--payloads_dir", type=click.Path(exists=True), default=Path("payloads").absolute()
 )
-sd.load_model()
+@click.option(
+    "--wildcards_dir",
+    type=click.Path(exists=True),
+    default=Path("wildcards").absolute(),
+)
+@click.option(
+    "--scorer_model_path",
+    type=click.Path(exists=True),
+    default=Path("models").absolute(),
+)
+@click.option("--init_points", type=int, default=1)
+@click.option("--n_iters", type=int, default=1)
+def main(*args, **kwargs) -> None:
+    print(kwargs)
+    bo = BayesianOptimiser(*args, **kwargs)
+    bo.optimise()
+
+
+if __name__ == "__main__":
+    main()

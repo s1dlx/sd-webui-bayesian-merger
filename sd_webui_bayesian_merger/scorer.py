@@ -38,8 +38,10 @@ class Scorer:
     def get_models(self):
         # TODO: let user pick model
         state_name = "sac+logos+ava1-l14-linearMSE.pth"
-        if not self.model_path.name == state_name:
-            print("You do not have an aesthetic model ckpt, let me download that for you")
+        if self.model_path.name != state_name:
+            print(
+                "You do not have an aesthetic model ckpt, let me download that for you"
+            )
             url = f"https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/{state_name}?raw=true"
             r = requests.get(url)
             self.model_path = Path("./models", state_name).absolute()
@@ -48,7 +50,7 @@ class Scorer:
                 f.write(r.content)
 
     def load_model(self):
-        print('Loading aestetic scorer model')
+        print("Loading aestetic scorer model")
         pt_state = torch.load(self.model_path, map_location=self.device)
         self.model = AestheticPredictor(768)
         self.model.load_state_dict(pt_state)
@@ -56,13 +58,13 @@ class Scorer:
         self.model.eval()
 
     def load_clip(self):
-        print('Loading CLIP')
+        print("Loading CLIP")
         # TODO: let user pick model
         self.clip_model, self.clip_preprocess = clip.load(
             "ViT-L/14", device=self.device
         )
 
-    def get_image_features(self, image:Image)->torch.Tensor:
+    def get_image_features(self, image: Image) -> torch.Tensor:
         image = self.clip_preprocess(image).unsqueeze(0).to(self.device)
         with torch.no_grad():
             image_features = self.clip_model.encode_image(image)

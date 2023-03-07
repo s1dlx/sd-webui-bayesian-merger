@@ -29,9 +29,7 @@ def get_state_dict_from_checkpoint(pl_sd):
     pl_sd.pop("state_dict", None)
     sd = {}
     for k, v in pl_sd.items():
-        new_key = transform_checkpoint_dict_key(k)
-
-        if new_key:
+        if new_key := transform_checkpoint_dict_key(k):
             sd[new_key] = v
 
     pl_sd.clear()
@@ -49,5 +47,5 @@ chckpoint_dict_replacements = {
 def transform_checkpoint_dict_key(k):
     for text, replacement in chckpoint_dict_replacements.items():
         if k.startswith(text):
-            k = replacement + k[len(text):]
+            k = replacement + k[len(text) :]
     return k
