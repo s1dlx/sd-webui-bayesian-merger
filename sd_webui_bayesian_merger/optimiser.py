@@ -18,13 +18,13 @@ class BayesianOptimiser:
         device,
         payloads_dir,
         wildcards_dir,
-        scorer_model_path,
+        scorer_model_dir,
         init_points,
         n_iters,
     ):
         self.generator = Generator(url, batch_size)
         self.merger = Merger(model_a, model_b, device)
-        self.scorer = Scorer(scorer_model_path, device)
+        self.scorer = Scorer(scorer_model_dir, device)
         self.prompter = Prompter(payloads_dir, wildcards_dir)
         self.init_points = init_points
         self.n_iters = n_iters
