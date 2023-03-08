@@ -58,7 +58,7 @@ class Merger:
         if self.iteration > 0:
             prev_model_name = self.get_model_out_name(self.iteration-1)
             prev_model = Path(self.model_a.parent, prev_model_name)
-            prev_model.unilink()
+            prev_model.unlink()
 
     def merge(
         self,
