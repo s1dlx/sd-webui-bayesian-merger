@@ -39,9 +39,26 @@ class Merger:
         self.model_b = Path(model_b)
         self.output_file = None
         self.device = device
+        self.iteration = -1
 
         # TODO: add as parameter?
         self.skip_position_ids = 0
+
+    def get_model_out_name(self, iteration):
+        return f"bbwm-{self.model_a.stem}-{self.model_b.stem}-{iteration}.safetensors"
+
+    def update_model_out_name(self):
+        self.iteration += 1
+        self.model_out_name = self.get_model_out_name(self.iteration)
+        self.output_file = Path(
+            self.model_a.parent, self.model_out_name
+        )
+
+    def delete_previous_model(self):
+        if self.iteration > 0:
+            prev_model_name = self.get_model_out_name(self.iteration-1)
+            prev_model = Path(self.model_a.parent, prev_model_name)
+            prev_model.unilink()
 
     def merge(
         self,
@@ -54,14 +71,8 @@ class Merger:
         theta_0 = SDModel(self.model_a, self.device).load_model()
         theta_1 = SDModel(self.model_b, self.device).load_model()
 
-        if not self.output_file:
-            print(self.model_a)
-            model_a_name = self.model_a.stem
-            model_b_name = self.model_b.stem
-            self.model_out_name = f"bbwm-{model_a_name}-{model_b_name}.safetensors"
-            self.output_file = Path(
-                self.model_a.parent, f"{self.model_out_name}.safetensors"
-            )
+        self.update_model_out_name()
+        self.delete_previous_model()
 
         re_inp = re.compile(r"\.input_blocks\.(\d+)\.")  # 12
         re_mid = re.compile(r"\.middle_block\.(\d+)\.")  # 1
