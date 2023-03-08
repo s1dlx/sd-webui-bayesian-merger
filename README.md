@@ -53,6 +53,7 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [x] native scorer class (took from SD-Chad)
 - [ ] consisten typing
 - [ ] save optimisation results
+- [ ] save images
 
 ## Experiments
 

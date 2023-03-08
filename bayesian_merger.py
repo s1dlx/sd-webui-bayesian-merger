@@ -32,6 +32,7 @@ def main(*args, **kwargs) -> None:
     print(kwargs)
     bo = BayesianOptimiser(*args, **kwargs)
     bo.optimise()
+    bo.postprocess()
 
 
 if __name__ == "__main__":

@@ -74,6 +74,8 @@ class BayesianOptimiser:
             n_iter=self.n_iters,
         )
 
-    def postprocess(self, optmizer: BayesianOptimization) -> None:
+    def postprocess(self) -> None:
         for i, res in enumerate(self.optimizer.res):
             print(f"Iteration {i}: \n\t{res}")
+
+        print(self.optimizer.max)
