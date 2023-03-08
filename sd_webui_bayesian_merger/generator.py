@@ -47,10 +47,13 @@ class Generator:
 
     def find_title(self, model_name) -> str:
         models = self.list_models()
+        print(model_name)
+        print(models)
         for p in models:
             title, name = p
+            print(title, name)
             if name == model_name:
                 return title
 
-        raise ValueError(f'model {mode_name} not found')
+        raise ValueError(f'model {model_name} not found')
         
