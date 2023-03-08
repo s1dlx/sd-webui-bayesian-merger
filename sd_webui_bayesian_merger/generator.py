@@ -28,7 +28,7 @@ class Generator:
         return [self.generate(payload) for _ in range(self.batch_size)]
 
     def switch_model(self, ckpt: str) -> None:
-        title = self.find_title(ckpt)
+        title = self.find_title(ckpt.split('.')[0])
         
         option_payload = {
             "sd_model_checkpoint": title,
@@ -47,11 +47,8 @@ class Generator:
 
     def find_title(self, model_name) -> str:
         models = self.list_models()
-        print(model_name)
-        print(models)
         for p in models:
             title, name = p
-            print(title, name)
             if name == model_name:
                 return title
 
