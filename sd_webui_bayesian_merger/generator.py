@@ -28,8 +28,10 @@ class Generator:
         return [self.generate(payload) for _ in range(self.batch_size)]
 
     def switch_model(self, ckpt: str) -> None:
+        title = self.find_title(ckpt)
+        
         option_payload = {
-            "sd_model_checkpoint": ckpt,
+            "sd_model_checkpoint": title,
         }
 
         # TODO: do something with the response?
@@ -37,3 +39,18 @@ class Generator:
             url=f"{self.url}/sdapi/v1/options",
             json=option_payload,
         )
+
+    def list_models(self)->[(str, str)]:
+        response = requests.get(
+            url=f"{self.url}/sdapi/v1/sd-models")
+        return [(m['title'], m['model_name']) for m in response.json()]
+
+    def find_title(self, model_name) -> str:
+        models = self.list_models()
+        for p in models:
+            title, name = p
+            if name == model_name:
+                return title
+
+        raise ValueError(f'model {mode_name} not found')
+        
