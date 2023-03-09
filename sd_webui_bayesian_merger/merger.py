@@ -54,11 +54,11 @@ class Merger:
         )
         self.output_file = Path(self.model_a.parent, self.model_out_name)
 
-    def delete_previous_model(self):
-        if self.iteration > 0:
-            prev_model_name = self.get_model_out_name(self.iteration - 1)
-            prev_model = Path(self.model_a.parent, prev_model_name)
-            prev_model.unlink()
+    # def delete_previous_model(self):
+    #     if self.iteration > 0:
+    #         prev_model_name = self.get_model_out_name(self.iteration - 1)
+    #         prev_model = Path(self.model_a.parent, prev_model_name)
+    #         prev_model.unlink()
 
     def merge(
         self,

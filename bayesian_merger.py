@@ -29,7 +29,6 @@ from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
 @click.option("--init_points", type=int, default=1)
 @click.option("--n_iters", type=int, default=1)
 def main(*args, **kwargs) -> None:
-    print(kwargs)
     bo = BayesianOptimiser(*args, **kwargs)
     bo.optimise()
     bo.postprocess()
