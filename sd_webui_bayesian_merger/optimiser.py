@@ -41,7 +41,7 @@ class BayesianOptimiser:
 
         # TODO: is this forcing the model load despite the same name?
         self.generator.switch_model(self.merger.model_out_name)
-        self.merger.delete_previous_model()
+        # self.merger.delete_previous_model()
 
         # generate images
         images = []
