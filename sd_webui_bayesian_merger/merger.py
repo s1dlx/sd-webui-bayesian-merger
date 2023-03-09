@@ -37,28 +37,17 @@ class Merger:
     ):
         self.model_a = Path(model_a)
         self.model_b = Path(model_b)
-        # self.output_file = None
         self.device = device
-        # self.iteration = -1
         self.create_model_out_name()
 
         # TODO: add as parameter?
         self.skip_position_ids = 0
-
-    # def get_model_out_name(self, iteration):
-    #     return f"bbwm-{self.model_a.stem}-{self.model_b.stem}-{iteration}.safetensors"
 
     def create_model_out_name(self):
         self.model_out_name = (
             f"bbwm-{self.model_a.stem}-{self.model_b.stem}.safetensors"
         )
         self.output_file = Path(self.model_a.parent, self.model_out_name)
-
-    # def delete_previous_model(self):
-    #     if self.iteration > 0:
-    #         prev_model_name = self.get_model_out_name(self.iteration - 1)
-    #         prev_model = Path(self.model_a.parent, prev_model_name)
-    #         prev_model.unlink()
 
     def merge(
         self,
@@ -70,9 +59,6 @@ class Merger:
 
         theta_0 = SDModel(self.model_a, self.device).load_model()
         theta_1 = SDModel(self.model_b, self.device).load_model()
-
-        # self.update_model_out_name()
-        # self.delete_previous_model()
 
         re_inp = re.compile(r"\.input_blocks\.(\d+)\.")  # 12
         re_mid = re.compile(r"\.middle_block\.(\d+)\.")  # 1

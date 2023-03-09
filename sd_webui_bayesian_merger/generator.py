@@ -56,7 +56,6 @@ class Generator:
         models = self.list_models()
         for p in models:
             title, name = p
-            print(title, '-', name, '-', model_name)
             if name == model_name:
                 return title
 

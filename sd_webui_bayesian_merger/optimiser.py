@@ -41,7 +41,6 @@ class BayesianOptimiser:
 
         # TODO: is this forcing the model load despite the same name?
         self.generator.switch_model(self.merger.model_out_name)
-        # self.merger.delete_previous_model()
 
         # generate images
         images = []
@@ -55,8 +54,6 @@ class BayesianOptimiser:
         return self.scorer.average_score(scores)
 
     def optimise(self) -> None:
-        # partial_sd_target_function = partial(self.sd_target_function, self)
-
         # TODO: what if we want to optimise only certain blocks?
         pbounds = {f"block_{i}": (0.0, 1.0) for i in range(25)}
         pbounds["base_alpha"] = (0.0, 1.0)
@@ -72,9 +69,6 @@ class BayesianOptimiser:
             init_points=self.init_points,
             n_iter=self.n_iters,
         )
-
-        # clean up
-        self.merger.delete_previous_model()
 
     def postprocess(self) -> None:
         for i, res in enumerate(self.optimizer.res):
