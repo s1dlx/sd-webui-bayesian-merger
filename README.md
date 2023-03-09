@@ -17,10 +17,11 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 
 - I believe you already have a stable-diffusion venv, activate it
 - Start webui in `--api` mode
-- `cd` to `sd-webui-bayesian-merger` folder
+- Install this _extension_ from url: `https://github.com/s1dlx/sd-webui-bayesian-merger.git`
+- `cd` to `stable-diffusion-webui/extensions/sd-webui-bayesian-merger` folder
 - `pip install -r requirements.txt`
 - fill in one or more `payloads/*.yaml` files
-- read `python3 bayesian_merger.py --help` and prepare all the arguments accordingly
+- read `python3 bayesian_merger.py --help` and set all the arguments accordingly
 - `python3 bayesian_merger.py --model_a=... `
 
 ## To be done
@@ -46,13 +47,13 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [x] simple readme walkthrough
 - [ ] example results
 - [ ] explain what we're doing
-- [ ] logging (really?!?)
+- [x] logging
 - [x] native merge function
 - [ ] simpler merge function (e.g. no regex)
 - [ ] no need for webui OR proper webui extension, ehe
 - [x] native scorer class (took from SD-Chad)
 - [ ] consisten typing
-- [ ] save optimisation results
+- [x] save optimisation results
 - [ ] save images
 
 ## Experiments
