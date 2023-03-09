@@ -33,8 +33,8 @@ class BayesianOptimiser:
         self.start_logging()
 
     def start_logging(self):
-        log_path = Path("logs", f'{self.merger.model_out_name.stem}.json')
-        self.logger = JSONLogger(path=log_path)
+        log_path = Path("logs", f'{self.merger.output_file.stem}.json')
+        self.logger = JSONLogger(path=str(log_path))
 
     def sd_target_function(self, **params):
         # TODO: in args?
