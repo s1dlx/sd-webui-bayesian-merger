@@ -30,6 +30,7 @@ class Generator:
         return [self.generate(payload) for _ in range(self.batch_size)]
 
     def switch_model(self, ckpt: str) -> None:
+        self.refresh_models()
         title = self.find_title(Path(ckpt).stem)
         
         option_payload = {
@@ -41,6 +42,10 @@ class Generator:
             url=f"{self.url}/sdapi/v1/options",
             json=option_payload,
         )
+
+    def refresh_models(self)->None:
+        response = requests.post(
+            url=f"{self.url}/sdapi/v1/refresh-checkpoints")
 
     def list_models(self)->[(str, str)]:
         response = requests.get(
