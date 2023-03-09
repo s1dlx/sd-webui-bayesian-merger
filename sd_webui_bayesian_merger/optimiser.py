@@ -1,4 +1,8 @@
+from pathlib import Path
+
 from bayes_opt import BayesianOptimization
+from bayes_opt.logger import JSONLogger
+from bayes_opt.event import Events
 
 from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
@@ -26,6 +30,11 @@ class BayesianOptimiser:
         self.prompter = Prompter(payloads_dir, wildcards_dir)
         self.init_points = init_points
         self.n_iters = n_iters
+        self.start_logging()
+
+    def start_logging(self):
+        log_path = Path("logs", f'{self.merger.model_out_name.stem}.json')
+        self.logger = JSONLogger(path=log_path)
 
     def sd_target_function(self, **params):
         # TODO: in args?
@@ -64,6 +73,8 @@ class BayesianOptimiser:
             pbounds=pbounds,
             random_state=1,
         )
+
+        self.optimizer.subscribe(Events.OPTIMIZATION_STEP, self.logger)
 
         self.optimizer.maximize(
             init_points=self.init_points,
