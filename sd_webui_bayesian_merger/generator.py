@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict, Tuple
 
@@ -8,11 +9,10 @@ import base64
 from PIL import Image
 
 
+@dataclass
 class Generator:
-    # TODO: defaultclass?
-    def __init__(self, url: str, batch_size: int):
-        self.url = url
-        self.batch_size = batch_size
+    url: str
+    batch_size: int
 
     def generate(self, payload: Dict) -> Image.Image:
         response = requests.post(

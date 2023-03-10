@@ -143,3 +143,6 @@ dmypy.json
 **/*.yaml
 !**/payload.tmpl.yaml
 **/*.txt
+
+# logs
+**/*.json

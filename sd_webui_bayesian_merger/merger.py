@@ -3,6 +3,7 @@
 
 import os
 
+from dataclasses import dataclass
 from typing import List
 from pathlib import Path
 
@@ -33,16 +34,13 @@ KEY_POSITION_IDS = ".".join(
 )
 
 
+@dataclass
 class Merger:
-    def __init__(
-        self,
-        model_a: PathT,
-        model_b: PathT,
-        device: str,
-    ):
-        self.model_a = model_a
-        self.model_b = model_b
-        self.device = device
+    model_a: PathT
+    model_b: PathT
+    device: str
+
+    def __init__(self):
         self.create_model_out_name()
 
         # TODO: add as parameter?

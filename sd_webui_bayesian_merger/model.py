@@ -1,5 +1,6 @@
 import os
 
+from dataclasses import dataclass
 from pathlib import Path
 
 import torch
@@ -7,10 +8,10 @@ import safetensors
 
 PathT = os.PathLike | str
 
+@dataclass
 class SDModel:
-    def __init__(self, model_path: PathT, device: str) -> None:
-        self.model_path = model_path
-        self.device = device
+    model_path: PathT
+    device: str
 
     def load_model(self):
         print(f"loading: {self.model_path}")
