@@ -40,7 +40,7 @@ class Merger:
     model_b: PathT
     device: str
 
-    def __init__(self):
+    def __post_init__(self):
         self.create_model_out_name()
 
         # TODO: add as parameter?
