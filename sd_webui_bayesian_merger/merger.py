@@ -41,6 +41,8 @@ class Merger:
     device: str
 
     def __post_init__(self):
+        self.model_a = Path(self.model_a)
+        self.model_b = Path(self.model_b)
         self.create_model_out_name()
 
         # TODO: add as parameter?
