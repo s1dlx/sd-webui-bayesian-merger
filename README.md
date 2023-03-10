@@ -4,25 +4,95 @@
 
 An opinionated take on stable-diffusion models-merging automatic-optimisation.
 
-Why not auto-merge extension? Brute force == long time to wait. With this method you can get away with <X> number of runs!
+The main idea is to treat models-merging procedure as a black-box model with 26 parameters: one for each block plus `base_alpha` (note that for the moment `clip_skip` is set to `0`).
+We can then try to apply black-box optimisation techniques, in particular we focus on [Bayesian optimisation](https://en.wikipedia.org/wiki/Bayesian_optimization) with a [Gaussian Process](https://en.wikipedia.org/wiki/Gaussian_process) emulator.
+Read more [here](https://github.com/fmfn/BayesianOptimization), [here](http://gaussianprocess.org) and [here](https://optimization.cbe.cornell.edu/index.php?title=Bayesian_optimization).
 
-Why opinionated? Because we use webui API and lots of config files to run the show. No GUI. 
-Embrace your inner touch-typist and leave the browser for the CLI.
+The optimisation process is split in two phases:
+1. __exploration__: here we sample (at random for now, with some heuristic in the future) the 26-parameter hyperspace, our block-weights. The number of samples is set by the
+`--init_points` argument. We use each set of weigths to merge the two models and we use the merged model to generate `batch_size * number of payloads` images which are then scored.
+2. __exploitation__: based on the exploratory phase, the optimiser makes an idea of where (i.e. which set of weights) the optimal merge is.
+This information is used to sample more set of weights `--n_iters` number of times. This time we don't sample all of them in one go. Instead we sample once, merge the models,
+generate and score the images and update the optimiser knowledge about the merging space. This way the optimiser can adapt the strategy step-by-step.
 
-## Requirements
+At the end of the exploitation phase, the set of weights scoring the highest score are deemed to be the optimal ones.
 
-- [stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui)
+## OK, how do I use it in practice?
 
-## How to use
+### Requirements
 
+- [stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui). You need to have it working locally and know how to change option flags.
+- Install this _extension_ from url: `https://github.com/s1dlx/sd-webui-bayesian-merger.git`. This will place this codebase into your `extensions` folder.
 - I believe you already have a stable-diffusion venv, activate it
-- Start webui in `--api` mode
-- Install this _extension_ from url: `https://github.com/s1dlx/sd-webui-bayesian-merger.git`
 - `cd` to `stable-diffusion-webui/extensions/sd-webui-bayesian-merger` folder
 - `pip install -r requirements.txt`
-- fill in one or more `payloads/*.yaml` files
-- read `python3 bayesian_merger.py --help` and set all the arguments accordingly
-- `python3 bayesian_merger.py --model_a=... `
+
+### Prepare payloads
+
+A `payload` is where you type in all the generation parameters (just like you click away in the webui). I've added a `payload.tmpl.yaml` you can use as reference:
+
+```yaml
+prompt: "your prompt, even with __wildcard__"
+neg_prompt: "your negative prompt"
+seed: -1
+cfg: 7
+width: 512
+height: 512
+sampler: "Euler"
+```
+
+As you can see, this is a subset of the configs you have in webui, but it should be enough to start with.
+
+- copy the `payload.tmpl.yaml` file and name it `mypayloadname.yaml`
+- fill in the various fields. Prompts support [wildcards](https://github.com/AUTOMATIC1111/stable-diffusion-webui-wildcards) but not other extensions (e.g. [sd-dynamic-prompt](https://github.com/adieyal/sd-dynamic-prompts)) yet.
+- make another copy of the payload template and keep going
+- try to have different resolutions, cfg values, samplers, etc...
+- however, try to be consistent with the style you want to achieve from the optimisation. For example, if you are merging two photorealistic models, it makes sense to avoid prompting for `illustration`. This is with the aim of not confusing the optimisation process.
+
+
+### Run!
+
+- Start webui in `--api`[mode](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API)
+- Running `python bayesian_merger.py --help` will print
+
+```
+Usage: bayesian_merger.py [OPTIONS]
+
+Options:
+  --url TEXT               where webui api is running, by default
+                           http://127.0.0.1:7860
+  --batch_size INTEGER     number of images to generate for each payload
+  --model_a PATH           absolute path to first model  [required]
+  --model_b PATH           absolute path to second model  [required]
+  --device TEXT            where to merge models and score images, default and
+                           recommended "cpu"
+  --payloads_dir PATH      absolute path to payloads directory
+  --wildcards_dir PATH     absolute path to wildcards directory
+  --scorer_model_dir PATH  absolute path to scorer models directory
+  --init_points INTEGER    exploratory phase sample size
+  --n_iters INTEGER        exploitation phase sample size
+  --help                   Show this message and exit.
+```
+
+- Prepare the arguments accordingly and finally run `python3 bayesian_merger.py --model_a=... `
+- Come back later to check results
+
+### Results
+
+In the `logs` function you'll find two files: 
+- `bbwm-model_a-model_b.json`: this contains the scores and the weights for all the iterations. The final set of weights is the best one.
+- `bbwm-model_a-model_b.png`: a plot showing the evolution of the score across the iterations.
+
+### FAQ
+
+- Why not [sdweb-auto-MBW](https://github.com/Xerxemi/sdweb-auto-MBW) extension? That amazing extension is based on brute-forcing the merge. Unfortunately, Brute force == long time to wait,
+expecially when generating lots of images. Hopefully, with this other method you can get away with a small number of runs!
+- Why opinionated? Because we use webui API and lots of config files to run the show. No GUI. 
+Embrace your inner touch-typist and leave the browser for the CLI.
+- Why rely on webui? It's a very popular platform. Chances are that if you already have a working webui, you do not need to do much to run this library.
+- How many iterations and payloads? What about the batch size? I'd suggest `--init_points 10 --n_iters 10 --batch_size 10` and at least 5 different payloads.
+Depending on your GPU this may take 2-3hrs to run on basic config.
+
 
 ## To be done
 
@@ -46,15 +116,17 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [x] click cli
 - [x] simple readme walkthrough
 - [ ] example results
-- [ ] explain what we're doing
+- [x] explain what we're doing
 - [x] logging
 - [x] native merge function
 - [ ] simpler merge function (e.g. no regex)
 - [ ] no need for webui OR proper webui extension, ehe
 - [x] native scorer class (took from SD-Chad)
-- [ ] consisten typing
+- [x] consisten typing
 - [x] save optimisation results
 - [ ] save images
+- [x] results viz
+- [ ] expose `clip_skip` parameter
 
 ## Experiments
 
