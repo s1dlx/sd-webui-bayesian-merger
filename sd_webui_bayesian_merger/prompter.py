@@ -1,7 +1,12 @@
+import os
+from typing import Dict, List
+
 import random
 import yaml
 
 from pathlib import Path
+
+PathT = os.PathLike | str
 
 
 class CardDealer:
@@ -13,7 +18,7 @@ class CardDealer:
         if wdir.exists():
             self.wildcards = {w.stem: w for w in wdir.glob("*.txt")}
         else:
-            self.widcards = {}
+            self.wlldcards: Dict[str, PathT] = {}
 
     def sample_wildcard(self, wildcard_name: str) -> str:
         if wildcard_name in self.wildcards:
@@ -35,12 +40,12 @@ class CardDealer:
         return "".join(chunks)
 
 
-def load_yaml(yaml_file: Path) -> dict:
+def load_yaml(yaml_file: PathT) -> Dict:
     with open(yaml_file, "r", encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
-def check_payload(payload: dict) -> dict:
+def check_payload(payload: Dict) -> Dict:
     if "prompt" not in payload:
         raise ValueError(f"{payload['path']} doesn't have a prompt")
 
@@ -98,7 +103,7 @@ class Prompter:
             checked_payload = check_payload(raw_payload)
             self.raw_payloads[payload_name].update(checked_payload)
 
-    def render_payloads(self) -> [dict]:
+    def render_payloads(self) -> List[Dict]:
         payloads = []
         for _, p in self.raw_payloads.items():
             rendered_payload = p.copy()

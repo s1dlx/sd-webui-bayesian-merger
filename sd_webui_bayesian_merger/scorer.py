@@ -1,3 +1,5 @@
+from typing import List
+
 from PIL import Image
 import torch
 import torch.nn as nn
@@ -66,7 +68,7 @@ class Scorer:
             "ViT-L/14", device=self.device
         )
 
-    def get_image_features(self, image: Image) -> torch.Tensor:
+    def get_image_features(self, image: Image.Image) -> torch.Tensor:
         image = self.clip_preprocess(image).unsqueeze(0).to(self.device)
         with torch.no_grad():
             image_features = self.clip_model.encode_image(image)
@@ -74,13 +76,13 @@ class Scorer:
         image_features = image_features.cpu().detach().numpy()
         return image_features
 
-    def score(self, image: Image) -> float:
+    def score(self, image: Image.Image) -> float:
         image_features = self.get_image_features(image)
         score = self.model(torch.from_numpy(image_features).to(self.device).float())
         return score.item()
 
-    def batch_score(self, images: [Image]) -> [float]:
+    def batch_score(self, images: List[Image.Image]) -> List[float]:
         return [self.score(img) for img in images]
 
-    def average_score(self, scores: [float]) -> float:
+    def average_score(self, scores: List[float]) -> float:
         return sum(scores) / len(scores)

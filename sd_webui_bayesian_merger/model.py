@@ -1,12 +1,15 @@
+import os
+
 from pathlib import Path
 
 import torch
 import safetensors
 
+PathT = os.PathLike | str
 
 class SDModel:
-    def __init__(self, model_path: str, device: str) -> None:
-        self.model_path = Path(model_path)
+    def __init__(self, model_path: PathT, device: str) -> None:
+        self.model_path = model_path
         self.device = device
 
     def load_model(self):

@@ -1,6 +1,9 @@
 # adapted from
 # bbc-mc/sdweb-merge-block-weighted-gui/scripts/mbw/merge_block_weighted.py
 
+import os
+
+from typing import List
 from pathlib import Path
 
 import re
@@ -11,6 +14,8 @@ import safetensors.torch
 from tqdm import tqdm
 
 from sd_webui_bayesian_merger.model import SDModel
+
+PathT = os.PathLike | str
 
 NUM_INPUT_BLOCKS = 12
 NUM_MID_BLOCK = 1
@@ -31,12 +36,12 @@ KEY_POSITION_IDS = ".".join(
 class Merger:
     def __init__(
         self,
-        model_a: str,
-        model_b: str,
+        model_a: PathT,
+        model_b: PathT,
         device: str,
     ):
-        self.model_a = Path(model_a)
-        self.model_b = Path(model_b)
+        self.model_a = model_a
+        self.model_b = model_b
         self.device = device
         self.create_model_out_name()
 
@@ -51,8 +56,8 @@ class Merger:
 
     def merge(
         self,
-        weights: [float],
-        base_alpha: int,
+        weights: List[float],
+        base_alpha: float,
     ) -> None:
         if len(weights) != NUM_TOTAL_BLOCKS:
             raise ValueError(f"weights value must be {NUM_TOTAL_BLOCKS}")
