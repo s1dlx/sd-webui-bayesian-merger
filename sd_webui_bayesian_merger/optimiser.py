@@ -1,4 +1,11 @@
+import os
+
 from pathlib import Path
+from typing import Dict, List, Tuple
+
+import json
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 from bayes_opt import BayesianOptimization
 from bayes_opt.logger import JSONLogger
@@ -8,6 +15,8 @@ from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
 from sd_webui_bayesian_merger.merger import Merger
 from sd_webui_bayesian_merger.scorer import Scorer
+
+PathT = os.PathLike | str
 
 
 class BayesianOptimiser:
@@ -33,7 +42,7 @@ class BayesianOptimiser:
         self.start_logging()
 
     def start_logging(self):
-        log_path = Path("logs", f'{self.merger.output_file.stem}.json')
+        log_path = Path("logs", f"{self.merger.output_file.stem}.json")
         self.logger = JSONLogger(path=str(log_path))
 
     def sd_target_function(self, **params):
@@ -86,3 +95,53 @@ class BayesianOptimiser:
             print(f"Iteration {i}: \n\t{res}")
 
         print(self.optimizer.max)
+
+        img_path = Path("logs", f"{self.merger.output_file.stem}.png")
+        plot(self.optimizer.res, figname=img_path)
+
+
+def load_log(log: PathT) -> List[Dict]:
+    iterations = []
+    with open(log, "r") as j:
+        while True:
+            try:
+                iteration = next(j)
+            except StopIteration:
+                break
+
+            iterations.append(json.loads(iteration))
+
+    return iterations
+
+
+def parse_results(iterations: List[Dict]) -> List[float]:
+    return [r["target"] for r in iterations]
+
+
+def maxwhere(l: List[float]) -> Tuple[int, float]:
+    m = 0
+    mi = -1
+    for i, v in enumerate(l):
+        if v > m:
+            m = v
+            mi = i
+    return mi, m
+
+
+def plot(scores: List[float], figname: PathT = None) -> None:
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    plt.plot(scores)
+
+    max_i, max_score = maxwhere(scores)
+    plt.plot(max_i, max_score, "or")
+
+    plt.xlabel("iterations")
+    plt.ylabel("score")
+
+    sns.despine()
+
+    if figname:
+        plt.title(figname.name)
+        plt.savefig(figname)

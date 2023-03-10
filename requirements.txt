@@ -6,3 +6,5 @@ safetensors
 torch
 tqdm
 bayesian-optimization
+matplotlib
+seaborn

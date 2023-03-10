@@ -8,6 +8,7 @@ import safetensors
 
 PathT = os.PathLike | str
 
+
 @dataclass
 class SDModel:
     model_path: PathT
