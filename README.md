@@ -33,7 +33,7 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - [x] scorer class
 - [x] fill in `payload.tmpl.yaml`
 - [x] results postprocessing
-- [ ] actually test this thing
+- [x] actually test this thing
 
 ## Nice to have
 

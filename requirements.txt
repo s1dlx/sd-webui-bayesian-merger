@@ -1,5 +1,5 @@
 click
-clip
+open_clip_torch
 Pillow
 PyYAML
 safetensors
