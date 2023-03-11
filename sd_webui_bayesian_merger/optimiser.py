@@ -97,7 +97,7 @@ class BayesianOptimiser:
         print(self.optimizer.max)
 
         img_path = Path("logs", f"{self.merger.output_file.stem}.png")
-        plot(self.optimizer.res, figname=img_path)
+        plot(self.optimizer.res.values(), figname=img_path)
 
 
 def load_log(log: PathT) -> List[Dict]:
