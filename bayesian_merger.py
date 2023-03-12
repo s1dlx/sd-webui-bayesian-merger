@@ -30,6 +30,7 @@ from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
     required=True,
     help="absolute path to second model",
 )
+@click.option("--skip_position_ids", type=int, default=0, help="clip skip, default 0",)
 @click.option(
     "--device",
     type=str,

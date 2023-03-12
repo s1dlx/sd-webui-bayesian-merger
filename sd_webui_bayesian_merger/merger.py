@@ -18,6 +18,7 @@ from sd_webui_bayesian_merger.model import SDModel
 
 PathT = os.PathLike | str
 
+MAX_TOKENS = 77
 NUM_INPUT_BLOCKS = 12
 NUM_MID_BLOCK = 1
 NUM_OUTPUT_BLOCKS = 12
@@ -39,14 +40,12 @@ class Merger:
     model_a: PathT
     model_b: PathT
     device: str
-
+    skip_position_ids: int
+ 
     def __post_init__(self):
         self.model_a = Path(self.model_a)
         self.model_b = Path(self.model_b)
         self.create_model_out_name()
-
-        # TODO: add as parameter?
-        self.skip_position_ids = 0
 
     def create_model_out_name(self):
         self.model_out_name = (
@@ -74,7 +73,7 @@ class Merger:
                 if KEY_POSITION_IDS in key and self.skip_position_ids in [1, 2]:
                     if self.skip_position_ids == 2:
                         theta_0[key] = torch.tensor(
-                            [list(range(77))], dtype=torch.int64
+                            [list(range(MAX_TOKENS))], dtype=torch.int64
                         )
                     continue
 
@@ -109,7 +108,7 @@ class Merger:
                 if KEY_POSITION_IDS in key and self.skip_position_ids in [1, 2]:
                     if self.skip_position_ids == 2:
                         theta_1[key] = torch.tensor(
-                            [list(range(77))], dtype=torch.int64
+                            [list(range(MAX_TOKENS))], dtype=torch.int64
                         )
                     continue
                 theta_0.update({key: theta_1[key]})

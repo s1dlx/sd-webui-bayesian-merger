@@ -32,9 +32,10 @@ class BayesianOptimiser:
         scorer_model_dir,
         init_points,
         n_iters,
+        skip_position_ids,
     ):
         self.generator = Generator(url, batch_size)
-        self.merger = Merger(model_a, model_b, device)
+        self.merger = Merger(model_a, model_b, device, skip_position_ids)
         self.scorer = Scorer(scorer_model_dir, device)
         self.prompter = Prompter(payloads_dir, wildcards_dir)
         self.init_points = init_points
