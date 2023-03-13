@@ -116,7 +116,7 @@ def out_block(x, y, weights, weight_id, bl, ax, middle_x0, middle_y0):
 
 
 def draw_unet(
-    base_alpha: int,
+    base_alpha: float,
     weights: List[float],
     model_a: str = "A",
     model_b: str = "B",
@@ -154,7 +154,6 @@ def draw_unet(
 
     # base_alpha
     ba_bl = (bl[0] + MIDDLE_W / 2 - BASE_W / 2, bl[1] + MIDDLE_H + BASE_H_V_D)
-    base_alpha = 0.5
     patch = block_patch(
         ba_bl,
         BASE_W,
