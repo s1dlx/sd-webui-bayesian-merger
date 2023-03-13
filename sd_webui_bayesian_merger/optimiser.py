@@ -48,12 +48,16 @@ class BayesianOptimiser:
         self.scorer = Scorer(self.scorer_model_dir, self.device)
         self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
         self.start_logging()
+        self.iteration = 0
 
     def start_logging(self):
         log_path = Path("logs", f"{self.merger.output_file.stem}.json")
         self.logger = JSONLogger(path=str(log_path))
 
     def sd_target_function(self, **params):
+        self.iteration += 1
+        print(f'Iteration: {self.iteration}')
+
         weights = [params[f"block_{i}"] for i in range(25)]
         base_alpha = params["base_alpha"]
 
