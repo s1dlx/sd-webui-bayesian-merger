@@ -79,10 +79,13 @@ Options:
 
 ### Results
 
-In the `logs` function you'll find two files: 
+In the `logs` function you'll find: 
 - `bbwm-model_a-model_b.json`: this contains the scores and the weights for all the iterations. The final set of weights is the best one.
 - `bbwm-model_a-model_b.png`: a plot showing the evolution of the score across the iterations.
-- `bbwm-model_a-model_b-unet.png`: an images showing the best weights on the UNET architecture.
+
+- `bbwm-model_a-model_b-unet.png`: an images showing the best weights on the UNET architecture
+<img width="641" alt="Screenshot 2023-03-13 at 11 35 32" src="https://user-images.githubusercontent.com/125022075/224714573-7d9ab61d-b534-4723-b029-3b12568b0ac7.png">
+
 
 
 ### FAQ
