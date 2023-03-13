@@ -47,9 +47,9 @@ class Merger:
         self.model_b = Path(self.model_b)
         self.create_model_out_name()
 
-    def create_model_out_name(self):
+    def create_model_out_name(self, it:int=0):
         self.model_out_name = (
-            f"bbwm-{self.model_a.stem}-{self.model_b.stem}.safetensors"
+            f"bbwm-{self.model_a.stem}-{self.model_b.stem}-{it}.safetensors"
         )
         self.output_file = Path(self.model_a.parent, self.model_out_name)
 

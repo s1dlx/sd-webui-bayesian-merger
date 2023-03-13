@@ -61,6 +61,7 @@ class BayesianOptimiser:
         weights = [params[f"block_{i}"] for i in range(25)]
         base_alpha = params["base_alpha"]
 
+        self.merger.create_model_out_name(self.iteration)
         self.merger.merge(
             weights,
             base_alpha,
