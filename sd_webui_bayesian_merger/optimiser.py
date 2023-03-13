@@ -15,6 +15,7 @@ from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
 from sd_webui_bayesian_merger.merger import Merger
 from sd_webui_bayesian_merger.scorer import Scorer
+from sd_webui_bayesian_merger.artist import draw_unet
 
 PathT = os.PathLike | str
 
@@ -98,7 +99,16 @@ class BayesianOptimiser:
         print(self.optimizer.max)
 
         img_path = Path("logs", f"{self.merger.output_file.stem}.png")
-        plot(parse_results(self.optimizer.res), figname=img_path)
+        weights = parse_results(self.optimizer.res)
+        convergence_plot(weights, figname=img_path)
+
+        unet_path = Path("logs", f"{self.merger.output_file.stem}_unet.png")
+        draw_unet(
+            weights,
+            model_a=self.model_a.stem,
+            model_b=self.model_b.stem,
+            figname=unet_path,
+        )
 
 
 def load_log(log: PathT) -> List[Dict]:
@@ -129,7 +139,7 @@ def maxwhere(l: List[float]) -> Tuple[int, float]:
     return mi, m
 
 
-def plot(scores: List[float], figname: PathT = None) -> None:
+def convergence_plot(scores: List[float], figname: PathT = None) -> None:
     fig = plt.figure()
     ax = fig.add_subplot(111)
 

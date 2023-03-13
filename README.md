@@ -93,49 +93,6 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - How many iterations and payloads? What about the batch size? I'd suggest `--init_points 10 --n_iters 10 --batch_size 10` and at least 5 different payloads.
 Depending on your GPU this may take 2-3hrs to run on basic config.
 
-
-## To be done
-
-- [x] prompter class
-- [x] generator class
-- [x] merger class
-- [x] optimiser class
-- [x] scorer class
-- [x] fill in `payload.tmpl.yaml`
-- [x] results postprocessing
-- [x] actually test this thing
-
-## Nice to have
-
-- [x] wildcards
-- [ ] comment out individual lines in wildcard files
-- [ ] additional prompt manipulation extensions
-- [ ] orthogonal sampler
-- [ ] UNET visualisation
-- [x] fill in `requirements.txt`
-- [x] click cli
-- [x] simple readme walkthrough
-- [ ] example results
-- [x] explain what we're doing
-- [x] logging
-- [x] native merge function
-- [ ] simpler merge function (e.g. no regex)
-- [ ] no need for webui OR proper webui extension, ehe
-- [x] native scorer class (took from SD-Chad)
-- [x] consisten typing
-- [x] save optimisation results
-- [ ] save images
-- [x] results viz
-- [ ] expose `clip_skip` parameter
-
-## Experiments
-
-- [ ] Are existing scoring networks tuned towards photorealism?
-- [ ] Can we optimize for prompting style? Are wildcards enough?
-- [ ] Can we train a scoring network on personal preferences? How many images do we need? Tooling?
-- [ ] Shall we use [sd-webui-supermerger](https://github.com/hako-mikan/sd-webui-supermerger) instead?
-- [ ] Negative payloads: we want to minimise the score for these (e.g. target `cartoon`)
-
 ## With the help of
 
 - [sdweb-merge-block-weighted-gui](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui)
