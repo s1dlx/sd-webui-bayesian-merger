@@ -116,6 +116,7 @@ def out_block(x, y, weights, weight_id, bl, ax, middle_x0, middle_y0):
 
 
 def draw_unet(
+    base_alpha: int,
     weights: List[float],
     model_a: str = "A",
     model_b: str = "B",

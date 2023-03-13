@@ -2,6 +2,7 @@ import os
 
 from pathlib import Path
 from typing import Dict, List, Tuple
+from dataclasses import dataclass
 
 import json
 import matplotlib.pyplot as plt
@@ -20,27 +21,30 @@ from sd_webui_bayesian_merger.artist import draw_unet
 PathT = os.PathLike | str
 
 
+@dataclass
 class BayesianOptimiser:
-    def __init__(
-        self,
-        url,
-        batch_size,
-        model_a,
-        model_b,
-        device,
-        payloads_dir,
-        wildcards_dir,
-        scorer_model_dir,
-        init_points,
-        n_iters,
-        skip_position_ids,
-    ):
-        self.generator = Generator(url, batch_size)
-        self.merger = Merger(model_a, model_b, device, skip_position_ids)
-        self.scorer = Scorer(scorer_model_dir, device)
-        self.prompter = Prompter(payloads_dir, wildcards_dir)
-        self.init_points = init_points
-        self.n_iters = n_iters
+    url: str
+    batch_size: int
+    model_a: PathT
+    model_b: PathT
+    device: str
+    payloads_dir: PathT
+    wildcards_dir: PathT
+    scorer_model_dir: PathT
+    init_points: int
+    n_iters: int
+    skip_position_ids: int
+
+    def __post_init__(self):
+        self.generator = Generator(self.url, self.batch_size)
+        self.merger = Merger(
+            self.model_a,
+            self.model_b,
+            self.device,
+            self.skip_position_ids,
+        )
+        self.scorer = Scorer(self.scorer_model_dir, self.device)
+        self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
         self.start_logging()
 
     def start_logging(self):
@@ -48,9 +52,6 @@ class BayesianOptimiser:
         self.logger = JSONLogger(path=str(log_path))
 
     def sd_target_function(self, **params):
-        # TODO: in args?
-        # skip_position_ids = 0
-
         weights = [params[f"block_{i}"] for i in range(25)]
         base_alpha = params["base_alpha"]
 
@@ -99,14 +100,17 @@ class BayesianOptimiser:
         print(self.optimizer.max)
 
         img_path = Path("logs", f"{self.merger.output_file.stem}.png")
-        weights = parse_results(self.optimizer.res)
-        convergence_plot(weights, figname=img_path)
+        scores = parse_scores(self.optimizer.res)
+        convergence_plot(scores, figname=img_path)
 
-        unet_path = Path("logs", f"{self.merger.output_file.stem}_unet.png")
+        unet_path = Path("logs", f"{self.merger.output_file.stem}-unet.png")
+        best_weights = self.optimizer.max
+        best_base_alpha, best_weights = parse_params(self.optimizer.max["params"])
         draw_unet(
-            weights,
-            model_a=self.model_a.stem,
-            model_b=self.model_b.stem,
+            best_base_alpha,
+            best_weights,
+            model_a=Path(self.model_a).stem,
+            model_b=Path(self.model_b).stem,
             figname=unet_path,
         )
 
@@ -125,8 +129,14 @@ def load_log(log: PathT) -> List[Dict]:
     return iterations
 
 
-def parse_results(iterations: List[Dict]) -> List[float]:
+def parse_scores(iterations: List[Dict]) -> List[float]:
     return [r["target"] for r in iterations]
+
+
+def parse_params(params: Dict) -> Tuple[float, List[float]]:
+    weights = [params[f"block_{i}"] for i in range(25)]
+    base_alpha = params["base_alpha"]
+    return base_alpha, weights
 
 
 def maxwhere(l: List[float]) -> Tuple[int, float]:
