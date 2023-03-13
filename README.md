@@ -17,6 +17,12 @@ generate and score the images and update the optimiser knowledge about the mergi
 
 At the end of the exploitation phase, the set of weights scoring the highest score are deemed to be the optimal ones.
 
+## Juicy features
+
+- wildcards support
+- UNET visualiser
+- convergence plot
+
 ## OK, how do I use it in practice?
 
 ### Requirements

@@ -46,6 +46,8 @@ class Scorer:
             )
             url = f"https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/{state_name}?raw=true"
             r = requests.get(url)
+            r.raise_for_status()
+
             self.model_path = Path("./models", state_name).absolute()
             with open(self.model_path, "wb") as f:
                 print(f"saved into {self.model_path}")
