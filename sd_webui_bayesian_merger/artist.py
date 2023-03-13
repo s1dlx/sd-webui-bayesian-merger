@@ -45,7 +45,7 @@ TEXT_SIZE = 10
 
 
 def get_color(w, palette=PALETTE, num_colors=NUM_COLORS):
-    return palette[int(round(w * num_colors))]
+    return palette[int(round(w * num_colors))-1]
 
 
 def block_patch(bl, w, h, pad, color, ecolor=ECOLOR, lwidth=LWIDTH):
@@ -182,7 +182,6 @@ def draw_unet(
 
     ax.relim()
     ax.autoscale_view()
-    # ax.set_aspect("equal", "box")
     ax.set_axis_off()
 
     # colorbar
@@ -197,14 +196,7 @@ def draw_unet(
     cbar.set_ticks([0, 1])
     cbar.set_ticklabels([model_a, model_b])
 
-    # plt.show()
-
     if figname:
         fig.savefig(figname)
 
     # TODO: weight value inside box?
-
-
-# import numpy as np
-
-# draw_unet(np.linspace(0, 1, 26), "A", "B")

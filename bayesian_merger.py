@@ -1,8 +1,10 @@
 from pathlib import Path
+from typing import List
 
 import click
 
 from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
+from sd_webui_bayesian_merger.artist import draw_unet
 
 
 @click.command()
@@ -30,7 +32,12 @@ from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
     required=True,
     help="absolute path to second model",
 )
-@click.option("--skip_position_ids", type=int, default=0, help="clip skip, default 0",)
+@click.option(
+    "--skip_position_ids",
+    type=int,
+    default=0,
+    help="clip skip, default 0",
+)
 @click.option(
     "--device",
     type=str,
@@ -56,13 +63,32 @@ from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
     help="absolute path to scorer models directory",
 )
 @click.option(
-    "--init_points", type=int, default=1, help="exploratory phase sample size",
+    "--init_points",
+    type=int,
+    default=1,
+    help="exploratory phase sample size",
 )
-@click.option("--n_iters", type=int, default=1, help="exploitation phase sample size",)
+@click.option(
+    "--n_iters",
+    type=int,
+    default=1,
+    help="exploitation phase sample size",
+)
+@click.option("--draw_unet_weights", type=str, help="", default=None)
+@click.option("--draw_unet_base_alpha", type=float, default=None, help="")
 def main(*args, **kwargs) -> None:
-    bo = BayesianOptimiser(*args, **kwargs)
-    bo.optimise()
-    bo.postprocess()
+    if kwargs["draw_unet_weights"] and kwargs["draw_unet_base_alpha"]:
+        weights = list(map(float, kwargs["draw_unet_weights"].split(',')))
+        draw_unet(
+            kwargs['draw_unet_base_alpha'],
+            weights,
+            Path(kwargs['model_a']).stem,
+            Path(kwargs['model_b']).stem,
+            './unet.png',)
+    else:
+        bo = BayesianOptimiser(*args, **kwargs)
+        bo.optimise()
+        bo.postprocess()
 
 
 if __name__ == "__main__":
