@@ -45,7 +45,7 @@ TEXT_SIZE = 10
 
 
 def get_color(w, palette=PALETTE, num_colors=NUM_COLORS):
-    return palette[int(round(w * num_colors))-1]
+    return palette[int(round(w * num_colors)) - 1]
 
 
 def block_patch(bl, w, h, pad, color, ecolor=ECOLOR, lwidth=LWIDTH):

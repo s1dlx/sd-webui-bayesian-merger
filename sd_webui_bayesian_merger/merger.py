@@ -41,7 +41,7 @@ class Merger:
     model_b: PathT
     device: str
     skip_position_ids: int
- 
+
     def __post_init__(self):
         self.model_a = Path(self.model_a)
         self.model_b = Path(self.model_b)

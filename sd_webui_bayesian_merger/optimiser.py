@@ -8,6 +8,8 @@ import json
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+from tqdm import tqdm
+
 from bayes_opt import BayesianOptimization
 from bayes_opt.logger import JSONLogger
 from bayes_opt.event import Events
@@ -65,7 +67,7 @@ class BayesianOptimiser:
 
         # generate images
         images = []
-        for payload in self.prompter.render_payloads():
+        for payload in tqdm(self.prompter.render_payloads()):
             images.extend(self.generator.batch_generate(payload))
 
         # score images

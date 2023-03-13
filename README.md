@@ -86,7 +86,12 @@ In the `logs` function you'll find:
 - `bbwm-model_a-model_b-unet.png`: an images showing the best weights on the UNET architecture
 <img width="641" alt="Screenshot 2023-03-13 at 11 35 32" src="https://user-images.githubusercontent.com/125022075/224714573-7d9ab61d-b534-4723-b029-3b12568b0ac7.png">
 
+### Extra
 
+- UNET drawing only: this command will save `./unet.png`, use it for quick visualise the net/debugging. Note that the weights should be passed as a string, i.e., in between quotes `"..."`
+```
+python3 bayesian_merger.py --model_a=name_A --model_b=name_B --draw_unet_base_alpha=0.5 --draw_unet_weights="1.0, 0.9166666667, 0.8333333333, 0.75, 0.6666666667,0.5833333333, 0.5, 0.4166666667, 0.3333333333, 0.25, 0.1666666667,0.0833333333,0.0,0.0833333333,0.1666666667,0.25,0.3333333333,0.4166666667,0.5,0.5833333333,0.6666666667,0.75,0.8333333333,0.9166666667,1.0"
+```
 
 ### FAQ
 

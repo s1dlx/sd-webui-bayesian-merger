@@ -78,13 +78,14 @@ from sd_webui_bayesian_merger.artist import draw_unet
 @click.option("--draw_unet_base_alpha", type=float, default=None, help="")
 def main(*args, **kwargs) -> None:
     if kwargs["draw_unet_weights"] and kwargs["draw_unet_base_alpha"]:
-        weights = list(map(float, kwargs["draw_unet_weights"].split(',')))
+        weights = list(map(float, kwargs["draw_unet_weights"].split(",")))
         draw_unet(
-            kwargs['draw_unet_base_alpha'],
+            kwargs["draw_unet_base_alpha"],
             weights,
-            Path(kwargs['model_a']).stem,
-            Path(kwargs['model_b']).stem,
-            './unet.png',)
+            Path(kwargs["model_a"]).stem,
+            Path(kwargs["model_b"]).stem,
+            "./unet.png",
+        )
     else:
         bo = BayesianOptimiser(*args, **kwargs)
         bo.optimise()

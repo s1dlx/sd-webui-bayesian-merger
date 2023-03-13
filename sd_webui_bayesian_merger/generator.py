@@ -20,14 +20,12 @@ class Generator:
             json=payload,
         )
 
-        # TODO: handle bad response
         r_json = response.json()
         img = r_json["images"][0]
 
         return Image.open(io.BytesIO(base64.b64decode(img.split(",", 1)[0])))
 
     def batch_generate(self, payload: Dict) -> List[Image.Image]:
-        # TODO: tqdm?
         return [self.generate(payload) for _ in range(self.batch_size)]
 
     def switch_model(self, ckpt: str) -> None:
@@ -38,14 +36,13 @@ class Generator:
             "sd_model_checkpoint": title,
         }
 
-        # TODO: do something with the response?
-        response = requests.post(
+        requests.post(
             url=f"{self.url}/sdapi/v1/options",
             json=option_payload,
         )
 
     def refresh_models(self) -> None:
-        response = requests.post(url=f"{self.url}/sdapi/v1/refresh-checkpoints")
+        requests.post(url=f"{self.url}/sdapi/v1/refresh-checkpoints")
 
     def list_models(self) -> List[Tuple[str, str]]:
         response = requests.get(url=f"{self.url}/sdapi/v1/sd-models")
