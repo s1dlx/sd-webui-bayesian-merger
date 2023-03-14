@@ -66,6 +66,7 @@ class BayesianOptimiser:
             weights,
             base_alpha,
         )
+        self.merger.remove_previous_ckpt(self.iteration)
 
         # TODO: is this forcing the model load despite the same name?
         self.generator.switch_model(self.merger.model_out_name)
