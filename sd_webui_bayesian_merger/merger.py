@@ -56,6 +56,7 @@ class Merger:
     def remove_previous_ckpt(self, current_it: int) -> None:
         if current_it > 1:
             self.create_model_out_name(current_it - 1)
+            print(f'Removing {self.output_file}')
             self.output_file.unlink()
 
     def merge(
