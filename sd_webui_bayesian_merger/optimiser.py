@@ -58,9 +58,9 @@ class BayesianOptimiser:
         self.iteration += 1
 
         if self.iteration == 1:
-            print('\n'+'-'*10+'> warmup')
-        elif self.iteration + self.init_points + 1:
-            print('\n'+'-'*10+'> optimisation')
+            print('\n'+'-'*10+' warmup '+'-'*10+'>')
+        elif self.iteration == self.init_points + 1:
+            print('\n'+'-'*10+' optimisation '+'-'*10+'>')
 
         it_type = 'warmup' if self.iteration <= self.init_points else 'optimisation'
         print(f"\n{it_type} - Iteration: {self.iteration}")
