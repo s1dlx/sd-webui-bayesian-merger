@@ -58,7 +58,7 @@ As you can see, this is a subset of the configs you have in webui, but it should
 
 ### Run!
 
-- Start webui in `--api`[mode](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API)
+- Start webui in `--api --nowebui`[mode](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API)
 - Running `python bayesian_merger.py --help` will print
 
 ```
