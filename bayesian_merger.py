@@ -87,8 +87,8 @@ def main(*args, **kwargs) -> None:
             "./unet.png",
         )
     else:
-        kwargs.pop('draw_unet_weights')
-        kwargs.pop('draw_unet_base_alpha')
+        kwargs.pop("draw_unet_weights")
+        kwargs.pop("draw_unet_base_alpha")
         bo = BayesianOptimiser(*args, **kwargs)
         bo.optimise()
         bo.postprocess()
