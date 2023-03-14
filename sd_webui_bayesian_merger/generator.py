@@ -30,13 +30,8 @@ class Generator:
         return [self.generate(payload) for _ in range(self.batch_size)]
 
     def switch_model(self, ckpt: str) -> None:
-        prev_title = self.find_title(Path(ckpt).stem)
-
         self.refresh_models()
         title = self.find_title(Path(ckpt).stem)
-
-        # are we really switching models?
-        assert title != prev_title
 
         option_payload = {
             "sd_model_checkpoint": title,
