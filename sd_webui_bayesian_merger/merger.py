@@ -45,7 +45,7 @@ class Merger:
     def __post_init__(self):
         self.model_a = Path(self.model_a)
         self.model_b = Path(self.model_b)
-        self.create_model_out_name()
+        self.create_model_out_name(0)
 
     def create_model_out_name(self, it: int)->None:
         self.model_out_name = (
