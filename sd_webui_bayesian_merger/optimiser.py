@@ -56,7 +56,14 @@ class BayesianOptimiser:
 
     def sd_target_function(self, **params):
         self.iteration += 1
-        print(f"Iteration: {self.iteration}")
+
+        if self.iteration == 1:
+            print('\n'+'-'*10+'> warmup')
+        elif self.iteration + self.init_points + 1:
+            print('\n'+'-'*10+'> optimisation')
+
+        it_type = 'warmup' if self.iteration <= self.init_points else 'optimisation'
+        print(f"\n{it_type} - Iteration: {self.iteration}")
 
         weights = [params[f"block_{i}"] for i in range(25)]
         base_alpha = params["base_alpha"]
@@ -83,7 +90,10 @@ class BayesianOptimiser:
         scores = self.scorer.batch_score(images)
 
         # spit out a single value for optimisation
-        return self.scorer.average_score(scores)
+        avg_score = self.scorer.average_score(scores)
+        print(f"Score: {avg_score}")
+
+        return avg_score
 
     def optimise(self) -> None:
         # TODO: what if we want to optimise only certain blocks?
@@ -103,6 +113,9 @@ class BayesianOptimiser:
             init_points=self.init_points,
             n_iter=self.n_iters,
         )
+
+        # clean up and remove the last merge
+        self.merger.remove_previous_ckpt(self.iteration+1)
 
     def postprocess(self) -> None:
         for i, res in enumerate(self.optimizer.res):
