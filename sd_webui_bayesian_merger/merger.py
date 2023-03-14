@@ -58,6 +58,7 @@ class Merger:
             self.create_model_out_name(current_it - 1)
             print(f'Removing {self.output_file}')
             self.output_file.unlink()
+        self.create_model_out_name(current_it)
 
     def merge(
         self,
