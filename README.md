@@ -65,19 +65,29 @@ As you can see, this is a subset of the configs you have in webui, but it should
 Usage: bayesian_merger.py [OPTIONS]
 
 Options:
-  --url TEXT               where webui api is running, by default
-                           http://127.0.0.1:7860
-  --batch_size INTEGER     number of images to generate for each payload
-  --model_a PATH           absolute path to first model  [required]
-  --model_b PATH           absolute path to second model  [required]
-  --device TEXT            where to merge models and score images, default and
-                           recommended "cpu"
-  --payloads_dir PATH      absolute path to payloads directory
-  --wildcards_dir PATH     absolute path to wildcards directory
-  --scorer_model_dir PATH  absolute path to scorer models directory
-  --init_points INTEGER    exploratory phase sample size
-  --n_iters INTEGER        exploitation phase sample size
-  --help                   Show this message and exit.
+  --url TEXT                      where webui api is running, by default
+                                  http://127.0.0.1:7860
+  --batch_size INTEGER            number of images to generate for each
+                                  payload
+  --model_a PATH                  absolute path to first model  [required]
+  --model_b PATH                  absolute path to second model  [required]
+  --skip_position_ids INTEGER     clip skip, default 0
+  --device TEXT                   where to merge models and score images,
+                                  default and recommended "cpu"
+  --payloads_dir PATH             absolute path to payloads directory
+  --wildcards_dir PATH            absolute path to wildcards directory
+  --scorer_model_dir PATH         absolute path to scorer models directory
+  --init_points INTEGER           exploratory/warmup phase sample size
+  --n_iters INTEGER               exploitation/optimisation phase sample size
+  --draw_unet_weights TEXT        list of weights for drawing mode
+  --draw_unet_base_alpha FLOAT    base alpha value for drawing mode
+  --best_format [safetensors|ckpt]
+                                  best model saving format, either safetensors
+                                  (default) or ckpt
+  --best_precision [16|32]        best model saving precision, either 16
+                                  (default) or 32 bit
+  --save_best BOOLEAN
+  --help                          Show this message and exit.
 ```
 
 - Prepare the arguments accordingly and finally run `python3 bayesian_merger.py --model_a=... `

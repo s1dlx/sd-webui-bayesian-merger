@@ -66,16 +66,39 @@ from sd_webui_bayesian_merger.artist import draw_unet
     "--init_points",
     type=int,
     default=1,
-    help="exploratory phase sample size",
+    help="exploratory/warmup phase sample size",
 )
 @click.option(
     "--n_iters",
     type=int,
     default=1,
-    help="exploitation phase sample size",
+    help="exploitation/optimisation phase sample size",
 )
-@click.option("--draw_unet_weights", type=str, help="", default=None)
-@click.option("--draw_unet_base_alpha", type=float, default=None, help="")
+@click.option(
+    "--draw_unet_weights",
+    type=str,
+    help="list of weights for drawing mode",
+    default=None,
+)
+@click.option(
+    "--draw_unet_base_alpha",
+    type=float,
+    default=None,
+    help="base alpha value for drawing mode",
+)
+@click.option(
+    "--best_format",
+    type=click.Choice(["safetensors", "ckpt"]),
+    default="safetensors",
+    help="best model saving format, either safetensors (default) or ckpt",
+)
+@click.option(
+    "--best_precision",
+    type=click.Choice(["16", "32"]),
+    default="16",
+    help="best model saving precision, either 16 (default) or 32 bit",
+)
+@click.option("--save_best", type=bool, default=False, help="")
 def main(*args, **kwargs) -> None:
     if kwargs["draw_unet_weights"] and kwargs["draw_unet_base_alpha"]:
         weights = list(map(float, kwargs["draw_unet_weights"].split(",")))
