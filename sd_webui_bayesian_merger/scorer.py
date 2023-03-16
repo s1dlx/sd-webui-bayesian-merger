@@ -56,7 +56,7 @@ class Scorer:
             self.model_path = Path(self.model_dir, state_name).absolute()
 
     def load_model(self):
-        print("Loading aestetic scorer model")
+        print("Loading aesthetic scorer model")
         pt_state = torch.load(self.model_path, map_location=self.device)
         self.model = AestheticPredictor(768)
         self.model.load_state_dict(pt_state)
