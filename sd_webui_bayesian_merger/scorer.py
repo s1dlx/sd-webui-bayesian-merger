@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 
 from PIL import Image
@@ -5,7 +6,6 @@ import torch
 import torch.nn as nn
 import clip
 
-from pathlib import Path
 import requests
 
 
