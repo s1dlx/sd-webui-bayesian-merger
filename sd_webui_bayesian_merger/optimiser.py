@@ -1,4 +1,3 @@
-import os
 from abc import abstractmethod
 
 from pathlib import Path
@@ -11,9 +10,7 @@ import seaborn as sns
 
 from tqdm import tqdm
 
-from bayes_opt import BayesianOptimization
 from bayes_opt.logger import JSONLogger
-from bayes_opt.event import Events
 
 from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
