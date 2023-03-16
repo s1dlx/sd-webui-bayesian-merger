@@ -36,9 +36,9 @@ class TPEOptimiser(Optimiser):
 
     def postprocess(self) -> None:
         scores = []
-        for i, res in enumerate(self.trials.trials):
-            print(f"Iteration {i}: \n\t{-res['loss']}")
-            scores.append(-res['loss'])
+        for i, res in enumerate(self.trials.losses()):
+            print(f"Iteration {i}: \n\t{-res}")
+            scores.append(-res)
         best = self.trials.best_trial
         print("Best:", best)
 
