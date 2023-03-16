@@ -22,6 +22,7 @@ class TPEOptimiser(Optimiser):
         space = {f"block_{i}": hp.uniform(f'block_{i}', 0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
         space["base_alpha"] = hp.uniform('base_alpha', 0.0, 1.0)
 
+        # this will do 20 warmup runs before optimising
         self.trials = Trials()
         fmin(
             self._target_function,
