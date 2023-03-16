@@ -1,4 +1,5 @@
 import os
+from abc import abstractmethod
 
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -16,15 +17,14 @@ from bayes_opt.event import Events
 
 from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
-from sd_webui_bayesian_merger.merger import Merger
+from sd_webui_bayesian_merger.merger import Merger, NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.scorer import Scorer
-from sd_webui_bayesian_merger.artist import draw_unet
 
 PathT = os.PathLike | str
 
 
 @dataclass
-class BayesianOptimiser:
+class Optimiser:
     url: str
     batch_size: int
     model_a: PathT
@@ -65,7 +65,7 @@ class BayesianOptimiser:
         it_type = 'warmup' if self.iteration <= self.init_points else 'optimisation'
         print(f"\n{it_type} - Iteration: {self.iteration}")
 
-        weights = [params[f"block_{i}"] for i in range(25)]
+        weights = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
         base_alpha = params["base_alpha"]
 
         self.merger.create_model_out_name(self.iteration)
@@ -95,48 +95,14 @@ class BayesianOptimiser:
 
         return avg_score
 
+    @abstractmethod
     def optimise(self) -> None:
-        # TODO: what if we want to optimise only certain blocks?
-        pbounds = {f"block_{i}": (0.0, 1.0) for i in range(25)}
-        pbounds["base_alpha"] = (0.0, 1.0)
+        raise NotImplemented("Not implemented")
 
-        # TODO: fork bayesian-optimisation and add LHS
-        self.optimizer = BayesianOptimization(
-            f=self.sd_target_function,
-            pbounds=pbounds,
-            random_state=1,
-        )
-
-        self.optimizer.subscribe(Events.OPTIMIZATION_STEP, self.logger)
-
-        self.optimizer.maximize(
-            init_points=self.init_points,
-            n_iter=self.n_iters,
-        )
-
-        # clean up and remove the last merge
-        self.merger.remove_previous_ckpt(self.iteration+1)
-
+    @abstractmethod
     def postprocess(self) -> None:
-        for i, res in enumerate(self.optimizer.res):
-            print(f"Iteration {i}: \n\t{res}")
+        raise NotImplemented("Not implemented")
 
-        print(self.optimizer.max)
-
-        img_path = Path("logs", f"{self.merger.output_file.stem}.png")
-        scores = parse_scores(self.optimizer.res)
-        convergence_plot(scores, figname=img_path)
-
-        unet_path = Path("logs", f"{self.merger.output_file.stem}-unet.png")
-        best_weights = self.optimizer.max
-        best_base_alpha, best_weights = parse_params(self.optimizer.max["params"])
-        draw_unet(
-            best_base_alpha,
-            best_weights,
-            model_a=Path(self.model_a).stem,
-            model_b=Path(self.model_b).stem,
-            figname=unet_path,
-        )
 
 
 def load_log(log: PathT) -> List[Dict]:
@@ -153,15 +119,6 @@ def load_log(log: PathT) -> List[Dict]:
     return iterations
 
 
-def parse_scores(iterations: List[Dict]) -> List[float]:
-    return [r["target"] for r in iterations]
-
-
-def parse_params(params: Dict) -> Tuple[float, List[float]]:
-    weights = [params[f"block_{i}"] for i in range(25)]
-    base_alpha = params["base_alpha"]
-    return base_alpha, weights
-
 
 def maxwhere(l: List[float]) -> Tuple[int, float]:
     m = 0
@@ -173,7 +130,7 @@ def maxwhere(l: List[float]) -> Tuple[int, float]:
     return mi, m
 
 
-def convergence_plot(scores: List[float], figname: PathT = None) -> None:
+def convergence_plot(scores: List[float], figname: Path = None) -> None:
     fig = plt.figure()
     ax = fig.add_subplot(111)
 

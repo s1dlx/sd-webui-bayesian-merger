@@ -1,9 +1,8 @@
 from pathlib import Path
-from typing import List
 
 import click
 
-from sd_webui_bayesian_merger.optimiser import BayesianOptimiser
+from sd_webui_bayesian_merger.optimiser import BayesianOptimiser, TPEOptimiser
 from sd_webui_bayesian_merger.artist import draw_unet
 
 
@@ -74,6 +73,12 @@ from sd_webui_bayesian_merger.artist import draw_unet
     default=1,
     help="exploitation phase sample size",
 )
+@click.option(
+    "--optimiser",
+    type=click.Choice(['bayes', 'tpe']),
+    default='bayes',
+    help='optimiser, bayes or tpe'
+)
 @click.option("--draw_unet_weights", type=str, help="", default=None)
 @click.option("--draw_unet_base_alpha", type=float, default=None, help="")
 def main(*args, **kwargs) -> None:
@@ -89,7 +94,14 @@ def main(*args, **kwargs) -> None:
     else:
         kwargs.pop("draw_unet_weights")
         kwargs.pop("draw_unet_base_alpha")
-        bo = BayesianOptimiser(*args, **kwargs)
+        optimiser = kwargs.pop('optimiser')
+        if optimiser == 'bayes':
+            cls = BayesianOptimiser
+        elif optimiser == 'tpe':
+            cls = TPEOptimiser
+        else:
+            exit("Invalid optimiser:" + optimiser)
+        bo = cls(*args, **kwargs)
         bo.optimise()
         bo.postprocess()
 
