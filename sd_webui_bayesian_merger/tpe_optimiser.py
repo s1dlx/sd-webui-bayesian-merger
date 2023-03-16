@@ -9,7 +9,7 @@ from hyperopt import Trials, hp, fmin, tpe, STATUS_OK
 
 class TPEOptimiser(Optimiser):
 
-    def _target_function(self, **params):
+    def _target_function(self, params):
         res = self.sd_target_function(**params)
         return {
             'loss': -res,
