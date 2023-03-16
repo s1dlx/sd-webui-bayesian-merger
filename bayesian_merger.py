@@ -2,7 +2,7 @@ from pathlib import Path
 
 import click
 
-from sd_webui_bayesian_merger.optimiser import BayesianOptimiser, TPEOptimiser
+from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser
 from sd_webui_bayesian_merger.artist import draw_unet
 
 
@@ -96,7 +96,7 @@ def main(*args, **kwargs) -> None:
         kwargs.pop("draw_unet_base_alpha")
         optimiser = kwargs.pop('optimiser')
         if optimiser == 'bayes':
-            cls = BayesianOptimiser
+            cls = BayesOptimiser
         elif optimiser == 'tpe':
             cls = TPEOptimiser
         else:
