@@ -20,7 +20,7 @@ At the end of the exploitation phase, the set of weights scoring the highest sco
 ## Juicy features
 
 - wildcards support
-- TPE or Bayesian Optimisers
+- TPE or Bayesian Optimisers. [cf. Bergstra et al., Algorithms for Hyper-Parameter Optimization 2011](http://papers.neurips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf) for a comparison and explanation
 - UNET visualiser
 - convergence plot
 
@@ -78,6 +78,9 @@ Options:
   --scorer_model_dir PATH  absolute path to scorer models directory
   --init_points INTEGER    exploratory phase sample size
   --n_iters INTEGER        exploitation phase sample size
+  --optimiser [bayes|tpe]  optimiser, bayes or tpe
+  --draw_unet_weights TEXT
+  --draw_unet_base_alpha FLOAT
   --help                   Show this message and exit.
 ```
 
