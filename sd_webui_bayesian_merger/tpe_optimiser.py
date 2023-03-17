@@ -30,7 +30,7 @@ class TPEOptimiser(Optimiser):
         fmin(
             self._target_function,
             space=space,
-            algo=tpe.suggest,
+            algo=algo,
             trials=self.trials,
             max_evals=self.n_iters,
         )
