@@ -76,6 +76,12 @@ from sd_webui_bayesian_merger.artist import draw_unet
 )
 @click.option("--draw_unet_weights", type=str, help="", default=None)
 @click.option("--draw_unet_base_alpha", type=float, default=None, help="")
+@click.option(
+    "--scorer_name",
+    type=click.Choice(["chad"]),
+    default="chad",
+    help="scoring method",
+)
 def main(*args, **kwargs) -> None:
     if kwargs["draw_unet_weights"] and kwargs["draw_unet_base_alpha"]:
         weights = list(map(float, kwargs["draw_unet_weights"].split(",")))

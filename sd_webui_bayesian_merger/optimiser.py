@@ -17,7 +17,7 @@ from bayes_opt.event import Events
 from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
 from sd_webui_bayesian_merger.merger import Merger
-from sd_webui_bayesian_merger.scorer import Scorer
+from sd_webui_bayesian_merger.chad import ChadScorer
 from sd_webui_bayesian_merger.artist import draw_unet
 
 PathT = os.PathLike | str
@@ -36,6 +36,7 @@ class BayesianOptimiser:
     init_points: int
     n_iters: int
     skip_position_ids: int
+    scorer_name: str
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
@@ -45,7 +46,14 @@ class BayesianOptimiser:
             self.device,
             self.skip_position_ids,
         )
-        self.scorer = Scorer(self.scorer_model_dir, self.device)
+
+        if self.scorer_name == "chad":
+            self.scorer = ChadScorer(self.scorer_model_dir, self.device)
+        else:
+            raise NotImplementedError(
+                f"{self.scorer_name} scorer not implemented",
+            )
+
         self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
         self.start_logging()
         self.iteration = 0
