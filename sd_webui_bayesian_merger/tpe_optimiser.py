@@ -36,6 +36,9 @@ class TPEOptimiser(Optimiser):
         )
 
         # clean up and remove the last merge
+        self._cleanup()
+
+    def _cleanup(self):
         self.merger.remove_previous_ckpt(self.iteration + 1)
 
     def postprocess(self) -> None:
