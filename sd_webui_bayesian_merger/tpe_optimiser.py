@@ -1,3 +1,4 @@
+from functools import partial
 from pathlib import Path
 
 from sd_webui_bayesian_merger.artist import draw_unet
@@ -24,6 +25,8 @@ class TPEOptimiser(Optimiser):
 
         # this will do 20 warmup runs before optimising
         self.trials = Trials()
+        tpe._default_n_startup_jobs = self.init_points
+        algo = partial(tpe.suggest, n_startup_jobs=self.init_points)
         fmin(
             self._target_function,
             space=space,
