@@ -1,12 +1,16 @@
+import os
+import requests
+
 from typing import List
+from abc import abstractmethod
+from dataclasses import dataclass
+from pathlib import Path
 
 from PIL import Image
 import torch
 import torch.nn as nn
 import clip
 
-from pathlib import Path
-import requests
 
 
 # from https://github.com/grexzen/SD-Chad
@@ -28,16 +32,35 @@ class AestheticPredictor(nn.Module):
     def forward(self, x):
         return self.layers(x)
 
-
+@dataclass
 class Scorer:
-    def __init__(self, model_dir, device):
-        self.device = device
-        self.model_dir = Path(model_dir)
-        self.get_models()
-        self.load_model()
-        self.load_clip()
+    device: str
+    model_dir: os.PathLike
 
-    def get_models(self):
+    def __post_init__(self):
+        self.get_model()
+        self.load_model()
+
+    @abstractmethod
+    def get_model(self) -> None:
+        raise NotImplemented("Not Implemented")
+
+    @abstractmethod
+    def load_model(self) -> None:
+        raise NotImplemented("Not Implemented")
+
+    @abstractmethod
+    def score(self, image: Image.Image) -> float:
+        raise NotImplemented("Not Implemented")
+        
+    def batch_score(self, images: List[Image.Image]) -> List[float]:
+        return [self.score(img) for img in images]
+
+    def average_score(self, scores: List[float]) -> float:
+        return sum(scores) / len(scores)
+
+class ChadScorer(Scorer):
+    def get_model(self) -> None:
         # TODO: let user pick model
         state_name = "sac+logos+ava1-l14-linearMSE.pth"
         if not Path(self.model_dir, state_name).is_file():
@@ -55,13 +78,14 @@ class Scorer:
         else:
             self.model_path = Path(self.model_dir, state_name).absolute()
 
-    def load_model(self):
+    def load_model(self) -> None:
         print("Loading aestetic scorer model")
         pt_state = torch.load(self.model_path, map_location=self.device)
         self.model = AestheticPredictor(768)
         self.model.load_state_dict(pt_state)
         self.model.to(self.device)
         self.model.eval()
+        self.load_clip()
 
     def load_clip(self):
         print("Loading CLIP")
@@ -82,9 +106,3 @@ class Scorer:
         image_features = self.get_image_features(image)
         score = self.model(torch.from_numpy(image_features).to(self.device).float())
         return score.item()
-
-    def batch_score(self, images: List[Image.Image]) -> List[float]:
-        return [self.score(img) for img in images]
-
-    def average_score(self, scores: List[float]) -> float:
-        return sum(scores) / len(scores)
