@@ -34,6 +34,7 @@ class Optimiser:
     init_points: int
     n_iters: int
     skip_position_ids: int
+    method: str
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
@@ -53,7 +54,7 @@ class Optimiser:
         )
 
     def start_logging(self):
-        log_path = Path("logs", f"{self.merger.output_file.stem}.json")
+        log_path = Path("logs", f"{self.merger.output_file.stem}-{self.method}.json")
         self.logger = JSONLogger(path=str(log_path))
 
     def sd_target_function(self, **params):

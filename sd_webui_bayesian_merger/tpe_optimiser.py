@@ -48,11 +48,11 @@ class TPEOptimiser(Optimiser):
             scores.append(-res)
         best = self.trials.best_trial
         print("Best:", best)
-        img_path = Path("logs", f"{self.merger.output_file.stem}.png")
+        img_path = Path("logs", f"{self.merger.output_file.stem}-{self.method}.png")
 
         convergence_plot(scores, figname=img_path)
 
-        unet_path = Path("logs", f"{self.merger.output_file.stem}-unet.png")
+        unet_path = Path("logs", f"{self.merger.output_file.stem}-unet-{self.method}.png")
         draw_unet(
             best['result']['params']['base_alpha'],
             [best['result']['params'][f'block_{i}'] for i in range(NUM_TOTAL_BLOCKS)],

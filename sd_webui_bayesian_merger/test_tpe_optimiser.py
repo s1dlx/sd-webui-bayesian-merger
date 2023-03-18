@@ -27,8 +27,9 @@ def test_tpe_optimiser():
                 wildcards_dir='',
                 scorer_model_dir='',
                 init_points=15,
-                n_iters=64,
-                skip_position_ids=0
+                n_iters=16,
+                skip_position_ids=0,
+                method='tpe'
             )
             optimiser.init_merger()
             optimiser.optimise()
