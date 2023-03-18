@@ -95,11 +95,11 @@ class Optimiser:
 
     @abstractmethod
     def optimise(self) -> None:
-        raise NotImplemented("Not implemented")
+        raise NotImplementedError("Not implemented")
 
     @abstractmethod
     def postprocess(self) -> None:
-        raise NotImplemented("Not implemented")
+        raise NotImplementedError("Not implemented")
 
 
 
