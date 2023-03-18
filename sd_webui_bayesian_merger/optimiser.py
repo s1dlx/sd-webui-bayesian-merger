@@ -147,5 +147,7 @@ def convergence_plot(scores: List[float], figname: Path = None) -> None:
     sns.despine()
 
     if figname:
-        plt.title(figname.name)
+        figname.parent.mkdir(exist_ok=True)
+        plt.title(figname.stem)
+        print("Saving fig to:", figname)
         plt.savefig(figname)
