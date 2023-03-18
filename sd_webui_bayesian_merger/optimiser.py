@@ -37,16 +37,20 @@ class Optimiser:
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
+        self.merger = None
+        self.init_merger()
+        self.scorer = Scorer(self.scorer_model_dir, self.device)
+        self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
+        self.start_logging()
+        self.iteration = 0
+
+    def init_merger(self):
         self.merger = Merger(
             self.model_a,
             self.model_b,
             self.device,
             self.skip_position_ids,
         )
-        self.scorer = Scorer(self.scorer_model_dir, self.device)
-        self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
-        self.start_logging()
-        self.iteration = 0
 
     def start_logging(self):
         log_path = Path("logs", f"{self.merger.output_file.stem}.json")
