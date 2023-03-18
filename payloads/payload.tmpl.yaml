@@ -4,4 +4,4 @@ seed: -1
 cfg: 7
 width: 512
 height: 512
-sampler: "Euler"
+sampler_name: "Euler"
