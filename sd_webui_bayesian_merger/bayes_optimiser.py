@@ -28,6 +28,7 @@ class BayesOptimiser(Optimiser):
             n_iter=self.n_iters,
         )
 
+    def _cleanup(self):
         # clean up and remove the last merge
         self.merger.remove_previous_ckpt(self.iteration + 1)
 
