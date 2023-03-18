@@ -13,7 +13,7 @@ class TPEOptimiser(Optimiser):
     def _target_function(self, params):
         res = self.sd_target_function(**params)
         return {
-            'loss': 1./(res + 1e-10),
+            'loss': 1. / (res + 1e-10),
             'status': STATUS_OK,
             'params': params
         }
