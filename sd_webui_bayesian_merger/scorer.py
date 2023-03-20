@@ -21,7 +21,6 @@ CHAD_URL = (
 )
 
 
-# from https://github.com/grexzen/SD-Chad
 class AestheticPredictor(nn.Module):
     def __init__(self, input_size):
         super().__init__()
@@ -74,7 +73,6 @@ class AestheticScorer:
         print(f"Loading {self.model_name}")
         self.model = AestheticPredictor(768).to(self.device).eval()
         if self.model_path.suffix == ".safetensors":
-            # pt_path = Path.join(dirname, "laion-sac-logos-ava-v2.safetensors")
             self.model.load_state_dict(
                 safetensors.torch.load_file(
                     self.model_path,
