@@ -1,7 +1,7 @@
 import os
+import requests
 
 from typing import List
-from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 
