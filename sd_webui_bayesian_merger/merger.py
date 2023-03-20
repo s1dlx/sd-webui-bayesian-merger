@@ -49,7 +49,13 @@ class Merger:
         self.model_b = Path(self.model_b)
         self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}"
         self.create_model_out_name(0)
-        self.create_best_model_out_name(0)
+        self.create_best_model_out_name()
+
+    def create_model_out_name(self, it: int = 0) -> None:
+        model_out_name = self.model_name_suffix
+        model_out_name += f"-it_{it}"
+        model_out_name += ".safetensors"
+        self.output_file = Path(self.model_a.parent, model_out_name)
 
     def create_best_model_out_name(self):
         model_out_name = self.model_name_suffix
@@ -57,12 +63,6 @@ class Merger:
         model_out_name += f"-{self.best_precision}bit"
         model_out_name += f".{self.best_format}"
         self.best_output_file = Path(self.model_a.parent, model_out_name)
-
-    def create_model_out_name(self, it: int = 0) -> None:
-        model_out_name = self.model_name_suffix
-        model_out_name += f"-it_{it}"
-        model_out_name += ".safetensors"
-        self.output_file = Path(self.model_a.parent, model_out_name)
 
     def remove_previous_ckpt(self, current_it: int) -> None:
         if current_it > 1:
