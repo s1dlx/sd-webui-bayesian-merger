@@ -6,7 +6,7 @@ import yaml
 
 from pathlib import Path
 
-PathT = os.PathLike | str
+PathT = os.PathLike
 
 
 class CardDealer:
@@ -59,7 +59,7 @@ def check_payload(payload: Dict) -> Dict:
             "cfg",
             "width",
             "height",
-            "sampler",
+            "sampler_name",
         ],
         [
             "",

@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from sd_webui_bayesian_merger.model import SDModel
 
-PathT = os.PathLike | str
+PathT = os.PathLike
 
 MAX_TOKENS = 77
 NUM_INPUT_BLOCKS = 12
@@ -41,17 +41,29 @@ class Merger:
     model_b: PathT
     device: str
     skip_position_ids: int
+    best_format: str
+    best_precision: str
 
     def __post_init__(self):
         self.model_a = Path(self.model_a)
         self.model_b = Path(self.model_b)
+        self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}"
         self.create_model_out_name(0)
+        self.create_best_model_out_name()
 
-    def create_model_out_name(self, it: int) -> None:
-        self.model_out_name = (
-            f"bbwm-{self.model_a.stem}-{self.model_b.stem}-it_{it}.safetensors"
-        )
-        self.output_file = Path(self.model_a.parent, self.model_out_name)
+    def create_model_out_name(self, it: int = 0) -> None:
+        model_out_name = self.model_name_suffix
+        model_out_name += f"-it_{it}"
+        model_out_name += ".safetensors"
+        self.model_out_name = model_out_name  # this is needed to switch
+        self.output_file = Path(self.model_a.parent, model_out_name)
+
+    def create_best_model_out_name(self):
+        model_out_name = self.model_name_suffix
+        model_out_name += "-best"
+        model_out_name += f"-{self.best_precision}bit"
+        model_out_name += f".{self.best_format}"
+        self.best_output_file = Path(self.model_a.parent, model_out_name)
 
     def remove_previous_ckpt(self, current_it: int) -> None:
         if current_it > 1:
@@ -64,6 +76,7 @@ class Merger:
         self,
         weights: List[float],
         base_alpha: float,
+        best: bool = False,
     ) -> None:
         if len(weights) != NUM_TOTAL_BLOCKS:
             raise ValueError(f"weights value must be {NUM_TOTAL_BLOCKS}")
@@ -108,7 +121,8 @@ class Merger:
                         c_alpha = weights[weight_index]
 
                 theta_0[key] = (1 - c_alpha) * theta_0[key] + c_alpha * theta_1[key]
-                theta_0[key] = theta_0[key].half()
+                if best and self.best_precision == "16":
+                    theta_0[key] = theta_0[key].half()
 
         for key in tqdm(theta_1.keys(), desc="merging 2/2"):
             if "model" in key and key not in theta_0:
@@ -119,11 +133,23 @@ class Merger:
                         )
                     continue
                 theta_0.update({key: theta_1[key]})
-                theta_0[key] = theta_0[key].half()
+                if best and self.best_precision == "16":
+                    theta_0[key] = theta_0[key].half()
 
-        print(f"Saving {self.output_file}")
-        safetensors.torch.save_file(
-            theta_0,
-            self.output_file,
-            metadata={"format": "pt"},
-        )
+        if best:
+            print(f"Saving {self.best_output_file}")
+            if self.best_format == "safetensors":
+                safetensors.torch.save_file(
+                    theta_0,
+                    self.best_output_file,
+                    metadata={"format": "pt"},
+                )
+            else:
+                torch.save({"state_dict": theta_0}, self.best_output_file)
+        else:
+            print(f"Saving {self.output_file}")
+            safetensors.torch.save_file(
+                theta_0,
+                self.output_file,
+                metadata={"format": "pt"},
+            )

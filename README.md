@@ -10,9 +10,9 @@ Read more [here](https://github.com/fmfn/BayesianOptimization), [here](http://ga
 
 The optimisation process is split in two phases:
 1. __exploration__: here we sample (at random for now, with some heuristic in the future) the 26-parameter hyperspace, our block-weights. The number of samples is set by the
-`--init_points` argument. We use each set of weigths to merge the two models and we use the merged model to generate `batch_size * number of payloads` images which are then scored.
+`--init_points` argument. We use each set of weights to merge the two models we use the merged model to generate `batch_size * number of payloads` images which are then scored.
 2. __exploitation__: based on the exploratory phase, the optimiser makes an idea of where (i.e. which set of weights) the optimal merge is.
-This information is used to sample more set of weights `--n_iters` number of times. This time we don't sample all of them in one go. Instead we sample once, merge the models,
+This information is used to sample more set of weights `--n_iters` number of times. This time we don't sample all of them in one go. Instead, we sample once, merge the models,
 generate and score the images and update the optimiser knowledge about the merging space. This way the optimiser can adapt the strategy step-by-step.
 
 At the end of the exploitation phase, the set of weights scoring the highest score are deemed to be the optimal ones.
@@ -20,10 +20,11 @@ At the end of the exploitation phase, the set of weights scoring the highest sco
 ## Juicy features
 
 - wildcards support
+- TPE or Bayesian Optimisers. [cf. Bergstra et al., Algorithms for Hyper-Parameter Optimization 2011](http://papers.neurips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf) for a comparison and explanation
 - UNET visualiser
 - convergence plot
 
-## OK, how do I use it in practice?
+## OK, How Do I Use It In Practice?
 
 ### Requirements
 
@@ -44,7 +45,7 @@ seed: -1
 cfg: 7
 width: 512
 height: 512
-sampler: "Euler"
+sampler_name: "Euler"
 ```
 
 As you can see, this is a subset of the configs you have in webui, but it should be enough to start with.
@@ -65,19 +66,30 @@ As you can see, this is a subset of the configs you have in webui, but it should
 Usage: bayesian_merger.py [OPTIONS]
 
 Options:
-  --url TEXT               where webui api is running, by default
-                           http://127.0.0.1:7860
-  --batch_size INTEGER     number of images to generate for each payload
-  --model_a PATH           absolute path to first model  [required]
-  --model_b PATH           absolute path to second model  [required]
-  --device TEXT            where to merge models and score images, default and
-                           recommended "cpu"
-  --payloads_dir PATH      absolute path to payloads directory
-  --wildcards_dir PATH     absolute path to wildcards directory
-  --scorer_model_dir PATH  absolute path to scorer models directory
-  --init_points INTEGER    exploratory phase sample size
-  --n_iters INTEGER        exploitation phase sample size
-  --help                   Show this message and exit.
+  --url TEXT                      where webui api is running, by default
+                                  http://127.0.0.1:7860
+  --batch_size INTEGER            number of images to generate for each
+                                  payload
+  --model_a PATH                  absolute path to first model  [required]
+  --model_b PATH                  absolute path to second model  [required]
+  --skip_position_ids INTEGER     clip skip, default 0
+  --device TEXT                   where to merge models and score images,
+                                  default and recommended "cpu"
+  --payloads_dir PATH             absolute path to payloads directory
+  --wildcards_dir PATH            absolute path to wildcards directory
+  --scorer_model_dir PATH         absolute path to scorer models directory
+  --init_points INTEGER           exploratory/warmup phase sample size
+  --n_iters INTEGER               exploitation/optimisation phase sample size
+  --draw_unet_weights TEXT        list of weights for drawing mode
+  --draw_unet_base_alpha FLOAT    base alpha value for drawing mode
+  --best_format [safetensors|ckpt]
+                                  best model saving format, either safetensors
+                                  (default) or ckpt
+  --best_precision [16|32]        best model saving precision, either 16
+                                  (default) or 32 bit
+  --save_best                     save best model across the whole run
+  --optimiser [bayes|tpe]         optimiser, bayes (default) or tpe
+  --help                          Show this message and exit.
 ```
 
 - Prepare the arguments accordingly and finally run `python3 bayesian_merger.py --model_a=... `
@@ -102,7 +114,7 @@ python3 bayesian_merger.py --model_a=name_A --model_b=name_B --draw_unet_base_al
 ### FAQ
 
 - Why not [sdweb-auto-MBW](https://github.com/Xerxemi/sdweb-auto-MBW) extension? That amazing extension is based on brute-forcing the merge. Unfortunately, Brute force == long time to wait,
-expecially when generating lots of images. Hopefully, with this other method you can get away with a small number of runs!
+especially when generating lots of images. Hopefully, with this other method you can get away with a small number of runs!
 - Why opinionated? Because we use webui API and lots of config files to run the show. No GUI. 
 Embrace your inner touch-typist and leave the browser for the CLI.
 - Why rely on webui? It's a very popular platform. Chances are that if you already have a working webui, you do not need to do much to run this library.

@@ -6,7 +6,6 @@ from dataclasses import dataclass
 
 from PIL import Image
 
-
 @dataclass
 class Scorer:
     device: str

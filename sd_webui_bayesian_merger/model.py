@@ -1,12 +1,11 @@
 import os
 
 from dataclasses import dataclass
-from pathlib import Path
 
 import torch
 import safetensors
 
-PathT = os.PathLike | str
+PathT = os.PathLike
 
 
 @dataclass
