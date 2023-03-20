@@ -60,7 +60,7 @@ class Optimiser:
         )
 
     def init_scorer(self):
-        if self.scorer_method == "chad":
+        if self.scorer_method in ["chad", "laion"]:
             self.scorer = AestheticScorer(
                 self.scorer_method,
                 self.scorer_model_dir,
@@ -69,7 +69,7 @@ class Optimiser:
             )
         else:
             raise NotImplementedError(
-                f"{self.scorer_name} scorer not implemented",
+                f"{self.scorer_method} scorer not implemented",
             )
 
     def _cleanup(self):

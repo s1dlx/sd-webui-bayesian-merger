@@ -123,13 +123,15 @@ from sd_webui_bayesian_merger.artist import draw_unet
             "sac+logos+ava1-l14-linearMSE.pth",  # chad
             "ava+logos-l14-linearMSE.pth",
             "ava+logos-l14-reluMSE.pth",
-            "laion-sac-logos-ava-v2.safetensors",  # laion
         ]
     ),
     default="sac+logos+ava1-l14-linearMSE.pth",
-    help="scoring model",
+    help="chad scoring model. For laion method, laion-sac-logos-ava-v2.safetensors is loaded by default as only option",
 )
 def main(*args, **kwargs) -> None:
+    if kwargs["scorer_method"] == "laion":
+        kwargs["scorer_model_name"] = "laion-sac-logos-ava-v2.safetensors"
+
     if kwargs["draw_unet_weights"] and kwargs["draw_unet_base_alpha"]:
         weights = list(map(float, kwargs["draw_unet_weights"].split(",")))
         draw_unet(
