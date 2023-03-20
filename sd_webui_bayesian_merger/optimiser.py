@@ -16,7 +16,7 @@ from bayes_opt.logger import JSONLogger
 from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
 from sd_webui_bayesian_merger.merger import Merger, NUM_TOTAL_BLOCKS
-from sd_webui_bayesian_merger.scorer import AestheticScorer
+from sd_webui_bayesian_merger.chad import ChadScorer
 
 PathT = os.PathLike
 
@@ -40,12 +40,22 @@ class Optimiser:
     method: str
     scorer_method: str
     scorer_model_name: str
-    clip_model_name: str
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
+        self.merger = None
         self.init_merger()
-        self.init_scorer()
+        if self.scorer_method == "chad":
+            self.scorer = ChadScorer(
+                self.scorer_model_dir,
+                self.scorer_model_name,
+                self.clip_model_name,
+                self.device,
+            )
+        else:
+            raise NotImplementedError(
+                f"{self.scorer_name} scorer not implemented",
+            )
         self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
         self.start_logging()
         self.iteration = 0
@@ -59,19 +69,6 @@ class Optimiser:
             self.best_format,
             self.best_precision,
         )
-
-    def init_scorer(self):
-        if self.scorer_method in ["chad", "laion"]:
-            self.scorer = AestheticScorer(self.scorer_method,
-                self.scorer_model_dir,
-                self.scorer_model_name,
-                self.clip_model_name,
-                self.device,
-            )
-        else:
-            raise NotImplementedError(
-                f"{self.scorer_name} scorer not implemented",
-            )
 
     def _cleanup(self):
         # clean up and remove the last merge
