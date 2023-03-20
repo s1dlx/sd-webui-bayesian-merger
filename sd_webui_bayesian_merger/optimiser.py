@@ -62,6 +62,7 @@ class Optimiser:
     def init_scorer(self):
         if self.scorer_method == "chad":
             self.scorer = AestheticScorer(
+                self.scorer_method,
                 self.scorer_model_dir,
                 self.scorer_model_name,
                 self.device,
