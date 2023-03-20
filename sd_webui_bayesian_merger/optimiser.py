@@ -17,9 +17,8 @@ from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
 from sd_webui_bayesian_merger.merger import Merger, NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.chad import ChadScorer
-from sd_webui_bayesian_merger.artist import draw_unet
 
-PathT = os.PathLike | str
+PathT = os.PathLike
 
 
 @dataclass
@@ -40,13 +39,19 @@ class Optimiser:
     save_best: bool
     method: str
     scorer_name: str
+    clip_name: str
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
         self.merger = None
         self.init_merger()
         if self.scorer_name == "chad":
-            self.scorer = ChadScorer(self.scorer_model_dir, self.device)
+            self.scorer = ChadScorer(
+                self.scorer_model_dir,
+                self.device,
+                self.scorer_name,
+                self.clip_name,
+            )
         else:
             raise NotImplementedError(
                 f"{self.scorer_name} scorer not implemented",
