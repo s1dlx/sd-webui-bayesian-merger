@@ -4,9 +4,7 @@ from sd_webui_bayesian_merger import TPEOptimiser
 
 def mock_target_function(self, **params):
     # just return the average dist from 0.5
-    diffs = []
-    for k, v in params.items():
-        diffs.append(abs(0.5 - v))
+    diffs = [abs(0.5 - v) for v in params.values()]
     return sum(diffs) / len(diffs)
 
 def mock_null(*args, **kwargs):
@@ -29,6 +27,9 @@ def test_tpe_optimiser():
                 init_points=15,
                 n_iters=16,
                 skip_position_ids=0,
+                best_format='',
+                best_precision='',
+                save_best=False,
                 method='tpe'
             )
             optimiser.init_merger()
