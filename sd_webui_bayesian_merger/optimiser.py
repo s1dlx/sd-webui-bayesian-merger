@@ -38,19 +38,20 @@ class Optimiser:
     best_precision: int
     save_best: bool
     method: str
-    scorer_name: str
-    clip_name: str
+    scorer_method: str
+    scorer_model_name: str
+    clip_model_name: str
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
         self.merger = None
         self.init_merger()
-        if self.scorer_name == "chad":
+        if self.scorer_method == "chad":
             self.scorer = ChadScorer(
                 self.scorer_model_dir,
                 self.device,
-                self.scorer_name,
-                self.clip_name,
+                self.scorer_model_name,
+                self.clip_model_name,
             )
         else:
             raise NotImplementedError(
