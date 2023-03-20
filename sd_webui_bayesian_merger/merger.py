@@ -16,7 +16,7 @@ from tqdm import tqdm
 
 from sd_webui_bayesian_merger.model import SDModel
 
-PathT = os.PathLike | str
+PathT = os.PathLike
 
 MAX_TOKENS = 77
 NUM_INPUT_BLOCKS = 12

@@ -6,7 +6,7 @@ import yaml
 
 from pathlib import Path
 
-PathT = os.PathLike | str
+PathT = os.PathLike
 
 
 class CardDealer:

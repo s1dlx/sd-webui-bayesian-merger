@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict, Tuple
 
-import requests
 import io
 import base64
 
+import requests
 from PIL import Image
 
 
