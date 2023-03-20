@@ -49,9 +49,9 @@ class Optimiser:
         if self.scorer_method == "chad":
             self.scorer = ChadScorer(
                 self.scorer_model_dir,
-                self.device,
                 self.scorer_model_name,
                 self.clip_model_name,
+                self.device,
             )
         else:
             raise NotImplementedError(
