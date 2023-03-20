@@ -120,10 +120,10 @@ from sd_webui_bayesian_merger.artist import draw_unet
     "--scorer_model_name",
     type=click.Choice(
         [
-            "sac+logos+ava1-l14-linearMSE.pth", # chad
+            "sac+logos+ava1-l14-linearMSE.pth",  # chad
             "ava+logos-l14-linearMSE.pth",
             "ava+logos-l14-reluMSE.pth",
-            "laion-sac-logos-ava-v2.safetensors", # laion
+            "laion-sac-logos-ava-v2.safetensors",  # laion
         ]
     ),
     default="sac+logos+ava1-l14-linearMSE.pth",

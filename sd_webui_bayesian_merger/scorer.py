@@ -12,9 +12,14 @@ import torch.nn as nn
 import clip
 import safetensors
 
-LAION_URL = "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
+LAION_URL = (
+    "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
+)
 
-CHAD_URL = "https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/"
+CHAD_URL = (
+    "https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/"
+)
+
 
 # from https://github.com/grexzen/SD-Chad
 class AestheticPredictor(nn.Module):
@@ -35,8 +40,9 @@ class AestheticPredictor(nn.Module):
     def forward(self, x):
         return self.layers(x)
 
+
 @dataclass
-class AestheticScorer():
+class AestheticScorer:
     scorer_method: str
     model_dir: os.PathLike
     model_name: str
@@ -50,9 +56,7 @@ class AestheticScorer():
     def get_model(self) -> None:
         if self.model_path.is_file():
             return
-        print(
-            "You do not have an aesthetic model ckpt, let me download that for you"
-        )
+        print("You do not have an aesthetic model ckpt, let me download that for you")
         if self.scorer_method == "chad":
             url = "{CHAD_URL}"
         elif self.scorer_method == "laion":
@@ -117,5 +121,3 @@ class AestheticScorer():
 
     def average_score(self, scores: List[float]) -> float:
         return sum(scores) / len(scores)
-
-

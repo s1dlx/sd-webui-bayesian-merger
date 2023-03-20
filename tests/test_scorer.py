@@ -15,10 +15,8 @@ def mock_null(*args, **kwargs):
 
 def test_aesthetic_scorer():
     cs = AestheticScorer(
-        scorer_method = 'chad',
-        model_dir = './models/',
-        model_name = 'sac+logos+ava1-l14-linearMSE.pth',
-        device = 'cpu',
+        scorer_method="chad",
+        model_dir="./models/",
+        model_name="sac+logos+ava1-l14-linearMSE.pth",
+        device="cpu",
     )
-
-

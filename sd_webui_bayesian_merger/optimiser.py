@@ -16,7 +16,7 @@ from bayes_opt.logger import JSONLogger
 from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
 from sd_webui_bayesian_merger.merger import Merger, NUM_TOTAL_BLOCKS
-from sd_webui_bayesian_merger.chad import ChadScorer
+from sd_webui_bayesian_merger.scorer import AestheticScorer
 
 PathT = os.PathLike
 
