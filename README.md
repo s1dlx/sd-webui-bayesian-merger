@@ -44,7 +44,7 @@ seed: -1
 cfg: 7
 width: 512
 height: 512
-sampler: "Euler"
+sampler_name: "Euler"
 ```
 
 As you can see, this is a subset of the configs you have in webui, but it should be enough to start with.

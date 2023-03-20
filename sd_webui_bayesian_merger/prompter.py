@@ -59,7 +59,7 @@ def check_payload(payload: Dict) -> Dict:
             "cfg",
             "width",
             "height",
-            "sampler",
+            "sampler_name",
         ],
         [
             "",
