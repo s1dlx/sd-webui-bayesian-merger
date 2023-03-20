@@ -86,7 +86,7 @@ Options:
                                   (default) or ckpt
   --best_precision [16|32]        best model saving precision, either 16
                                   (default) or 32 bit
-  --save_best BOOLEAN
+  --save_best                     save best model across the whole run
   --help                          Show this message and exit.
 ```
 

@@ -98,7 +98,11 @@ from sd_webui_bayesian_merger.artist import draw_unet
     default="16",
     help="best model saving precision, either 16 (default) or 32 bit",
 )
-@click.option("--save_best", type=bool, default=False, help="")
+@click.option(
+    "--save_best",
+    is_flag=True,
+    help="save best model across the whole run",
+)
 def main(*args, **kwargs) -> None:
     if kwargs["draw_unet_weights"] and kwargs["draw_unet_base_alpha"]:
         weights = list(map(float, kwargs["draw_unet_weights"].split(",")))
