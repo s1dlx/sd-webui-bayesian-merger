@@ -135,7 +135,7 @@ def main(*args, **kwargs) -> None:
         elif optimiser == "tpe":
             cls = TPEOptimiser
         else:
-            exit("Invalid optimiser:" + optimiser)
+            exit(f"Invalid optimiser:{optimiser}")
         bo = cls(*args, method=optimiser, **kwargs)
         bo.optimise()
         bo.postprocess()
