@@ -30,7 +30,7 @@ class TPEOptimiser(Optimiser):
             space=space,
             algo=algo,
             trials=self.trials,
-            max_evals=self.n_iters,
+            max_evals=self.init_points + self.n_iters,
         )
 
         # clean up and remove the last merge
