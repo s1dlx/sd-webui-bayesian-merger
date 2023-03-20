@@ -8,8 +8,8 @@ from PIL import Image
 
 @dataclass
 class Scorer:
-    device: str
     model_dir: os.PathLike
+    device: str
 
     def __post_init__(self):
         self.get_model()
