@@ -64,7 +64,6 @@ class Optimiser:
             self.scorer = AestheticScorer(
                 self.scorer_model_dir,
                 self.scorer_model_name,
-                self.clip_model_name,
                 self.device,
             )
         else:
