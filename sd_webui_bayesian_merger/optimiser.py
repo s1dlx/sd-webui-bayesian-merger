@@ -36,6 +36,9 @@ class BayesianOptimiser:
     init_points: int
     n_iters: int
     skip_position_ids: int
+    best_format: str
+    best_precision: int
+    save_best: bool
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
@@ -44,6 +47,8 @@ class BayesianOptimiser:
             self.model_b,
             self.device,
             self.skip_position_ids,
+            self.best_format,
+            self.best_precision,
         )
         self.scorer = Scorer(self.scorer_model_dir, self.device)
         self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
@@ -58,11 +63,11 @@ class BayesianOptimiser:
         self.iteration += 1
 
         if self.iteration == 1:
-            print('\n'+'-'*10+' warmup '+'-'*10+'>')
+            print("\n" + "-" * 10 + " warmup " + "-" * 10 + ">")
         elif self.iteration == self.init_points + 1:
-            print('\n'+'-'*10+' optimisation '+'-'*10+'>')
+            print("\n" + "-" * 10 + " optimisation " + "-" * 10 + ">")
 
-        it_type = 'warmup' if self.iteration <= self.init_points else 'optimisation'
+        it_type = "warmup" if self.iteration <= self.init_points else "optimisation"
         print(f"\n{it_type} - Iteration: {self.iteration}")
 
         weights = [params[f"block_{i}"] for i in range(25)]
@@ -115,7 +120,13 @@ class BayesianOptimiser:
         )
 
         # clean up and remove the last merge
-        self.merger.remove_previous_ckpt(self.iteration+1)
+        self.merger.remove_previous_ckpt(self.iteration + 1)
+
+        if self.save_best:
+            best_base_alpha, best_weights = parse_params(
+                self.optimizer.max["params"],
+            )
+            self.merger.merge(best_weights, best_base_alpha, best=True)
 
     def postprocess(self) -> None:
         for i, res in enumerate(self.optimizer.res):
@@ -128,8 +139,9 @@ class BayesianOptimiser:
         convergence_plot(scores, figname=img_path)
 
         unet_path = Path("logs", f"{self.merger.output_file.stem}-unet.png")
-        best_weights = self.optimizer.max
-        best_base_alpha, best_weights = parse_params(self.optimizer.max["params"])
+        best_base_alpha, best_weights = parse_params(
+            self.optimizer.max["params"],
+        )
         draw_unet(
             best_base_alpha,
             best_weights,
@@ -137,6 +149,9 @@ class BayesianOptimiser:
             model_b=Path(self.model_b).stem,
             figname=unet_path,
         )
+
+        print(f'Saving best merge: {self.merger.best_output_file}')
+        self.merger.merge(best_weights, best_base_alpha, best=True)
 
 
 def load_log(log: PathT) -> List[Dict]:
