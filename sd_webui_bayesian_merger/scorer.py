@@ -13,34 +13,6 @@ import clip
 import safetensors
 
 
-@dataclass
-class Scorer:
-    model_dir: os.PathLike
-    device: str
-
-    def __post_init__(self):
-        self.get_model()
-        self.load_model()
-
-    @abstractmethod
-    def get_model(self) -> None:
-        raise NotImplementedError("Not Implemented")
-
-    @abstractmethod
-    def load_model(self) -> None:
-        raise NotImplementedError("Not Implemented")
-
-    @abstractmethod
-    def score(self, image: Image.Image) -> float:
-        raise NotImplementedError("Not Implemented")
-
-    def batch_score(self, images: List[Image.Image]) -> List[float]:
-        return [self.score(img) for img in images]
-
-    def average_score(self, scores: List[float]) -> float:
-        return sum(scores) / len(scores)
-
-
 # from https://github.com/grexzen/SD-Chad
 class AestheticPredictor(nn.Module):
     def __init__(self, input_size):
@@ -60,13 +32,15 @@ class AestheticPredictor(nn.Module):
     def forward(self, x):
         return self.layers(x)
 
-
+@dataclass
 class AestheticScorer(Scorer):
-    def __post_init__(self, model_name: str, clip_model="ViT-L/14") -> None:
-        self.model_name = model_name
-        self.model_path = Path(self.model_dir, self.model_name)
-        self.clip_model = clip_model
+    model_dir: os.PathLike
+    model_name: str
+    clip_model: str
+    device: str
 
+    def __post_init__(self):
+        self.model_path = Path(self.model_dir, self.model_name)
         self.get_model()
         self.load_model()
 
@@ -117,3 +91,11 @@ class AestheticScorer(Scorer):
         )
 
         return score.item()
+
+    def batch_score(self, images: List[Image.Image]) -> List[float]:
+        return [self.score(img) for img in images]
+
+    def average_score(self, scores: List[float]) -> float:
+        return sum(scores) / len(scores)
+
+
