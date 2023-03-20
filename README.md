@@ -10,9 +10,9 @@ Read more [here](https://github.com/fmfn/BayesianOptimization), [here](http://ga
 
 The optimisation process is split in two phases:
 1. __exploration__: here we sample (at random for now, with some heuristic in the future) the 26-parameter hyperspace, our block-weights. The number of samples is set by the
-`--init_points` argument. We use each set of weigths to merge the two models and we use the merged model to generate `batch_size * number of payloads` images which are then scored.
+`--init_points` argument. We use each set of weights to merge the two models we use the merged model to generate `batch_size * number of payloads` images which are then scored.
 2. __exploitation__: based on the exploratory phase, the optimiser makes an idea of where (i.e. which set of weights) the optimal merge is.
-This information is used to sample more set of weights `--n_iters` number of times. This time we don't sample all of them in one go. Instead we sample once, merge the models,
+This information is used to sample more set of weights `--n_iters` number of times. This time we don't sample all of them in one go. Instead, we sample once, merge the models,
 generate and score the images and update the optimiser knowledge about the merging space. This way the optimiser can adapt the strategy step-by-step.
 
 At the end of the exploitation phase, the set of weights scoring the highest score are deemed to be the optimal ones.
@@ -20,10 +20,11 @@ At the end of the exploitation phase, the set of weights scoring the highest sco
 ## Juicy features
 
 - wildcards support
+- TPE or Bayesian Optimisers. [cf. Bergstra et al., Algorithms for Hyper-Parameter Optimization 2011](http://papers.neurips.cc/paper/4443-algorithms-for-hyper-parameter-optimization.pdf) for a comparison and explanation
 - UNET visualiser
 - convergence plot
 
-## OK, how do I use it in practice?
+## OK, How Do I Use It In Practice?
 
 ### Requirements
 
@@ -112,7 +113,7 @@ python3 bayesian_merger.py --model_a=name_A --model_b=name_B --draw_unet_base_al
 ### FAQ
 
 - Why not [sdweb-auto-MBW](https://github.com/Xerxemi/sdweb-auto-MBW) extension? That amazing extension is based on brute-forcing the merge. Unfortunately, Brute force == long time to wait,
-expecially when generating lots of images. Hopefully, with this other method you can get away with a small number of runs!
+especially when generating lots of images. Hopefully, with this other method you can get away with a small number of runs!
 - Why opinionated? Because we use webui API and lots of config files to run the show. No GUI. 
 Embrace your inner touch-typist and leave the browser for the CLI.
 - Why rely on webui? It's a very popular platform. Chances are that if you already have a working webui, you do not need to do much to run this library.

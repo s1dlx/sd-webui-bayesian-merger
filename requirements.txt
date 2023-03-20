@@ -8,3 +8,5 @@ tqdm
 bayesian-optimization
 matplotlib
 seaborn
+hyperopt
+pytest
