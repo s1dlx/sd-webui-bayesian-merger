@@ -15,14 +15,9 @@ from bayes_opt.logger import JSONLogger
 
 from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
-<<<<<<< HEAD
-from sd_webui_bayesian_merger.merger import Merger
+from sd_webui_bayesian_merger.merger import Merger, NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.chad import ChadScorer
 from sd_webui_bayesian_merger.artist import draw_unet
-=======
-from sd_webui_bayesian_merger.merger import Merger, NUM_TOTAL_BLOCKS
-from sd_webui_bayesian_merger.scorer import Scorer
->>>>>>> main
 
 PathT = os.PathLike | str
 
