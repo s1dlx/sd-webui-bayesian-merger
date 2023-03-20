@@ -112,21 +112,22 @@ from sd_webui_bayesian_merger.artist import draw_unet
 @click.option("--draw_unet_base_alpha", type=float, default=None, help="")
 @click.option(
     "--scorer_method",
-    type=click.Choice(["chad"]),
+    type=click.Choice(["chad", "laion"]),
     default="chad",
-    help="scoring method",
+    help="scoring methods, chad (default) or laion",
 )
 @click.option(
     "--scorer_model_name",
-    type=click.Choice(["sac+logos+ava1-l14-linearMSE.pth"]),
+    type=click.Choice(
+        [
+            "sac+logos+ava1-l14-linearMSE.pth", # chad
+            "ava+logos-l14-linearMSE.pth",
+            "ava+logos-l14-reluMSE.pth",
+            "laion-sac-logos-ava-v2.safetensors", # laion
+        ]
+    ),
     default="sac+logos+ava1-l14-linearMSE.pth",
     help="scoring model",
-)
-@click.option(
-    "--clip_model_name",
-    type=click.Choice(["ViT-L/14"]),
-    default="ViT-L/14",
-    help="clip embedding extractor name",
 )
 def main(*args, **kwargs) -> None:
     if kwargs["draw_unet_weights"] and kwargs["draw_unet_base_alpha"]:

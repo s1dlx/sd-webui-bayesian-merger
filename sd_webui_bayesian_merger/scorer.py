@@ -12,6 +12,9 @@ import torch.nn as nn
 import clip
 import safetensors
 
+LAION_URL = "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
+
+CHAD_URL = "https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/"
 
 # from https://github.com/grexzen/SD-Chad
 class AestheticPredictor(nn.Module):
@@ -34,9 +37,9 @@ class AestheticPredictor(nn.Module):
 
 @dataclass
 class AestheticScorer():
+    scorer_method: str
     model_dir: os.PathLike
     model_name: str
-    clip_model: str
     device: str
 
     def __post_init__(self):
@@ -44,9 +47,24 @@ class AestheticScorer():
         self.get_model()
         self.load_model()
 
-    @abstractmethod
     def get_model(self) -> None:
-        raise NotImplementedError("Not Implemented")
+        if self.model_path.is_file():
+            return
+        print(
+            "You do not have an aesthetic model ckpt, let me download that for you"
+        )
+        if self.scorer_method == "chad":
+            url = "{CHAD_URL}"
+        elif self.scorer_method == "laion":
+            url = "{LAION_URL}"
+        url += f"{self.model_name}?raw=true"
+
+        r = requests.get(url)
+        r.raise_for_status()
+
+        with open(self.model_path.absolute(), "wb") as f:
+            print(f"saved into {self.model_path}")
+            f.write(r.content)
 
     def load_model(self) -> None:
         print(f"Loading {self.model_name}")
@@ -70,6 +88,8 @@ class AestheticScorer():
         self.load_clip()
 
     def load_clip(self) -> None:
+        if self.scorer_method in ["chad", "laion"]:
+            self.clip_model = "ViT-L/14"
         print(f"Loading {self.clip_model}")
         self.clip_model, self.clip_preprocess = clip.load(
             self.clip_model,

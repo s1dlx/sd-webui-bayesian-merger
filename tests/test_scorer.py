@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from sd_webui_bayesian_merger.chad import ChadScorer
+from sd_webui_bayesian_merger.scorer import AestheticScorer
 
 
 def mock_target_function(self, **params):
@@ -14,10 +14,10 @@ def mock_null(*args, **kwargs):
 
 
 def test_aesthetic_scorer():
-    cs = ChadScorer(
+    cs = AestheticScorer(
+        scorer_method = 'chad',
         model_dir = './models/',
         model_name = 'sac+logos+ava1-l14-linearMSE.pth',
-        clip_model = 'ViT-L/14',
         device = 'cpu',
     )
 
