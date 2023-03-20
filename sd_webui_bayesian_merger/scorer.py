@@ -58,9 +58,9 @@ class AestheticScorer:
             return
         print("You do not have an aesthetic model ckpt, let me download that for you")
         if self.scorer_method == "chad":
-            url = "{CHAD_URL}"
+            url = CHAD_URL
         elif self.scorer_method == "laion":
-            url = "{LAION_URL}"
+            url = LAION_URL
         url += f"{self.model_name}?raw=true"
 
         r = requests.get(url)
