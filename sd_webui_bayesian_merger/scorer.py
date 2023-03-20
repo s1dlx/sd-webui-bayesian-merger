@@ -33,7 +33,7 @@ class AestheticPredictor(nn.Module):
         return self.layers(x)
 
 @dataclass
-class AestheticScorer(Scorer):
+class AestheticScorer():
     model_dir: os.PathLike
     model_name: str
     clip_model: str
@@ -50,7 +50,7 @@ class AestheticScorer(Scorer):
 
     def load_model(self) -> None:
         print(f"Loading {self.model_name}")
-        self.model = AestheticPredictor(768).to("cuda").eval()
+        self.model = AestheticPredictor(768).to(self.device).eval()
         if self.model_path.suffix == ".safetensors":
             # pt_path = Path.join(dirname, "laion-sac-logos-ava-v2.safetensors")
             self.model.load_state_dict(
