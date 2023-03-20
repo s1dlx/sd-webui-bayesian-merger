@@ -125,7 +125,7 @@ from sd_webui_bayesian_merger.artist import draw_unet
 @click.option(
     "--clip_model_name",
     type=click.Choice(["ViT-L/14"]),
-    default="",
+    default="ViT-L/14",
     help="clip embedding extractor name",
 )
 def main(*args, **kwargs) -> None:

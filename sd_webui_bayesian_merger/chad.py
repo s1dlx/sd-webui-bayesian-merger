@@ -6,6 +6,9 @@ from sd_webui_bayesian_merger.scorer import AestheticScorer
 
 
 class ChadScorer(AestheticScorer):
+    def __init__(self):
+        super().__init__(**kwargs)
+        
     def get_model(self) -> None:
         # TODO: let user pick model
         state_name = "sac+logos+ava1-l14-linearMSE.pth"
