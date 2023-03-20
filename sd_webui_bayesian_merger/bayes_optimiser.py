@@ -28,9 +28,8 @@ class BayesOptimiser(Optimiser):
             n_iter=self.n_iters,
         )
 
-    def _cleanup(self):
         # clean up and remove the last merge
-        self.merger.remove_previous_ckpt(self.iteration + 1)
+        self._cleanup()
 
     def postprocess(self) -> None:
         for i, res in enumerate(self.optimizer.res):
@@ -52,8 +51,9 @@ class BayesOptimiser(Optimiser):
             figname=unet_path,
         )
 
-        print(f'Saving best merge: {self.merger.best_output_file}')
-        self.merger.merge(best_weights, best_base_alpha, best=True)
+        if self.save_best:
+            print(f'Saving best merge: {self.merger.best_output_file}')
+            self.merger.merge(best_weights, best_base_alpha, best=True)
 
 
 def parse_scores(iterations: List[Dict]) -> List[float]:

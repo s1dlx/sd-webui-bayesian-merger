@@ -38,9 +38,6 @@ class TPEOptimiser(Optimiser):
         # clean up and remove the last merge
         self._cleanup()
 
-    def _cleanup(self):
-        self.merger.remove_previous_ckpt(self.iteration + 1)
-
     def postprocess(self) -> None:
         scores = []
         for i, res in enumerate(self.trials.losses()):
@@ -61,5 +58,6 @@ class TPEOptimiser(Optimiser):
             figname=unet_path,
         )
 
-        print(f'Saving best merge: {self.merger.best_output_file}')
-        self.merger.merge(best_weights, best_base_alpha, best=True)
+        if self.save_best:
+            print(f'Saving best merge: {self.merger.best_output_file}')
+            self.merger.merge(best_weights, best_base_alpha, best=True)
