@@ -41,7 +41,9 @@ class BayesOptimiser(Optimiser):
         scores = parse_scores(self.optimizer.res)
         convergence_plot(scores, figname=img_path)
 
-        unet_path = Path("logs", f"{self.merger.output_file.stem}-unet-{self.method}.png")
+        unet_path = Path(
+            "logs", f"{self.merger.output_file.stem}-unet-{self.method}.png"
+        )
         best_base_alpha, best_weights = parse_params(self.optimizer.max["params"])
         draw_unet(
             best_base_alpha,
@@ -52,7 +54,7 @@ class BayesOptimiser(Optimiser):
         )
 
         if self.save_best:
-            print(f'Saving best merge: {self.merger.best_output_file}')
+            print(f"Saving best merge: {self.merger.best_output_file}")
             self.merger.merge(best_weights, best_base_alpha, best=True)
 
 

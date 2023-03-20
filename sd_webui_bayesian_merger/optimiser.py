@@ -37,6 +37,7 @@ class Optimiser:
     best_format: str
     best_precision: int
     save_best: bool
+    method: str
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
@@ -56,6 +57,10 @@ class Optimiser:
             self.best_format,
             self.best_precision,
         )
+
+    def _cleanup(self):
+        # clean up and remove the last merge
+        self.merger.remove_previous_ckpt(self.iteration + 1)
 
     def start_logging(self):
         log_path = Path("logs", f"{self.merger.output_file.stem}-{self.method}.json")
@@ -111,7 +116,6 @@ class Optimiser:
         raise NotImplementedError("Not implemented")
 
 
-
 def load_log(log: PathT) -> List[Dict]:
     iterations = []
     with open(log, "r") as j:
@@ -124,7 +128,6 @@ def load_log(log: PathT) -> List[Dict]:
             iterations.append(json.loads(iteration))
 
     return iterations
-
 
 
 def maxwhere(l: List[float]) -> Tuple[int, float]:

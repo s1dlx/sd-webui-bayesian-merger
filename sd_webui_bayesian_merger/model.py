@@ -5,7 +5,7 @@ from dataclasses import dataclass
 import torch
 import safetensors
 
-PathT = os.PathLike | str
+PathT = os.PathLike
 
 
 @dataclass

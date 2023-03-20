@@ -104,9 +104,9 @@ from sd_webui_bayesian_merger.artist import draw_unet
 )
 @click.option(
     "--optimiser",
-    type=click.Choice(['bayes', 'tpe']),
-    default='bayes',
-    help='optimiser, bayes or tpe'
+    type=click.Choice(["bayes", "tpe"]),
+    default="bayes",
+    help="optimiser, bayes or tpe",
 )
 @click.option("--draw_unet_weights", type=str, help="", default=None)
 @click.option("--draw_unet_base_alpha", type=float, default=None, help="")
@@ -123,10 +123,10 @@ def main(*args, **kwargs) -> None:
     else:
         kwargs.pop("draw_unet_weights")
         kwargs.pop("draw_unet_base_alpha")
-        optimiser = kwargs.pop('optimiser')
-        if optimiser == 'bayes':
+        optimiser = kwargs.pop("optimiser")
+        if optimiser == "bayes":
             cls = BayesOptimiser
-        elif optimiser == 'tpe':
+        elif optimiser == "tpe":
             cls = TPEOptimiser
         else:
             exit("Invalid optimiser:" + optimiser)

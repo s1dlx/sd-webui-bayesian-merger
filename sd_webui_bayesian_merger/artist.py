@@ -8,7 +8,7 @@ import matplotlib.patches as mpatches
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import seaborn as sns
 
-PathT = os.PathLike | str
+PathT = os.PathLike
 
 # colormap
 NUM_COLORS = 20
@@ -128,7 +128,7 @@ def draw_unet(
     ax = fig.add_subplot(111)
 
     weight_id = 0
-    bl = (0, 0)
+    bl = (0.0, 0.0)
     for y in range(4):
         for x in range(3):
             weight_id, bl = in_block(x, y, weights, weight_id, bl, ax)
