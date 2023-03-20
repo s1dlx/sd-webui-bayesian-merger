@@ -150,6 +150,9 @@ class BayesianOptimiser:
             figname=unet_path,
         )
 
+        print(f'Saving best merge: {self.merger.best_output_file}')
+        self.merger.merge(best_weights, best_base_alpha, best=True)
+
 
 def load_log(log: PathT) -> List[Dict]:
     iterations = []

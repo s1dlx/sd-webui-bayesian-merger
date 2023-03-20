@@ -55,6 +55,7 @@ class Merger:
         model_out_name = self.model_name_suffix
         model_out_name += f"-it_{it}"
         model_out_name += ".safetensors"
+        self.model_out_name = model_out_name  # this is needed to switch
         self.output_file = Path(self.model_a.parent, model_out_name)
 
     def create_best_model_out_name(self):
