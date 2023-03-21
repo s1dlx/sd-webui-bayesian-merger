@@ -91,13 +91,12 @@ Options:
   --optimiser [bayes|tpe]         optimiser, bayes or tpe
   --draw_unet_weights TEXT
   --draw_unet_base_alpha FLOAT
-  --scorer_method [chad|laion]    scoring methods, chad (default) or laion
+  --scorer_method [chad|laion|aes|cafe_aesthetic|cafe_style|cafe_waifu]
+                                  scoring methods, chad (default)
   --scorer_model_name [sac+logos+ava1-l14-linearMSE.pth|ava+logos-l14-linearMSE.pth|ava+logos-l14-reluMSE.pth]
-                                  chad scoring model. For laion method, laion-
-                                  sac-logos-ava-v2.safetensors is loaded by
-                                  default as only option
+                                  scoring model options for chad method
   --help                          Show this message and exit.
-  ```
+```
 
 - Prepare the arguments accordingly and finally run `python3 bayesian_merger.py --model_a=... `
 - Come back later to check results

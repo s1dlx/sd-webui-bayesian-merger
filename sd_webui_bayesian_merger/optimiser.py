@@ -60,7 +60,14 @@ class Optimiser:
         )
 
     def init_scorer(self):
-        if self.scorer_method in ["chad", "laion", 'aes', 'cafe_aesthetic', 'cafe_style', 'cafe_waifu',]:
+        if self.scorer_method in [
+            "chad",
+            "laion",
+            "aes",
+            "cafe_aesthetic",
+            "cafe_style",
+            "cafe_waifu",
+        ]:
             self.scorer = AestheticScorer(
                 self.scorer_method,
                 self.scorer_model_dir,
