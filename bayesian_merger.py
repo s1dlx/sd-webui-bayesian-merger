@@ -112,9 +112,18 @@ from sd_webui_bayesian_merger.artist import draw_unet
 @click.option("--draw_unet_base_alpha", type=float, default=None, help="")
 @click.option(
     "--scorer_method",
-    type=click.Choice(["chad", "laion"]),
+    type=click.Choice(
+        [
+            "chad",
+            "laion",
+            "aes",
+            "cafe_aesthetic",
+            "cafe_style",
+            "cafe_waifu",
+        ]
+    ),
     default="chad",
-    help="scoring methods, chad (default) or laion",
+    help="scoring methods, chad (default)",
 )
 @click.option(
     "--scorer_model_name",
@@ -126,11 +135,15 @@ from sd_webui_bayesian_merger.artist import draw_unet
         ]
     ),
     default="sac+logos+ava1-l14-linearMSE.pth",
-    help="chad scoring model. For laion method, laion-sac-logos-ava-v2.safetensors is loaded by default as only option",
+    help="scoring model options for chad method",
 )
 def main(*args, **kwargs) -> None:
     if kwargs["scorer_method"] == "laion":
         kwargs["scorer_model_name"] = "laion-sac-logos-ava-v2.safetensors"
+    elif kwargs["scorer_method"] == "aes":
+        kwargs["scorer_model_name"] = "aes-B32-v0.safetensor"
+    elif kwargs["scorer_method"].startswith("cafe"):
+        kwargs["scorer_model_name"] = ""
 
     if kwargs["draw_unet_weights"] and kwargs["draw_unet_base_alpha"]:
         weights = list(map(float, kwargs["draw_unet_weights"].split(",")))

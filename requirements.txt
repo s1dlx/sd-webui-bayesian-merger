@@ -10,3 +10,5 @@ matplotlib
 seaborn
 hyperopt
 pytest
+transformers
+numpy
