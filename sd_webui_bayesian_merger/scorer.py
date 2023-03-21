@@ -183,5 +183,4 @@ class AestheticScorer:
     def average_score(self, scores: List[float]) -> float:
         return sum(scores) / len(scores)
 
-    def judge(self, image: Image.Image):
         
