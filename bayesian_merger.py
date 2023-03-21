@@ -141,7 +141,7 @@ def main(*args, **kwargs) -> None:
     if kwargs["scorer_method"] == "laion":
         kwargs["scorer_model_name"] = "laion-sac-logos-ava-v2.safetensors"
     elif kwargs["scorer_method"] == "aes":
-        kwargs["scorer_model_name"] = "aes-B32-v0.safetensor"
+        kwargs["scorer_model_name"] = "aes-B32-v0.safetensors"
     elif kwargs["scorer_method"].startswith("cafe"):
         kwargs["scorer_model_name"] = ""
 

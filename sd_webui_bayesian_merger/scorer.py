@@ -22,7 +22,7 @@ CHAD_URL = (
     "https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/"
 )
 
-AES_URL = "https://raw.githubusercontent.com/Xerxemi/sdweb-auto-MBW/master/scripts/classifiers/aesthetic/aes-B32-v0.safetensors"
+AES_URL = "https://raw.githubusercontent.com/Xerxemi/sdweb-auto-MBW/master/scripts/classifiers/aesthetic/"
 
 
 class AestheticClassifier(nn.Module):
@@ -96,8 +96,7 @@ class AestheticScorer:
         elif self.scorer_method == "aes":
             url = AES_URL
 
-        if self.scorer_method != 'aes':
-            url += f"{self.model_name}?raw=true"
+        url += f"{self.model_name}?raw=true"
 
         r = requests.get(url)
         r.raise_for_status()
