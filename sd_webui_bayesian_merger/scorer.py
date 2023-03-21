@@ -22,7 +22,7 @@ CHAD_URL = (
     "https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/"
 )
 
-AES_URL = "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/aesthetic/"
+AES_URL = "https://raw.githubusercontent.com/Xerxemi/sdweb-auto-MBW/master/scripts/classifiers/aesthetic/aes-B32-v0.safetensors"
 
 
 class AestheticClassifier(nn.Module):
@@ -73,15 +73,18 @@ class AestheticScorer:
     def __post_init__(self):
         self.model_path = Path(self.model_dir, self.model_name)
         self.get_model()
-        if not self.scorer_method.sstartswith('cafe'):
+        if not self.scorer_method.startswith("cafe"):
             self.load_model()
 
     def get_model(self) -> None:
-        if self.scorer_method.startswith('cafe'):
-            print('Creating scoring pipeline')
-            self.judge = pipeline('image-classification', model=f'cafeai/{self.scorer_method}',)
+        if self.scorer_method.startswith("cafe"):
+            print("Creating scoring pipeline")
+            self.judge = pipeline(
+                "image-classification",
+                model=f"cafeai/{self.scorer_method}",
+            )
             return
-        
+
         if self.model_path.is_file():
             return
 
@@ -92,7 +95,9 @@ class AestheticScorer:
             url = LAION_URL
         elif self.scorer_method == "aes":
             url = AES_URL
-        url += f"{self.model_name}?raw=true"
+
+        if self.scorer_method != 'aes':
+            url += f"{self.model_name}?raw=true"
 
         r = requests.get(url)
         r.raise_for_status()
@@ -166,9 +171,11 @@ class AestheticScorer:
             return (result / np.linalg.norm(result)).squeeze(axis=0)
 
     def score(self, image: Image.Image) -> float:
-        if self.scorer_method.startswith('cafe'):
-            data = self.judge(image, top_k=5)
-            print(data)
+        if self.scorer_method.startswith("cafe"):
+            # TODO: this returns also a 'label', what can we do with it?
+            # TODO: does it make sense to use top_k != 1?
+            data = self.judge(image, top_k=1)
+            return data[0]["score"]
 
         image_features = self.get_image_features(image)
         score = self.model(
@@ -182,5 +189,3 @@ class AestheticScorer:
 
     def average_score(self, scores: List[float]) -> float:
         return sum(scores) / len(scores)
-
-        
