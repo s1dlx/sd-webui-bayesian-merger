@@ -88,7 +88,13 @@ Options:
   --best_precision [16|32]        best model saving precision, either 16
                                   (default) or 32 bit
   --save_best                     save best model across the whole run
-  --optimiser [bayes|tpe]         optimiser, bayes (default) or tpe
+  --optimiser [bayes|tpe]         optimiser, bayes or tpe
+  --draw_unet_weights TEXT
+  --draw_unet_base_alpha FLOAT
+  --scorer_method [chad|laion|aes|cafe_aesthetic|cafe_style|cafe_waifu]
+                                  scoring methods, chad (default)
+  --scorer_model_name [sac+logos+ava1-l14-linearMSE.pth|ava+logos-l14-linearMSE.pth|ava+logos-l14-reluMSE.pth]
+                                  scoring model options for chad method
   --help                          Show this message and exit.
 ```
 

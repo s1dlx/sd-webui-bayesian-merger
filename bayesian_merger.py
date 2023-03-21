@@ -110,7 +110,41 @@ from sd_webui_bayesian_merger.artist import draw_unet
 )
 @click.option("--draw_unet_weights", type=str, help="", default=None)
 @click.option("--draw_unet_base_alpha", type=float, default=None, help="")
+@click.option(
+    "--scorer_method",
+    type=click.Choice(
+        [
+            "chad",
+            "laion",
+            "aes",
+            "cafe_aesthetic",
+            "cafe_style",
+            "cafe_waifu",
+        ]
+    ),
+    default="chad",
+    help="scoring methods, chad (default)",
+)
+@click.option(
+    "--scorer_model_name",
+    type=click.Choice(
+        [
+            "sac+logos+ava1-l14-linearMSE.pth",  # chad
+            "ava+logos-l14-linearMSE.pth",
+            "ava+logos-l14-reluMSE.pth",
+        ]
+    ),
+    default="sac+logos+ava1-l14-linearMSE.pth",
+    help="scoring model options for chad method",
+)
 def main(*args, **kwargs) -> None:
+    if kwargs["scorer_method"] == "laion":
+        kwargs["scorer_model_name"] = "laion-sac-logos-ava-v2.safetensors"
+    elif kwargs["scorer_method"] == "aes":
+        kwargs["scorer_model_name"] = "aes-B32-v0.safetensors"
+    elif kwargs["scorer_method"].startswith("cafe"):
+        kwargs["scorer_model_name"] = ""
+
     if kwargs["draw_unet_weights"] and kwargs["draw_unet_base_alpha"]:
         weights = list(map(float, kwargs["draw_unet_weights"].split(",")))
         draw_unet(
@@ -129,7 +163,7 @@ def main(*args, **kwargs) -> None:
         elif optimiser == "tpe":
             cls = TPEOptimiser
         else:
-            exit("Invalid optimiser:" + optimiser)
+            exit(f"Invalid optimiser:{optimiser}")
         bo = cls(*args, method=optimiser, **kwargs)
         bo.optimise()
         bo.postprocess()
