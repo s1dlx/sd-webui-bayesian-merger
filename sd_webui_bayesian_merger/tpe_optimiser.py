@@ -50,9 +50,13 @@ class TPEOptimiser(Optimiser):
         unet_path = Path(
             "logs", f"{self.merger.output_file.stem}-unet-{self.method}.png"
         )
+        best_base_alpha = best["result"]["params"]["base_alpha"]
+        best_weights = [
+            best["result"]["params"][f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)
+        ]
         draw_unet(
-            best["result"]["params"]["base_alpha"],
-            [best["result"]["params"][f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)],
+            best_base_alpha,
+            best_weights,
             model_a=Path(self.model_a).stem,
             model_b=Path(self.model_b).stem,
             figname=unet_path,
