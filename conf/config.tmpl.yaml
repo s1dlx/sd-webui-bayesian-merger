@@ -1,0 +1,28 @@
+webui:
+  url: "http:127.0.0.1:7860"
+  device: "cpu"
+
+merger:
+  model_a: "path/to/model_a"
+  model_b: "path/to/model_b"
+  skip_position_ids: 0
+
+generator:
+  payloads_dir: "payloads"
+  wildcards_dir: "wildcards"
+  batch_size: 1
+
+optimiser:
+  init_points: 1
+  n_iters: 1
+  optimiser: "bayes"
+  
+scorer:
+  scorer_model_dir: "models"
+  scorer_method: "chad"
+  scorer_model_name: "sac+logos+ava1-l14-linearMSE.pth"
+  
+save:
+  save_best: False
+  best_format: "safetensors"
+  best_precision: 16
