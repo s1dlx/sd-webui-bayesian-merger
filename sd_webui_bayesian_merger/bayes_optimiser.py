@@ -39,14 +39,14 @@ class BayesOptimiser(Optimiser):
 
         img_path = Path(
             self.log_dir,
-            f"{self.merger.output_file.stem}-{self.method}.png",
+            f"{self.merger.log_name}-{self.method}.png",
         )
         scores = parse_scores(self.optimizer.res)
         convergence_plot(scores, figname=img_path)
 
         unet_path = Path(
             self.log_dir,
-            f"{self.merger.output_file.stem}-unet-{self.method}.png",
+            f"{self.merger.log_name}-unet-{self.method}.png",
         )
         best_base_alpha, best_weights = parse_params(self.optimizer.max["params"])
         draw_unet(

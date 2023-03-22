@@ -92,9 +92,10 @@ class Optimiser:
         str_now = datetime.strftime(now, "%Y-%m-%d-%H-%M-%S")
         h, e, l, _ = self.merger.output_file.stem.split("-")
         dir_name = "-".join([h, e, l])
+        self.log_name = f"{dir_name}-{self.method}"
         self.log_dir = Path(
             "logs",
-            f"{dir_name}-{self.method}-{str_now}",
+            f"{self.log_name}-{str_now}",
         )
         if not self.log_dir.exists():
             self.log_dir.mkdir()
