@@ -131,7 +131,7 @@ class Optimiser:
             desc="Batches generation",
         ):
             images.extend(self.generator.batch_generate(payload))
-            gen_paths.extend = [paths[i]]*self.batch_size
+            gen_paths.extend([paths[i]]*self.batch_size)
 
         # score images
         scores = self.scorer.batch_score(
