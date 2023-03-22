@@ -12,7 +12,7 @@ class TPEOptimiser(Optimiser):
     def _target_function(self, params):
         res = self.sd_target_function(**params)
         return {
-            "loss": 1.0 / (res + 1e-10),
+            "loss": -res,
             "status": STATUS_OK,
             "params": params,
         }
@@ -43,7 +43,7 @@ class TPEOptimiser(Optimiser):
     def postprocess(self) -> None:
         scores = []
         for i, res in enumerate(self.trials.losses()):
-            print(f"Iteration {i}: \n\t{res}")
+            print(f"Iteration {i} loss: \n\t{res}")
             scores.append(res)
         best = self.trials.best_trial
         print("Best:", best)

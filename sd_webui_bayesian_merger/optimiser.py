@@ -90,9 +90,11 @@ class Optimiser:
     def start_logging(self):
         now = datetime.now()
         str_now = datetime.strftime(now, "%Y-%m-%d-%H-%M-%S")
+        a, b, i, o = self.merge.output_file.stem.split('-')
+        dir_name = '-'.join([a, b, o])
         self.log_dir = Path(
             "logs",
-            f"{self.merger.output_file.stem}-{self.method}-{str_now}",
+            f"{dir_name}-{self.method}-{str_now}",
         )
         if not self.log_dir.exists():
             self.log_dir.mkdir()
@@ -208,7 +210,11 @@ def convergence_plot(
     plt.plot(star_i, star_score, "or")
 
     plt.xlabel("iterations")
-    plt.ylabel("score")
+
+    if minimise:
+        plt.ylabel("loss")
+    else:
+        plt.ylabel("score")
 
     sns.despine()
 
