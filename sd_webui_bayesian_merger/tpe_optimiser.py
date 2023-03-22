@@ -11,7 +11,11 @@ from hyperopt import Trials, hp, fmin, tpe, STATUS_OK
 class TPEOptimiser(Optimiser):
     def _target_function(self, params):
         res = self.sd_target_function(**params)
-        return {"loss": 1.0 / (res + 1e-10), "status": STATUS_OK, "params": params}
+        return {
+            "loss": 1.0 / (res + 1e-10),
+            "status": STATUS_OK,
+            "params": params,
+        }
 
     def optimise(self) -> None:
         # TODO: what if we want to optimise only certain blocks?
@@ -39,16 +43,20 @@ class TPEOptimiser(Optimiser):
     def postprocess(self) -> None:
         scores = []
         for i, res in enumerate(self.trials.losses()):
-            print(f"Iteration {i}: \n\t{-res}")
-            scores.append(-res)
+            print(f"Iteration {i}: \n\t{res}")
+            scores.append(res)
         best = self.trials.best_trial
         print("Best:", best)
-        img_path = Path("logs", f"{self.merger.output_file.stem}-{self.method}.png")
+        img_path = Path(
+            self.log_dir,
+            f"{self.merger.output_file.stem}-{self.method}.png",
+        )
 
-        convergence_plot(scores, figname=img_path)
+        convergence_plot(scores, figname=img_path, minimise=True)
 
         unet_path = Path(
-            "logs", f"{self.merger.output_file.stem}-unet-{self.method}.png"
+            self.log_dir,
+            f"{self.merger.output_file.stem}-unet-{self.method}.png",
         )
         best_base_alpha = best["result"]["params"]["base_alpha"]
         best_weights = [

@@ -104,9 +104,7 @@ def configure(ctx, param, filename):
     help="exploitation/optimisation phase sample size",
 )
 @click.option(
-    "--save_imgs/--no_save_imgs",
-    default=False,
-    help="save all the generated images"
+    "--save_imgs/--no_save_imgs", default=False, help="save all the generated images"
 )
 @click.option(
     "--scorer_method",

@@ -132,7 +132,7 @@ class Optimiser:
             desc="Batches generation",
         ):
             images.extend(self.generator.batch_generate(payload))
-            gen_paths.extend([paths[i]]*self.batch_size)
+            gen_paths.extend([paths[i]] * self.batch_size)
 
         # score images
         print("\nScoring")
@@ -181,14 +181,31 @@ def maxwhere(l: List[float]) -> Tuple[int, float]:
     return mi, m
 
 
-def convergence_plot(scores: List[float], figname: Path = None) -> None:
+def minwhere(l: List[float]) -> Tuple[int, float]:
+    m = 10
+    mi = -1
+    for i, v in enumerate(l):
+        if v < m:
+            m = v
+            mi = i
+    return mi, m
+
+
+def convergence_plot(
+    scores: List[float],
+    figname: Path = None,
+    minimise=False,
+) -> None:
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
     plt.plot(scores)
 
-    max_i, max_score = maxwhere(scores)
-    plt.plot(max_i, max_score, "or")
+    if minimise:
+        star_i, star_score = minwhere(scores)
+    else:
+        star_i, star_score = maxwhere(scores)
+    plt.plot(star_i, star_score, "or")
 
     plt.xlabel("iterations")
     plt.ylabel("score")
