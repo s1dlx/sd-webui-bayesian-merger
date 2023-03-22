@@ -1,12 +1,36 @@
 from pathlib import Path
+from configparser import ConfigParser
 
 import click
 
 from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser
 from sd_webui_bayesian_merger.artist import draw_unet
 
+DEFAULT_CFG = "config.ini"
+
+
+def configure(ctx, param, filename):
+    cfg = ConfigParser()
+    cfg.read(filename)
+    try:
+        options = dict(cfg["options"])
+    except KeyError:
+        options = {}
+    ctx.default_map = options
+
 
 @click.command()
+@click.option(
+    "-c",
+    "--config",
+    type=click.Path(dir_okay=False),
+    default=DEFAULT_CFG,
+    callback=configure,
+    is_eager=True,
+    expose_value=False,
+    help="Read option defaults from the specified INI file",
+    show_default=True,
+)
 @click.option(
     "--url",
     type=str,
@@ -98,8 +122,8 @@ from sd_webui_bayesian_merger.artist import draw_unet
     help="best model saving precision, either 16 (default) or 32 bit",
 )
 @click.option(
-    "--save_best",
-    is_flag=True,
+    "--save_best/--no_save_best",
+    default=False,
     help="save best model across the whole run",
 )
 @click.option(
@@ -138,6 +162,8 @@ from sd_webui_bayesian_merger.artist import draw_unet
     help="scoring model options for chad method",
 )
 def main(*args, **kwargs) -> None:
+    import json
+    print(json.dumps(kwargs, sort_keys=True, indent=4))
     if kwargs["scorer_method"] == "laion":
         kwargs["scorer_model_name"] = "laion-sac-logos-ava-v2.safetensors"
     elif kwargs["scorer_method"] == "aes":
