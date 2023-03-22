@@ -1,7 +1,7 @@
 import os
 import requests
 
-from typing import List
+from typing import List, Dict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,6 +13,8 @@ import torch.nn as nn
 import clip
 import safetensors
 import numpy as np
+
+PathT = os.PathLike
 
 LAION_URL = (
     "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
@@ -69,6 +71,7 @@ class AestheticScorer:
     model_dir: os.PathLike
     model_name: str
     device: str
+    save_imgs: bool
 
     def __post_init__(self):
         self.model_path = Path(self.model_dir, self.model_name)
@@ -183,8 +186,35 @@ class AestheticScorer:
 
         return score.item()
 
-    def batch_score(self, images: List[Image.Image]) -> List[float]:
-        return [self.score(img) for img in images]
+    def batch_score(
+        self,
+        images: List[Image.Image],
+        payloads: List[Dict],
+        paths: List[Dict],
+    ) -> List[float]:
+
+        if not self.save_imgs:
+            return [self.score(img) for img in images]
+
+        scores = []
+        for img, payload, path in zip(images, payloads, paths):
+            score = self.score(img)
+            self.save_img(img, payload, path, score)
+            scores.append(score)
+
+        return score
 
     def average_score(self, scores: List[float]) -> float:
         return sum(scores) / len(scores)
+
+    def save_img(
+        self,
+        image: Image.Image,
+        payload: Dict,
+        path: PathT,
+        score: float,
+    ) -> None:
+        print(score)
+        print(path)
+        print(payload)
+        return

@@ -40,6 +40,7 @@ class Optimiser:
     method: str
     scorer_method: str
     scorer_model_name: str
+    save_imgs: bool
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
@@ -73,6 +74,7 @@ class Optimiser:
                 self.scorer_model_dir,
                 self.scorer_model_name,
                 self.device,
+                self.save_imgs,
             )
         else:
             raise NotImplementedError(
@@ -113,14 +115,15 @@ class Optimiser:
 
         # generate images
         images = []
+        payloads, paths = self.prompter.render_payloads()
         for payload in tqdm(
-            self.prompter.render_payloads(),
+            payloads,
             desc="Batches generation",
         ):
             images.extend(self.generator.batch_generate(payload))
 
         # score images
-        scores = self.scorer.batch_score(images)
+        scores = self.scorer.batch_score(images, payloads, paths)
 
         # spit out a single value for optimisation
         avg_score = self.scorer.average_score(scores)

@@ -38,12 +38,6 @@ def configure(ctx, param, filename):
     default="http://127.0.0.1:7860",
 )
 @click.option(
-    "--batch_size",
-    type=int,
-    default=1,
-    help="number of images to generate for each payload",
-)
-@click.option(
     "--model_a",
     type=click.Path(exists=True),
     required=True,
@@ -86,6 +80,18 @@ def configure(ctx, param, filename):
     help="absolute path to scorer models directory",
 )
 @click.option(
+    "--optimiser",
+    type=click.Choice(["bayes", "tpe"]),
+    default="bayes",
+    help="optimiser, bayes (default) or tpe",
+)
+@click.option(
+    "--batch_size",
+    type=int,
+    default=1,
+    help="number of images to generate for each payload",
+)
+@click.option(
     "--init_points",
     type=int,
     default=1,
@@ -98,39 +104,9 @@ def configure(ctx, param, filename):
     help="exploitation/optimisation phase sample size",
 )
 @click.option(
-    "--draw_unet_weights",
-    type=str,
-    help="list of weights for drawing mode",
-    default=None,
-)
-@click.option(
-    "--draw_unet_base_alpha",
-    type=float,
-    default=None,
-    help="base alpha value for drawing mode",
-)
-@click.option(
-    "--best_format",
-    type=click.Choice(["safetensors", "ckpt"]),
-    default="safetensors",
-    help="best model saving format, either safetensors (default) or ckpt",
-)
-@click.option(
-    "--best_precision",
-    type=click.Choice(["16", "32"]),
-    default="16",
-    help="best model saving precision, either 16 (default) or 32 bit",
-)
-@click.option(
-    "--save_best/--no_save_best",
+    "--save_imgs/--no_save_imgs",
     default=False,
-    help="save best model across the whole run",
-)
-@click.option(
-    "--optimiser",
-    type=click.Choice(["bayes", "tpe"]),
-    default="bayes",
-    help="optimiser, bayes (default) or tpe",
+    help="save all the generated images"
 )
 @click.option(
     "--scorer_method",
@@ -158,6 +134,35 @@ def configure(ctx, param, filename):
     ),
     default="sac+logos+ava1-l14-linearMSE.pth",
     help="scoring model options for chad method",
+)
+@click.option(
+    "--save_best/--no_save_best",
+    default=False,
+    help="save best model across the whole run",
+)
+@click.option(
+    "--best_format",
+    type=click.Choice(["safetensors", "ckpt"]),
+    default="safetensors",
+    help="best model saving format, either safetensors (default) or ckpt",
+)
+@click.option(
+    "--best_precision",
+    type=click.Choice(["16", "32"]),
+    default="16",
+    help="best model saving precision, either 16 (default) or 32 bit",
+)
+@click.option(
+    "--draw_unet_weights",
+    type=str,
+    help="list of weights for drawing mode",
+    default=None,
+)
+@click.option(
+    "--draw_unet_base_alpha",
+    type=float,
+    default=None,
+    help="base alpha value for drawing mode",
 )
 def main(*args, **kwargs) -> None:
     if kwargs["scorer_method"] == "laion":

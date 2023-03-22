@@ -105,9 +105,10 @@ class Prompter:
 
     def render_payloads(self) -> List[Dict]:
         payloads = []
+        paths = []
         for _, p in self.raw_payloads.items():
             rendered_payload = p.copy()
             rendered_payload["prompt"] = self.dealer.replace_wildcards(p["prompt"])
-            rendered_payload.pop("path")
+            paths.append(rendered_payload.pop("path"))
             payloads.append(rendered_payload)
-        return payloads
+        return payloads, paths

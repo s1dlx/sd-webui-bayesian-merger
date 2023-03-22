@@ -30,9 +30,6 @@ At the end of the exploitation phase, the set of weights scoring the highest sco
 
 - [stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui). You need to have it working locally and know how to change option flags.
 - Install this _extension_ from url: `https://github.com/s1dlx/sd-webui-bayesian-merger.git`. This will place this codebase into your `extensions` folder.
-- I believe you already have a stable-diffusion venv, activate it
-- `cd` to `stable-diffusion-webui/extensions/sd-webui-bayesian-merger` folder
-- `pip install -r requirements.txt`
 
 ### Prepare payloads
 
@@ -59,13 +56,15 @@ As you can see, this is a subset of the configs you have in webui, but it should
 
 ### Run!
 
-- Start webui in `--api --nowebui`[mode](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API)
+- Start webui in `--api`[mode](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API)
 - Running `python bayesian_merger.py --help` will print
 
 ```
 Usage: bayesian_merger.py [OPTIONS]
 
 Options:
+  -c, --config FILE               Read option defaults from the specified INI
+                                  file  [default: config.ini]
   --url TEXT                      where webui api is running, by default
                                   http://127.0.0.1:7860
   --batch_size INTEGER            number of images to generate for each
@@ -87,19 +86,27 @@ Options:
                                   (default) or ckpt
   --best_precision [16|32]        best model saving precision, either 16
                                   (default) or 32 bit
-  --save_best                     save best model across the whole run
-  --optimiser [bayes|tpe]         optimiser, bayes or tpe
-  --draw_unet_weights TEXT
-  --draw_unet_base_alpha FLOAT
+  --save_best / --no_save_best    save best model across the whole run
+  --optimiser [bayes|tpe]         optimiser, bayes (default) or tpe
   --scorer_method [chad|laion|aes|cafe_aesthetic|cafe_style|cafe_waifu]
                                   scoring methods, chad (default)
   --scorer_model_name [sac+logos+ava1-l14-linearMSE.pth|ava+logos-l14-linearMSE.pth|ava+logos-l14-reluMSE.pth]
                                   scoring model options for chad method
   --help                          Show this message and exit.
-```
+  ```
 
-- Prepare the arguments accordingly and finally run `python3 bayesian_merger.py --model_a=... `
-- Come back later to check results
+You can either:
+- Prepare the arguments accordingly and run `python3 bayesian_merger.py --model_a=... `
+
+OR
+
+- copy and rename `config.tmpl.ini` to `config.ini`
+- change all the fields in the config as you like
+- run `python3 bayesian_merger.py --config config.ini`
+
+The latter method is cleaner. You can also use both config and command line arguments at the same time.
+
+Now just wait and come back later to check results.
 
 ### Results
 
