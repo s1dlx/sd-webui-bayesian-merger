@@ -125,16 +125,18 @@ class Optimiser:
         # generate images
         images = []
         payloads, paths = self.prompter.render_payloads()
-        for payload in tqdm(
-            payloads,
+        gen_paths = []
+        for i, payload in tqdm(
+            enumerate(payloads),
             desc="Batches generation",
         ):
             images.extend(self.generator.batch_generate(payload))
+            gen_paths.extend = [paths[i]]*self.batch_size
 
         # score images
         scores = self.scorer.batch_score(
             images,
-            paths,
+            gen_paths,
             self.iteration,
         )
 
