@@ -50,10 +50,22 @@ def configure(ctx, param, filename):
     help="absolute path to second model",
 )
 @click.option(
+    "--model_c",
+    type=click.Path(exists=True),
+    required=False,
+    help="absolute path to third model",
+)
+@click.option(
     "--skip_position_ids",
     type=int,
     default=0,
     help="clip skip, default 0",
+)
+@click.option(
+    "--merge_style",
+    type=click.Choice(["weigh_sum", "add_difference", "triple_sum", "sum_twice"]),
+    default="",
+    help=""
 )
 @click.option(
     "--device",
