@@ -1,7 +1,7 @@
 import os
 import requests
 
-from typing import List
+from typing import List, Dict
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -13,6 +13,8 @@ import torch.nn as nn
 import clip
 import safetensors
 import numpy as np
+
+PathT = os.PathLike
 
 LAION_URL = (
     "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
@@ -66,15 +68,22 @@ class AestheticPredictor(nn.Module):
 @dataclass
 class AestheticScorer:
     scorer_method: str
-    model_dir: os.PathLike
+    model_dir: PathT
     model_name: str
     device: str
+    save_imgs: bool
+    log_dir: PathT
 
     def __post_init__(self):
         self.model_path = Path(self.model_dir, self.model_name)
         self.get_model()
         if not self.scorer_method.startswith("cafe"):
             self.load_model()
+
+        if self.save_imgs:
+            self.imgs_dir = Path(self.log_dir, "imgs")
+            if not self.imgs_dir.exists():
+                self.imgs_dir.mkdir()
 
     def get_model(self) -> None:
         if self.scorer_method.startswith("cafe"):
@@ -183,8 +192,36 @@ class AestheticScorer:
 
         return score.item()
 
-    def batch_score(self, images: List[Image.Image]) -> List[float]:
-        return [self.score(img) for img in images]
+    def batch_score(
+        self,
+        images: List[Image.Image],
+        payload_paths: List[PathT],
+        it: int,
+    ) -> List[float]:
+        scores = []
+        for i, (img, path) in enumerate(zip(images, payload_paths)):
+            score = self.score(img)
+            print(f"{path.stem}-{i} {score:4.3f}")
+            if self.save_imgs:
+                self.save_img(img, path, score, it, i)
+            scores.append(score)
+
+        return scores
 
     def average_score(self, scores: List[float]) -> float:
         return sum(scores) / len(scores)
+
+    def save_img(
+        self,
+        image: Image.Image,
+        path: PathT,
+        score: float,
+        it: int,
+        batch_n: int,
+    ) -> None:
+        img_path = Path(
+            self.imgs_dir,
+            f"{path.stem}-{batch_n}-{it}-{score:4.3f}.png",
+        )
+        image.save(img_path)
+        return

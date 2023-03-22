@@ -150,3 +150,7 @@ dmypy.json
 # vim
 **/*.swp
 **/*.swo
+
+# configs
+**/*.ini
+!**/config.tmpl.ini

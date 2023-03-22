@@ -1,11 +1,9 @@
-from pathlib import Path
 from typing import Dict, Tuple, List
 
 from bayes_opt import BayesianOptimization, Events
 
-from sd_webui_bayesian_merger.artist import draw_unet
 from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS
-from sd_webui_bayesian_merger.optimiser import Optimiser, convergence_plot
+from sd_webui_bayesian_merger.optimiser import Optimiser
 
 
 class BayesOptimiser(Optimiser):
@@ -35,27 +33,15 @@ class BayesOptimiser(Optimiser):
         for i, res in enumerate(self.optimizer.res):
             print(f"Iteration {i}: \n\t{res}")
 
-        print(self.optimizer.max)
-
-        img_path = Path("logs", f"{self.merger.output_file.stem}-{self.method}.png")
         scores = parse_scores(self.optimizer.res)
-        convergence_plot(scores, figname=img_path)
-
-        unet_path = Path(
-            "logs", f"{self.merger.output_file.stem}-unet-{self.method}.png"
-        )
         best_base_alpha, best_weights = parse_params(self.optimizer.max["params"])
-        draw_unet(
+
+        self.plot_and_save(
+            scores,
             best_base_alpha,
             best_weights,
-            model_a=Path(self.model_a).stem,
-            model_b=Path(self.model_b).stem,
-            figname=unet_path,
+            minimise=False,
         )
-
-        if self.save_best:
-            print(f"Saving best merge: {self.merger.best_output_file}")
-            self.merger.merge(best_weights, best_base_alpha, best=True)
 
 
 def parse_scores(iterations: List[Dict]) -> List[float]:

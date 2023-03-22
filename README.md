@@ -30,9 +30,6 @@ At the end of the exploitation phase, the set of weights scoring the highest sco
 
 - [stable-diffusion-webui](https://github.com/AUTOMATIC1111/stable-diffusion-webui). You need to have it working locally and know how to change option flags.
 - Install this _extension_ from url: `https://github.com/s1dlx/sd-webui-bayesian-merger.git`. This will place this codebase into your `extensions` folder.
-- I believe you already have a stable-diffusion venv, activate it
-- `cd` to `stable-diffusion-webui/extensions/sd-webui-bayesian-merger` folder
-- `pip install -r requirements.txt`
 
 ### Prepare payloads
 
@@ -59,17 +56,17 @@ As you can see, this is a subset of the configs you have in webui, but it should
 
 ### Run!
 
-- Start webui in `--api --nowebui`[mode](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API)
+- Start webui in `--api`[mode](https://github.com/AUTOMATIC1111/stable-diffusion-webui/wiki/API)
 - Running `python bayesian_merger.py --help` will print
 
 ```
 Usage: bayesian_merger.py [OPTIONS]
 
 Options:
+  -c, --config FILE               Read option defaults from the specified INI
+                                  file  [default: config.ini]
   --url TEXT                      where webui api is running, by default
                                   http://127.0.0.1:7860
-  --batch_size INTEGER            number of images to generate for each
-                                  payload
   --model_a PATH                  absolute path to first model  [required]
   --model_b PATH                  absolute path to second model  [required]
   --skip_position_ids INTEGER     clip skip, default 0
@@ -78,36 +75,47 @@ Options:
   --payloads_dir PATH             absolute path to payloads directory
   --wildcards_dir PATH            absolute path to wildcards directory
   --scorer_model_dir PATH         absolute path to scorer models directory
+  --optimiser [bayes|tpe]         optimiser, bayes (default) or tpe
+  --batch_size INTEGER            number of images to generate for each
+                                  payload
   --init_points INTEGER           exploratory/warmup phase sample size
   --n_iters INTEGER               exploitation/optimisation phase sample size
-  --draw_unet_weights TEXT        list of weights for drawing mode
-  --draw_unet_base_alpha FLOAT    base alpha value for drawing mode
+  --save_imgs / --no_save_imgs    save all the generated images
+  --scorer_method [chad|laion|aes|cafe_aesthetic|cafe_style|cafe_waifu]
+                                  scoring methods, chad (default)
+  --scorer_model_name [sac+logos+ava1-l14-linearMSE.pth|ava+logos-l14-linearMSE.pth|ava+logos-l14-reluMSE.pth]
+                                  scoring model options for chad method
+  --save_best / --no_save_best    save best model across the whole run
   --best_format [safetensors|ckpt]
                                   best model saving format, either safetensors
                                   (default) or ckpt
   --best_precision [16|32]        best model saving precision, either 16
                                   (default) or 32 bit
-  --save_best                     save best model across the whole run
-  --optimiser [bayes|tpe]         optimiser, bayes or tpe
-  --draw_unet_weights TEXT
-  --draw_unet_base_alpha FLOAT
-  --scorer_method [chad|laion|aes|cafe_aesthetic|cafe_style|cafe_waifu]
-                                  scoring methods, chad (default)
-  --scorer_model_name [sac+logos+ava1-l14-linearMSE.pth|ava+logos-l14-linearMSE.pth|ava+logos-l14-reluMSE.pth]
-                                  scoring model options for chad method
+  --draw_unet_weights TEXT        list of weights for drawing mode
+  --draw_unet_base_alpha FLOAT    base alpha value for drawing mode
   --help                          Show this message and exit.
 ```
 
-- Prepare the arguments accordingly and finally run `python3 bayesian_merger.py --model_a=... `
-- Come back later to check results
+You can either:
+- Prepare the arguments accordingly and run `python3 bayesian_merger.py --model_a=... `
+
+OR
+
+- copy and rename `config.tmpl.ini` to `config.ini`
+- change all the fields in the config as you like
+- run `python3 bayesian_merger.py --config config.ini`
+
+The latter method is cleaner. You can also use both config and command line arguments at the same time.
+
+Now just wait and come back later to check results.
 
 ### Results
 
-In the `logs` function you'll find: 
-- `bbwm-model_a-model_b.json`: this contains the scores and the weights for all the iterations. The final set of weights is the best one.
+In the `logs` function you'll find a folder named `bbwm-model_a-model_b-RUN_DATE_TIME` containing: 
+- `imgs` folder: if `--save_imgs` was used, here all the generated images will be saved/
+- `log.json`: this contains the scores and the weights for all the iterations. The final set of weights is the best one.
 - `bbwm-model_a-model_b.png`: a plot showing the evolution of the score across the iterations.
-
-- `bbwm-model_a-model_b-unet.png`: an images showing the best weights on the UNET architecture
+- `bbwm-model_a-model_b-unet.png`: an image showing the best weights on the UNET architecture
 <img width="641" alt="Screenshot 2023-03-13 at 11 35 32" src="https://user-images.githubusercontent.com/125022075/224714573-7d9ab61d-b534-4723-b029-3b12568b0ac7.png">
 
 ### Extra
@@ -126,6 +134,7 @@ Embrace your inner touch-typist and leave the browser for the CLI.
 - Why rely on webui? It's a very popular platform. Chances are that if you already have a working webui, you do not need to do much to run this library.
 - How many iterations and payloads? What about the batch size? I'd suggest `--init_points 10 --n_iters 10 --batch_size 10` and at least 5 different payloads.
 Depending on your GPU this may take 2-3hrs to run on basic config.
+- Why not using [hydra](hydra.cc) for config management? a single `.ini` file is easy to handle. Hydra's config management workflow seemed overkill for this project.
 
 ## With the help of
 
