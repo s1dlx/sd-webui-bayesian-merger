@@ -195,18 +195,16 @@ class AestheticScorer:
     def batch_score(
         self,
         images: List[Image.Image],
-        payloads: List[Dict],
-        paths: List[Dict],
+        payload_paths: List[PathT],
         it: int,
     ) -> List[float]:
 
-        if not self.save_imgs:
-            return [self.score(img) for img in images]
-
         scores = []
-        for img, payload, path in zip(images, payloads, paths):
+        for img, path in zip(images, payload_paths):
             score = self.score(img)
-            self.save_img(img, payload, path, score, it)
+            print(f"{path.stem} {score:4.3f}")
+            if self.save_imgs:
+                self.save_img(img, path, score, it)
             scores.append(score)
 
         return scores
@@ -217,7 +215,6 @@ class AestheticScorer:
     def save_img(
         self,
         image: Image.Image,
-        payload: Dict,
         path: PathT,
         score: float,
         it: int,

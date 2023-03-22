@@ -132,11 +132,15 @@ class Optimiser:
             images.extend(self.generator.batch_generate(payload))
 
         # score images
-        scores = self.scorer.batch_score(images, payloads, paths)
+        scores = self.scorer.batch_score(
+            images,
+            paths,
+            self.iteration,
+        )
 
         # spit out a single value for optimisation
         avg_score = self.scorer.average_score(scores)
-        print(f"Score: {avg_score}")
+        print(f"Batch score: {avg_score}")
 
         return avg_score
 
