@@ -198,13 +198,12 @@ class AestheticScorer:
         payload_paths: List[PathT],
         it: int,
     ) -> List[float]:
-
         scores = []
-        for img, path in zip(images, payload_paths):
+        for i, (img, path) in enumerate(zip(images, payload_paths)):
             score = self.score(img)
-            print(f"{path.stem} {score:4.3f}")
+            print(f"{path.stem}-{i} {score:4.3f}")
             if self.save_imgs:
-                self.save_img(img, path, score, it)
+                self.save_img(img, path, score, it, i)
             scores.append(score)
 
         return scores
@@ -218,7 +217,11 @@ class AestheticScorer:
         path: PathT,
         score: float,
         it: int,
+        batch_n: int,
     ) -> None:
-        img_path = Path(self.imgs_dir, f"{path.stem}-{score:4.3f}-{it}.png")
-        print(img_path)
+        img_path = Path(
+            self.imgs_dir,
+            f"{path.stem}-{batch_n}-{score:4.3f}-{it}.png",
+        )
+        image.save(img_path)
         return
