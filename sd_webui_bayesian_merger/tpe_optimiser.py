@@ -1,9 +1,7 @@
 from functools import partial
-from pathlib import Path
 
-from sd_webui_bayesian_merger.artist import draw_unet
 from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS
-from sd_webui_bayesian_merger.optimiser import Optimiser, convergence_plot
+from sd_webui_bayesian_merger.optimiser import Optimiser
 
 from hyperopt import Trials, hp, fmin, tpe, STATUS_OK
 
@@ -47,33 +45,14 @@ class TPEOptimiser(Optimiser):
             scores.append(res)
         best = self.trials.best_trial
 
-        img_path = Path(
-            self.log_dir,
-            f"{self.log_name}.png",
-        )
-        convergence_plot(scores, figname=img_path, minimise=True)
-
-        unet_path = Path(
-            self.log_dir,
-            f"{self.log_name}-unet.png",
-        )
         best_base_alpha = best["result"]["params"]["base_alpha"]
         best_weights = [
             best["result"]["params"][f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)
         ]
-        print('\nBest run:')
-        print('best base_alpha:')
-        print(best_base_alpha)
-        print('\nbest weights:')
-        print(','.join(best_weights))
-        draw_unet(
+
+        self.plot_and_save(
+            scores,
             best_base_alpha,
             best_weights,
-            model_a=Path(self.model_a).stem,
-            model_b=Path(self.model_b).stem,
-            figname=unet_path,
+            minimise=True,
         )
-
-        if self.save_best:
-            print(f"Saving best merge: {self.merger.best_output_file}")
-            self.merger.merge(best_weights, best_base_alpha, best=True)

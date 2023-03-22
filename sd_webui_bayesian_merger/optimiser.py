@@ -18,6 +18,7 @@ from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
 from sd_webui_bayesian_merger.merger import Merger, NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.scorer import AestheticScorer
+from sd_webui_bayesian_merger.artist import draw_unet
 
 PathT = os.PathLike
 
@@ -159,6 +160,40 @@ class Optimiser:
     def postprocess(self) -> None:
         raise NotImplementedError("Not implemented")
 
+    def plot_and_save(
+        self,
+        scores: List[float],
+        best_base_alpha: float,
+        best_weights: List[float],
+        minimise: bool,
+    ) -> None:
+        img_path = Path(
+            self.log_dir,
+            f"{self.log_name}.png",
+        )
+        convergence_plot(scores, figname=img_path, minimise=minimise)
+
+        unet_path = Path(
+            self.log_dir,
+            f"{self.log_name}-unet.png",
+        )
+        print("\nBest run:")
+        print("best base_alpha:")
+        print(best_base_alpha)
+        print("\nbest weights:")
+        print(",".join(list(map(str, best_weights))))
+        draw_unet(
+            best_base_alpha,
+            best_weights,
+            model_a=Path(self.model_a).stem,
+            model_b=Path(self.model_b).stem,
+            figname=unet_path,
+        )
+
+        if self.save_best:
+            print(f"Saving best merge: {self.merger.best_output_file}")
+            self.merger.merge(best_weights, best_base_alpha, best=True)
+
 
 def load_log(log: PathT) -> List[Dict]:
     iterations = []
@@ -174,20 +209,20 @@ def load_log(log: PathT) -> List[Dict]:
     return iterations
 
 
-def maxwhere(l: List[float]) -> Tuple[int, float]:
+def maxwhere(li: List[float]) -> Tuple[int, float]:
     m = 0
     mi = -1
-    for i, v in enumerate(l):
+    for i, v in enumerate(li):
         if v > m:
             m = v
             mi = i
     return mi, m
 
 
-def minwhere(l: List[float]) -> Tuple[int, float]:
+def minwhere(li: List[float]) -> Tuple[int, float]:
     m = 10
     mi = -1
-    for i, v in enumerate(l):
+    for i, v in enumerate(li):
         if v < m:
             m = v
             mi = i
