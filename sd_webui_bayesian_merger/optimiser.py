@@ -1,5 +1,6 @@
 import os
 from abc import abstractmethod
+from datetime import datetime
 
 from pathlib import Path
 from typing import Dict, List, Tuple
@@ -87,11 +88,11 @@ class Optimiser:
         self.merger.remove_previous_ckpt(self.iteration + 1)
 
     def start_logging(self):
-        # WARNING: avoid overwriting stuff
-        # TODO: warn or handle automatically
+        now = datetime.now()
+        str_now = datetime.strftime(now, "%Y-%m-%d-%H-%M-%S")
         self.log_dir = Path(
             "logs",
-            f"{self.merger.output_file.stem}-{self.method}",
+            f"{self.merger.output_file.stem}-{self.method}-{str_now}",
         )
         if not self.log_dir.exists():
             self.log_dir.mkdir()
