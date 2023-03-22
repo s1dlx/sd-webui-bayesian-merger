@@ -134,6 +134,7 @@ class Optimiser:
             gen_paths.extend([paths[i]]*self.batch_size)
 
         # score images
+        print("\nScoring")
         scores = self.scorer.batch_score(
             images,
             gen_paths,
@@ -142,7 +143,7 @@ class Optimiser:
 
         # spit out a single value for optimisation
         avg_score = self.scorer.average_score(scores)
-        print(f"Batch score: {avg_score}")
+        print(f"{'-'*10}\nRun score: {avg_score}")
 
         return avg_score
 
