@@ -92,6 +92,12 @@ def configure(ctx, param, filename):
     help="number of images to generate for each payload",
 )
 @click.option(
+    "--webui-batch-size",
+    type=int,
+    default=1,
+    help="how many images to generate in one api call for each payload",
+)
+@click.option(
     "--init_points",
     type=int,
     default=1,

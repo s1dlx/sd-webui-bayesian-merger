@@ -43,13 +43,18 @@ class Optimiser:
     scorer_method: str
     scorer_model_name: str
     save_imgs: bool
+    webui_batch_size: int
 
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
         self.init_merger()
         self.start_logging()
         self.init_scorer()
-        self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
+        self.prompter = Prompter(
+            self.payloads_dir,
+            self.wildcards_dir,
+            self.webui_batch_size,
+        )
         self.iteration = 0
 
     def init_merger(self):

@@ -45,7 +45,10 @@ def load_yaml(yaml_file: PathT) -> Dict:
         return yaml.safe_load(f)
 
 
-def check_payload(payload: Dict) -> Dict:
+def check_payload(
+    payload: Dict,
+    webui_batch_size: int,
+) -> Dict:
     if "prompt" not in payload:
         raise ValueError(f"{payload['path']} doesn't have a prompt")
 
@@ -60,6 +63,7 @@ def check_payload(payload: Dict) -> Dict:
             "width",
             "height",
             "sampler_name",
+            "batch_size",
         ],
         [
             "",
@@ -69,6 +73,7 @@ def check_payload(payload: Dict) -> Dict:
             512,
             512,
             "Euler",
+            webui_batch_size,
         ],
     ):
         if k not in payload:
@@ -78,10 +83,16 @@ def check_payload(payload: Dict) -> Dict:
 
 
 class Prompter:
-    def __init__(self, payloads_dir: str, wildcards_dir: str):
+    def __init__(
+        self,
+        payloads_dir: str,
+        wildcards_dir: str,
+        webui_batch_size: int,
+    ):
         self.find_payloads(payloads_dir)
         self.load_payloads()
         self.dealer = CardDealer(wildcards_dir)
+        self.webui_batch_size = webui_batch_size
 
     def find_payloads(self, payloads_dir: str) -> None:
         # TODO: allow for listing payloads instead of taking all of them
@@ -100,7 +111,7 @@ class Prompter:
     def load_payloads(self) -> None:
         for payload_name, payload in self.raw_payloads.items():
             raw_payload = load_yaml(payload["path"])
-            checked_payload = check_payload(raw_payload)
+            checked_payload = check_payload(raw_payload, self.webui_batch_size)
             self.raw_payloads[payload_name].update(checked_payload)
 
     def render_payloads(self) -> List[Dict]:
