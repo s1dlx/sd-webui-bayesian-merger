@@ -221,7 +221,7 @@ class AestheticScorer:
     ) -> None:
         img_path = Path(
             self.imgs_dir,
-            f"{path.stem}-{batch_n}-{score:4.3f}-{it}.png",
+            f"{path.stem}-{batch_n}-{it}-{score:4.3f}.png",
         )
         image.save(img_path)
         return
