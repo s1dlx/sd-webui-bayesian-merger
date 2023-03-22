@@ -202,7 +202,7 @@ class AestheticScorer:
             self.save_img(img, payload, path, score)
             scores.append(score)
 
-        return score
+        return scores
 
     def average_score(self, scores: List[float]) -> float:
         return sum(scores) / len(scores)
@@ -214,7 +214,5 @@ class AestheticScorer:
         path: PathT,
         score: float,
     ) -> None:
-        print(score)
-        print(path)
-        print(payload)
+        print(f"{score:4.3f}-{path.stem}")
         return
