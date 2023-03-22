@@ -23,7 +23,6 @@ class TPEOptimiser(Optimiser):
         }
         space["base_alpha"] = hp.uniform("base_alpha", 0.0, 1.0)
 
-        # this will do 20 warmup runs before optimising
         self.trials = Trials()
         tpe._default_n_startup_jobs = self.init_points
         algo = partial(tpe.suggest, n_startup_jobs=self.init_points)

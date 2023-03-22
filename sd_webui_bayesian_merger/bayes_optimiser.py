@@ -36,7 +36,12 @@ class BayesOptimiser(Optimiser):
         scores = parse_scores(self.optimizer.res)
         best_base_alpha, best_weights = parse_params(self.optimizer.max["params"])
 
-        self.plot_and_save(scores, best_base_alpha, best_weights, minimise=False,)
+        self.plot_and_save(
+            scores,
+            best_base_alpha,
+            best_weights,
+            minimise=False,
+        )
 
 
 def parse_scores(iterations: List[Dict]) -> List[float]:
