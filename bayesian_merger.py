@@ -130,10 +130,8 @@ def configure(ctx, param, filename):
     "--optimiser",
     type=click.Choice(["bayes", "tpe"]),
     default="bayes",
-    help="optimiser, bayes or tpe",
+    help="optimiser, bayes (default) or tpe",
 )
-@click.option("--draw_unet_weights", type=str, help="", default=None)
-@click.option("--draw_unet_base_alpha", type=float, default=None, help="")
 @click.option(
     "--scorer_method",
     type=click.Choice(
@@ -162,8 +160,6 @@ def configure(ctx, param, filename):
     help="scoring model options for chad method",
 )
 def main(*args, **kwargs) -> None:
-    import json
-    print(json.dumps(kwargs, sort_keys=True, indent=4))
     if kwargs["scorer_method"] == "laion":
         kwargs["scorer_model_name"] = "laion-sac-logos-ava-v2.safetensors"
     elif kwargs["scorer_method"] == "aes":
