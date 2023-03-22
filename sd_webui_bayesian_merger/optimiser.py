@@ -90,8 +90,8 @@ class Optimiser:
     def start_logging(self):
         now = datetime.now()
         str_now = datetime.strftime(now, "%Y-%m-%d-%H-%M-%S")
-        a, b, i, o = self.merge.output_file.stem.split('-')
-        dir_name = '-'.join([a, b, o])
+        a, b, i, o = self.merge.output_file.stem.split("-")
+        dir_name = "-".join([a, b, o])
         self.log_dir = Path(
             "logs",
             f"{dir_name}-{self.method}-{str_now}",
