@@ -150,6 +150,10 @@ class Optimiser:
         avg_score = self.scorer.average_score(scores)
         print(f"{'-'*10}\nRun score: {avg_score}")
 
+        print(f'\nrun base_alpha: {base_alpha}')
+        print('run weights:')
+        print(','.join(list(map(str, weights))))
+
         return avg_score
 
     @abstractmethod
