@@ -35,20 +35,23 @@ class BayesOptimiser(Optimiser):
         for i, res in enumerate(self.optimizer.res):
             print(f"Iteration {i}: \n\t{res}")
 
-        print(self.optimizer.max)
-
         img_path = Path(
             self.log_dir,
-            f"{self.merger.log_name}-{self.method}.png",
+            f"{self.log_name}-{self.method}.png",
         )
         scores = parse_scores(self.optimizer.res)
         convergence_plot(scores, figname=img_path)
 
         unet_path = Path(
             self.log_dir,
-            f"{self.merger.log_name}-unet-{self.method}.png",
+            f"{self,log_name}-unet-{self.method}.png",
         )
         best_base_alpha, best_weights = parse_params(self.optimizer.max["params"])
+        print('\nBest run:')
+        print('best base_alpha:')
+        print(best_base_alpha)
+        print('\nbest weights:')
+        print(','.join(best_weights))
         draw_unet(
             best_base_alpha,
             best_weights,

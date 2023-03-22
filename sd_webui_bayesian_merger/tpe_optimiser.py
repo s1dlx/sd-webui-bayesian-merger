@@ -46,22 +46,26 @@ class TPEOptimiser(Optimiser):
             print(f"Iteration {i} loss: \n\t{res}")
             scores.append(res)
         best = self.trials.best_trial
-        print("Best:", best)
+
         img_path = Path(
             self.log_dir,
-            f"{self.merger.log_name}.png",
+            f"{self.log_name}.png",
         )
-
         convergence_plot(scores, figname=img_path, minimise=True)
 
         unet_path = Path(
             self.log_dir,
-            f"{self.merger.log_name}-unet.png",
+            f"{self.log_name}-unet.png",
         )
         best_base_alpha = best["result"]["params"]["base_alpha"]
         best_weights = [
             best["result"]["params"][f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)
         ]
+        print('\nBest run:')
+        print('best base_alpha:')
+        print(best_base_alpha)
+        print('\nbest weights:')
+        print(','.join(best_weights))
         draw_unet(
             best_base_alpha,
             best_weights,
