@@ -45,9 +45,9 @@ class Optimiser:
     def __post_init__(self):
         self.generator = Generator(self.url, self.batch_size)
         self.init_merger()
+        self.start_logging()
         self.init_scorer()
         self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
-        self.start_logging()
         self.iteration = 0
 
     def init_merger(self):
@@ -75,6 +75,7 @@ class Optimiser:
                 self.scorer_model_name,
                 self.device,
                 self.save_imgs,
+                self.log_dir,
             )
         else:
             raise NotImplementedError(
@@ -86,7 +87,15 @@ class Optimiser:
         self.merger.remove_previous_ckpt(self.iteration + 1)
 
     def start_logging(self):
-        log_path = Path("logs", f"{self.merger.output_file.stem}-{self.method}.json")
+        # WARNING: avoid overwriting stuff
+        # TODO: warn or handle automatically
+        self.log_dir = Path(
+            "logs",
+            f"{self.merger.output_file.stem}-{self.method}",
+        )
+        if not self.log_dir.exists():
+            self.log_dir.mkdir()
+        log_path = Path(self.log_dir, "log.json")
         self.logger = JSONLogger(path=str(log_path))
 
     def sd_target_function(self, **params):

@@ -68,16 +68,22 @@ class AestheticPredictor(nn.Module):
 @dataclass
 class AestheticScorer:
     scorer_method: str
-    model_dir: os.PathLike
+    model_dir: PathT
     model_name: str
     device: str
     save_imgs: bool
+    log_dir: PathT
 
     def __post_init__(self):
         self.model_path = Path(self.model_dir, self.model_name)
         self.get_model()
         if not self.scorer_method.startswith("cafe"):
             self.load_model()
+
+        if self.save_imgs:
+            self.imgs_dir = Path(self.log_dir, "imgs")
+            if not self.imgs_dir.exists():
+                self.imgs_dir.mkdir()
 
     def get_model(self) -> None:
         if self.scorer_method.startswith("cafe"):
@@ -191,6 +197,7 @@ class AestheticScorer:
         images: List[Image.Image],
         payloads: List[Dict],
         paths: List[Dict],
+        it: int,
     ) -> List[float]:
 
         if not self.save_imgs:
@@ -199,7 +206,7 @@ class AestheticScorer:
         scores = []
         for img, payload, path in zip(images, payloads, paths):
             score = self.score(img)
-            self.save_img(img, payload, path, score)
+            self.save_img(img, payload, path, score, it)
             scores.append(score)
 
         return scores
@@ -213,6 +220,8 @@ class AestheticScorer:
         payload: Dict,
         path: PathT,
         score: float,
+        it: int,
     ) -> None:
-        print(f"{score:4.3f}-{path.stem}")
+        img_path = Path(self.imgs_dir, f"{path.stem}-{score:4.3f}-{it}.png")
+        print(img_path)
         return
