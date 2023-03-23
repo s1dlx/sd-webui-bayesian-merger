@@ -8,17 +8,21 @@ function bayesian_merger_load() {
         return;
     }
 
-    api_url_textarea.value = window.location.href;
-    event = new Event("input", {
-        bubbles: false,
-    });
+    refresh_python_api_url(api_url_textarea)
+}
 
-    // for some reason the target of the event is null on Firefox
-    // force the target to a dummy value gradio will happily work with
+window.addEventListener("load", bayesian_merger_load);
+
+function refresh_python_api_url(api_url_textarea) {
+    api_url = window.location.href.split('?')[0].slice(0, -1);
+
+    api_url_textarea.value = api_url;
+    event = new Event("input");
+
+    // for some reason `event.target` is null on load
+    // force `event.target` to a dummy value that gradio javascript code will happily work with
     dummy_target = { style: { height: "" } };
     Object.defineProperty(event, "target", { writable: false, value: dummy_target });
 
     api_url_textarea.dispatchEvent(event);
 }
-
-window.addEventListener("load", bayesian_merger_load);

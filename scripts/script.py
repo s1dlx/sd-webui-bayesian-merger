@@ -1,7 +1,7 @@
-from scripts import main_gui
+from scripts import optimiser_gui
 from modules import scripts, script_callbacks
 import importlib
-importlib.reload(main_gui)
+importlib.reload(optimiser_gui)
 
 class BayesianMergerScript(scripts.Script):
     def title(self):
@@ -15,7 +15,8 @@ class BayesianMergerScript(scripts.Script):
 
 
 def on_ui_tabs():
-    return [main_gui.create_tab()]
+    gui = optimiser_gui.OptimiserGui()
+    return [gui.get_webui_tab()]
 
 
 script_callbacks.on_ui_tabs(on_ui_tabs)
