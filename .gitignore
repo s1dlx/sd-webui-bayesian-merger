@@ -154,3 +154,5 @@ dmypy.json
 # configs
 **/*.ini
 !**/config.tmpl.ini
+!conf/config.tmpl.yaml
+!conf/payloads/cargo.tmpl.yaml

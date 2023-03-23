@@ -12,3 +12,4 @@ hyperopt
 pytest
 transformers
 numpy
+hydra-core

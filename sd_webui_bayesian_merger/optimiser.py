@@ -1,7 +1,6 @@
 import os
 from abc import abstractmethod
 from datetime import datetime
-
 from pathlib import Path
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
@@ -11,7 +10,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from tqdm import tqdm
-
+from omegaconf import DictConfig
 from bayes_opt.logger import JSONLogger
 
 from sd_webui_bayesian_merger.generator import Generator
@@ -25,80 +24,27 @@ PathT = os.PathLike
 
 @dataclass
 class Optimiser:
-    url: str
-    batch_size: int
-    model_a: PathT
-    model_b: PathT
-    device: str
-    payloads_dir: PathT
-    wildcards_dir: PathT
-    scorer_model_dir: PathT
-    init_points: int
-    n_iters: int
-    skip_position_ids: int
-    best_format: str
-    best_precision: int
-    save_best: bool
-    method: str
-    scorer_method: str
-    scorer_model_name: str
-    save_imgs: bool
-    webui_batch_size: int
+    cfg: DictConfig
 
-    def __post_init__(self):
-        self.generator = Generator(self.url, self.batch_size)
+    def __post_init__(self) -> None:
+        self.generator = Generator(self.cfg.url, self.cfg.batch_size)
         self.init_merger()
+        self.merger = Merger(self.cfg)
         self.start_logging()
-        self.init_scorer()
-        self.prompter = Prompter(
-            self.payloads_dir,
-            self.wildcards_dir,
-            self.webui_batch_size,
-        )
+        self.scorer = AestheticScorer(self.cfg, self.log_dir)
+        self.prompter = Prompter(self.cfg)
         self.iteration = 0
 
-    def init_merger(self):
-        self.merger = Merger(
-            self.model_a,
-            self.model_b,
-            self.device,
-            self.skip_position_ids,
-            self.best_format,
-            self.best_precision,
-        )
-
-    def init_scorer(self):
-        if self.scorer_method in [
-            "chad",
-            "laion",
-            "aes",
-            "cafe_aesthetic",
-            "cafe_style",
-            "cafe_waifu",
-        ]:
-            self.scorer = AestheticScorer(
-                self.scorer_method,
-                self.scorer_model_dir,
-                self.scorer_model_name,
-                self.device,
-                self.save_imgs,
-                self.log_dir,
-            )
-        else:
-            raise NotImplementedError(
-                f"{self.scorer_method} scorer not implemented",
-            )
-
-    def _cleanup(self):
+    def _cleanup(self) -> None:
         # clean up and remove the last merge
         self.merger.remove_previous_ckpt(self.iteration + 1)
 
-    def start_logging(self):
+    def start_logging(self) -> None:
         now = datetime.now()
         str_now = datetime.strftime(now, "%Y-%m-%d-%H-%M-%S")
         h, e, l, _ = self.merger.output_file.stem.split("-")
         dir_name = "-".join([h, e, l])
-        self.log_name = f"{dir_name}-{self.method}"
+        self.log_name = f"{dir_name}-{self.cfg.method}"
         self.log_dir = Path(
             "logs",
             f"{self.log_name}-{str_now}",
@@ -113,10 +59,10 @@ class Optimiser:
 
         if self.iteration == 1:
             print("\n" + "-" * 10 + " warmup " + "-" * 10 + ">")
-        elif self.iteration == self.init_points + 1:
+        elif self.iteration == self.cfg.init_points + 1:
             print("\n" + "-" * 10 + " optimisation " + "-" * 10 + ">")
 
-        it_type = "warmup" if self.iteration <= self.init_points else "optimisation"
+        it_type = "warmup" if self.iteration <= self.cfg.init_points else "optimisation"
         print(f"\n{it_type} - Iteration: {self.iteration}")
 
         weights = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
@@ -141,7 +87,7 @@ class Optimiser:
             desc="Batches generation",
         ):
             images.extend(self.generator.batch_generate(payload))
-            gen_paths.extend([paths[i]] * self.batch_size * self.webui_batch_size)
+            gen_paths.extend([paths[i]] * self.cfg.batch_size * self.cfg.webui_batch_size)
 
         # score images
         print("\nScoring")
@@ -194,8 +140,8 @@ class Optimiser:
         draw_unet(
             best_base_alpha,
             best_weights,
-            model_a=Path(self.model_a).stem,
-            model_b=Path(self.model_b).stem,
+            model_a=Path(self.cfg.model_a).stem,
+            model_b=Path(self.cfg.model_b).stem,
             figname=unet_path,
         )
 

@@ -1,10 +1,14 @@
 import os
-from typing import Dict, List
-
 import random
+
+from typing import Dict, List
+from pathlib import Path
+from dataclasses import dataclass
+
 import yaml
 
-from pathlib import Path
+from omegaconf import DictConfig
+
 
 PathT = os.PathLike
 
@@ -82,17 +86,17 @@ def check_payload(
     return payload
 
 
+@dataclass
 class Prompter:
-    def __init__(
-        self,
-        payloads_dir: str,
-        wildcards_dir: str,
-        webui_batch_size: int,
+    cfg: DictConfig
+    webui_batch_size: int
+    def __post_init__(
+        self
     ):
         self.find_payloads(payloads_dir)
         self.load_payloads()
-        self.dealer = CardDealer(wildcards_dir)
-        self.webui_batch_size = webui_batch_size
+        self.dealer = CardDealer(self.cfg.wildcards_dir)
+        self.webui_batch_size = self.webui_batch_size
 
     def find_payloads(self, payloads_dir: str) -> None:
         # TODO: allow for listing payloads instead of taking all of them

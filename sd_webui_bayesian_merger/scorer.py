@@ -1,12 +1,13 @@
 import os
 import requests
 
-from typing import List, Dict
+from typing import List
 from dataclasses import dataclass
 from pathlib import Path
 
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor, pipeline
+from omegaconf import DictConfig
 
 import torch
 import torch.nn as nn
@@ -67,30 +68,31 @@ class AestheticPredictor(nn.Module):
 
 @dataclass
 class AestheticScorer:
-    scorer_method: str
-    model_dir: PathT
-    model_name: str
-    device: str
-    save_imgs: bool
+    cfg: DictConfig
+    # scorer_method: str
+    # model_dir: PathT
+    # model_name: str
+    # device: str
+    # save_imgs: bool
     log_dir: PathT
 
     def __post_init__(self):
-        self.model_path = Path(self.model_dir, self.model_name)
+        self.model_path = Path(self.cfg.model_dir, self.cfg.model_name)
         self.get_model()
-        if not self.scorer_method.startswith("cafe"):
+        if not self.cfg.scorer_method.startswith("cafe"):
             self.load_model()
 
-        if self.save_imgs:
+        if self.cfg.save_imgs:
             self.imgs_dir = Path(self.log_dir, "imgs")
             if not self.imgs_dir.exists():
                 self.imgs_dir.mkdir()
 
     def get_model(self) -> None:
-        if self.scorer_method.startswith("cafe"):
+        if self.cfg.scorer_method.startswith("cafe"):
             print("Creating scoring pipeline")
             self.judge = pipeline(
                 "image-classification",
-                model=f"cafeai/{self.scorer_method}",
+                model=f"cafeai/{self.cfg.scorer_method}",
             )
             return
 
@@ -98,14 +100,14 @@ class AestheticScorer:
             return
 
         print("You do not have an aesthetic model ckpt, let me download that for you")
-        if self.scorer_method == "chad":
+        if self.cfg.scorer_method == "chad":
             url = CHAD_URL
-        elif self.scorer_method == "laion":
+        elif self.cfg.scorer_method == "laion":
             url = LAION_URL
-        elif self.scorer_method == "aes":
+        elif self.cfg.scorer_method == "aes":
             url = AES_URL
 
-        url += f"{self.model_name}?raw=true"
+        url += f"{self.cfg.model_name}?raw=true"
 
         r = requests.get(url)
         r.raise_for_status()
@@ -115,12 +117,12 @@ class AestheticScorer:
             f.write(r.content)
 
     def load_model(self) -> None:
-        print(f"Loading {self.model_name}")
+        print(f"Loading {self.cfg.model_name}")
 
-        if self.scorer_method in ["chad", "laion"]:
-            self.model = AestheticPredictor(768).to(self.device).eval()
-        elif self.scorer_method in ["aes"]:
-            self.model = AestheticClassifier(512, 256, 1).to(self.device).eval()
+        if self.cfg.scorer_method in ["chad", "laion"]:
+            self.model = AestheticPredictor(768).to(self.cfg.device).eval()
+        elif self.cfg.scorer_method in ["aes"]:
+            self.model = AestheticClassifier(512, 256, 1).to(self.cfg.device).eval()
 
         if self.model_path.suffix == ".safetensors":
             self.model.load_state_dict(
@@ -128,48 +130,48 @@ class AestheticScorer:
                     self.model_path,
                 )
             )
-            self.model.to(self.device)
+            self.model.to(self.cfg.device)
         else:
             self.model.load_state_dict(
                 torch.load(
                     self.model_path,
-                    map_location=self.device,
+                    map_location=self.cfg.device,
                 )
             )
         self.model.eval()
         self.load_clip()
 
     def load_clip(self) -> None:
-        if self.scorer_method in ["chad", "laion"]:
+        if self.cfg.scorer_method in ["chad", "laion"]:
             self.clip_model_name = "ViT-L/14"
-        elif self.scorer_method in ["aes"]:
+        elif self.cfg.scorer_method in ["aes"]:
             self.clip_model_name = "openai/clip-vit-base-patch32"
 
         print(f"Loading {self.clip_model_name}")
 
-        if self.scorer_method in ["chad", "laion"]:
+        if self.cfg.scorer_method in ["chad", "laion"]:
             self.clip_model, self.clip_preprocess = clip.load(
                 self.clip_model_name,
-                device=self.device,
+                device=self.cfg.device,
             )
-        elif self.scorer_method in ["aes"]:
+        elif self.cfg.scorer_method in ["aes"]:
             self.clip_model = (
-                CLIPModel.from_pretrained(self.clip_model_name).to(self.device).eval()
+                CLIPModel.from_pretrained(self.clip_model_name).to(self.cfg.device).eval()
             )
             self.clip_preprocess = CLIPProcessor.from_pretrained(self.clip_model_name)
 
     def get_image_features(self, image: Image.Image) -> torch.Tensor:
-        if self.scorer_method in ["chad", "laion"]:
-            image = self.clip_preprocess(image).unsqueeze(0).to(self.device)
+        if self.cfg.scorer_method in ["chad", "laion"]:
+            image = self.clip_preprocess(image).unsqueeze(0).to(self.cfg.device)
             with torch.no_grad():
                 image_features = self.clip_model.encode_image(image)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
             image_features = image_features.cpu().detach().numpy()
             return image_features
-        elif self.scorer_method in ["aes"]:
+        elif self.cfg.scorer_method in ["aes"]:
             inputs = self.clip_preprocess(images=image, return_tensors="pt")[
                 "pixel_values"
-            ].to(self.device)
+            ].to(self.cfg.device)
             result = (
                 self.clip_model.get_image_features(pixel_values=inputs)
                 .cpu()
@@ -187,7 +189,7 @@ class AestheticScorer:
 
         image_features = self.get_image_features(image)
         score = self.model(
-            torch.from_numpy(image_features).to(self.device).float(),
+            torch.from_numpy(image_features).to(self.cfg.device).float(),
         )
 
         return score.item()
