@@ -155,13 +155,13 @@ class OptimiserGui:
 
     def connect_events(self):
         self.start_merge_button.click(
-            fn=on_start_optimise,
+            fn=on_start_merge,
             inputs=[getattr(self, self_field.name) for self_field in fields(self)],
             outputs=[self.status],
         )
 
 
-def on_start_optimise(
+def on_start_merge(
     api_url: str,
     model_a: str | list,
     model_b: str | list,
@@ -185,8 +185,8 @@ def on_start_optimise(
     script_args = [
         sys.executable, "bayesian_merger.py",
         "--url", api_url,
-        "--model_a", get_model_absolute_path(model_a),
-        "--model_b", get_model_absolute_path(model_b),
+        "--model_a", str(get_model_absolute_path(model_a)),
+        "--model_b", str(get_model_absolute_path(model_b)),
         "--skip_position_ids", str(clip_skip),
         "--device", device,
         "--batch_size", str(int(batch_size)),
