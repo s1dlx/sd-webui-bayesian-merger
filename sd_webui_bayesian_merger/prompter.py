@@ -2,7 +2,7 @@ import os
 import random
 
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Tuple
 from dataclasses import dataclass
 
 from omegaconf import DictConfig
@@ -49,6 +49,16 @@ def assemble_payload(defaults: Dict, payload: Dict) -> Dict:
     return payload
 
 
+def unpack_cargo(cargo: DictConfig) -> Tuple[Dict, Dict]:
+    defaults = {}
+    for k, v in cargo.keys():
+        if k == "cargo":
+            payloads = v
+        else:
+            defaults[k] = v
+    return defaults, payloads
+
+
 @dataclass
 class Prompter:
     cfg: DictConfig
@@ -60,8 +70,7 @@ class Prompter:
 
     def load_payloads(self) -> None:
         self.raw_payloads = {}
-        defaults = self.cfg.payloads
-        payloads = defaults.pop("cargo")
+        defaults, payloads = unpack_cargo(self.cfg.payloads)
         for payload_name, payload in payloads.items():
             self.raw_payloads[payload_name] = assemble_payload(
                 defaults,
