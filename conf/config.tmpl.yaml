@@ -1,7 +1,6 @@
 defaults:
-  - payloads:
-    - payload1
-    - payload2
+  - _self_
+  - payloads: cargo
 
 url: http://127.0.0.1:7860
 device: cpu

@@ -33,11 +33,9 @@ def main(cfg: DictConfig) -> None:
         cls = TPEOptimiser
     else:
         exit(f"Invalid optimiser:{cfg['optimiser']}")
-    bo = cls(**cfg)
-    return
+    bo = cls(cfg)
     bo.optimise()
     bo.postprocess()
-    print(OmegaConf.to_yaml(cfg))
 
 
 if __name__ == "__main__":
