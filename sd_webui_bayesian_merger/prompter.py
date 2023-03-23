@@ -1,11 +1,9 @@
 import os
 import random
 
-from typing import Dict, List
 from pathlib import Path
+from typing import Dict, List
 from dataclasses import dataclass
-
-import yaml
 
 from omegaconf import DictConfig
 
@@ -44,79 +42,31 @@ class CardDealer:
         return "".join(chunks)
 
 
-def load_yaml(yaml_file: PathT) -> Dict:
-    with open(yaml_file, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def check_payload(
-    payload: Dict,
-    webui_batch_size: int,
-) -> Dict:
-    if "prompt" not in payload:
-        raise ValueError(f"{payload['path']} doesn't have a prompt")
-
-    # set defaults
-    # TODO: get default values from args
-    for k, v in zip(
-        [
-            "neg_prompt",
-            "seed",
-            "steps",
-            "cfg",
-            "width",
-            "height",
-            "sampler_name",
-            "batch_size",
-        ],
-        [
-            "",
-            -1,
-            20,
-            7,
-            512,
-            512,
-            "Euler",
-            webui_batch_size,
-        ],
-    ):
-        if k not in payload:
+def assemble_payload(defaults: Dict, payload: Dict) -> Dict:
+    for k, v in defaults.items():
+        if k not in payload.keys():
             payload[k] = v
-
     return payload
 
 
 @dataclass
 class Prompter:
     cfg: DictConfig
-    webui_batch_size: int
-    def __post_init__(
-        self
-    ):
-        self.find_payloads(payloads_dir)
+
+    def __post_init__(self):
         self.load_payloads()
         self.dealer = CardDealer(self.cfg.wildcards_dir)
         self.webui_batch_size = self.webui_batch_size
 
-    def find_payloads(self, payloads_dir: str) -> None:
-        # TODO: allow for listing payloads instead of taking all of them
-        pdir = Path(payloads_dir)
-        if pdir.exists():
-            self.raw_payloads = {
-                p.stem: {"path": p}
-                for p in pdir.glob("*.yaml")
-                if ".tmpl.yaml" not in p.name
-            }
-
-        else:
-            # TODO: pick a better error
-            raise ValueError("payloads directory not found!")
-
     def load_payloads(self) -> None:
-        for payload_name, payload in self.raw_payloads.items():
-            raw_payload = load_yaml(payload["path"])
-            checked_payload = check_payload(raw_payload, self.webui_batch_size)
-            self.raw_payloads[payload_name].update(checked_payload)
+        self.raw_payloads = {}
+        defaults = self.cfg.payloads
+        payloads = defaults.pop("cargo")
+        for payload_name, payload in payloads.items():
+            self.raw_payloads[payload_name] = assemble_payload(
+                defaults,
+                payload,
+            )
 
     def render_payloads(self) -> List[Dict]:
         payloads = []
