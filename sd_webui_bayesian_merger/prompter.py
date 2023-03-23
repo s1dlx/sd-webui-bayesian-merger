@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
 
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 
 
 PathT = os.PathLike
@@ -51,9 +51,11 @@ def assemble_payload(defaults: Dict, payload: Dict) -> Dict:
 
 def unpack_cargo(cargo: DictConfig) -> Tuple[Dict, Dict]:
     defaults = {}
-    for k, v in cargo.keys():
+    payloads = {}
+    for k, v in cargo.items():
         if k == "cargo":
-            payloads = v
+            for p_name, p in v.items():
+                payloads[p_name] = OmegaConf.to_container(p) 
         else:
             defaults[k] = v
     return defaults, payloads
@@ -66,7 +68,6 @@ class Prompter:
     def __post_init__(self):
         self.load_payloads()
         self.dealer = CardDealer(self.cfg.wildcards_dir)
-        self.webui_batch_size = self.webui_batch_size
 
     def load_payloads(self) -> None:
         self.raw_payloads = {}
@@ -80,9 +81,9 @@ class Prompter:
     def render_payloads(self) -> List[Dict]:
         payloads = []
         paths = []
-        for _, p in self.raw_payloads.items():
+        for p_name, p in self.raw_payloads.items():
             rendered_payload = p.copy()
             rendered_payload["prompt"] = self.dealer.replace_wildcards(p["prompt"])
-            paths.append(rendered_payload.pop("path"))
+            paths.append(p_name)
             payloads.append(rendered_payload)
         return payloads, paths

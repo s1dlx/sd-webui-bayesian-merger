@@ -5,10 +5,15 @@ import hydra
 
 from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser
 from sd_webui_bayesian_merger.artist import draw_unet
+from sd_webui_bayesian_merger.prompter import Prompter
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: DictConfig) -> None:
+    p = Prompter(cfg)
+    print(p.render_payloads())
+
+    return
     if cfg['scorer_method'] == 'laion':
         cfg['scorer_model_name'] = "laion-sac-logos-ava-v2.safetensors"
     elif cfg["scorer_method"] == "aes":
