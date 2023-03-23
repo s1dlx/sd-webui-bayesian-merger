@@ -7,11 +7,10 @@ from modules import shared
 from dataclasses import dataclass, fields, field
 import gradio as gr
 import torch
-
+from sd_webui_bayesian_merger import DefaultCliArgs
 
 # personal notes
 ### wildcards. use extensions instead?
-### detect optimiser?
 ### draw unet merge chart
 
 
@@ -24,57 +23,63 @@ class OptimiserGui:
     api_url: ... = factory_field(
         gr.Textbox,
         visible=False,
-        elem_id='bayesian_merger_api_url',
+        elem_id="bayesian_merger_api_url",
     )
     model_a: ... = factory_field(
         gr.Dropdown,
-        label='Model A',
+        label="Model A",
         choices=shared.list_checkpoint_tiles(),
     )
     model_b: ... = factory_field(
         gr.Dropdown,
-        label='Model B',
+        label="Model B",
         choices=shared.list_checkpoint_tiles(),
     )
     device: ... = factory_field(
         gr.Dropdown,
-        label='Merge on device',
-        choices=['cpu'] + [f'cuda:{i}' for i in range(torch.cuda.device_count())],
-        value='cpu',
+        label="Merge on device",
+        choices=["cpu"] + [f"cuda:{i}" for i in range(torch.cuda.device_count())],
+        value=DefaultCliArgs.device,
     )
     payloads_dir: ... = factory_field(
         gr.Textbox,
-        label='Payloads directory',
+        label="Payloads directory",
+        placeholder=str(DefaultCliArgs.payloads_dir),
+    )
+    wildcards_dir: ... = factory_field(
+        gr.Textbox,
+        label="Wildcards directory",
+        placeholder=str(DefaultCliArgs.wildcards_dir),
     )
     scorer_model: ... = factory_field(
         gr.Textbox,
-        label='Path to scorer model',
+        label="Path to scorer model",
+        placeholder=str(DefaultCliArgs.scorer_model_dir / DefaultCliArgs.scorer_model_name)
     )
     optimiser: ... = factory_field(
         gr.Dropdown,
-        label='Optimiser',
-        choices=['bayes', 'tpe'],
-        value='bayes',
-        elem_id='bayesian_merger_optimiser_dropdown',
+        label="Optimiser",
+        choices=["bayes", "tpe"],
+        value=DefaultCliArgs.device,
     )
-    batch_count: ... = factory_field(
+    batch_size: ... = factory_field(
         gr.Number,
-        label='Batch count',
-        value=10,
+        label="Batch count",
+        value=DefaultCliArgs.batch_size,
     )
     init_points: ... = factory_field(
         gr.Number,
-        label='Initialization points',
-        value=10,
+        label="Initialization points",
+        value=DefaultCliArgs.init_points,
     )
-    iterations: ... = factory_field(
+    n_iters: ... = factory_field(
         gr.Number,
-        label='Iterations',
-        value=10,
+        label="Iterations",
+        value=DefaultCliArgs.n_iters,
     )
     scorer_method: ... = factory_field(
         gr.Dropdown,
-        label='Scorer method',
+        label="Scorer method",
         choices=[
             "chad",
             "laion",
@@ -83,33 +88,33 @@ class OptimiserGui:
             "cafe_style",
             "cafe_waifu",
         ],
-        value='chad',
+        value=DefaultCliArgs.scorer_method,
     )
-    save_model: ... = factory_field(
+    save_best: ... = factory_field(
         gr.Checkbox,
-        label='Save best model',
-        value=False,
+        label="Save best model",
+        value=DefaultCliArgs.save_best,
     )
-    save_model_format: ... = factory_field(
+    best_format: ... = factory_field(
         gr.Dropdown,
-        label='Model format',
-        choices=['safetensors', 'ckpt'],
-        value='safetensors',
+        label="Model format",
+        choices=["safetensors", "ckpt"],
+        value=DefaultCliArgs.best_format,
     )
-    save_model_precision: ... = factory_field(
+    best_precision: ... = factory_field(
         gr.Dropdown,
-        label='Model precision',
-        choices=['16', '32'],
-        value='16',
+        label="Model precision",
+        choices=["16", "32"],
+        value=DefaultCliArgs.best_precision,
     )
 
     def __post_init__(self):
         self.start_optimiser_button = gr.Button(
-            value='Start Optimizer',
-            variant='primary',
+            value="Start Optimizer",
+            variant="primary",
         )
         self.message = gr.Textbox(
-            label='Message',
+            label="Message",
             interactive=False,
         )
 
@@ -118,7 +123,7 @@ class OptimiserGui:
             self.connect_events()
 
     def get_webui_tab(self) -> Tuple[gr.Blocks, str, str]:
-        return self.root, 'Bayesian Merger', 'bayesian_merger'
+        return self.root, "Bayesian Merger", "bayesian_merger"
 
     def connect_events(self):
         self.start_optimiser_button.click(
@@ -133,15 +138,16 @@ class OptimiserGui:
         self.model_b.render()
         self.device.render()
         self.payloads_dir.render()
+        self.wildcards_dir.render()
         self.scorer_model.render()
         self.scorer_method.render()
         self.optimiser.render()
-        self.batch_count.render()
+        self.batch_size.render()
         self.init_points.render()
-        self.iterations.render()
-        self.save_model.render()
-        self.save_model_format.render()
-        self.save_model_precision.render()
+        self.n_iters.render()
+        self.save_best.render()
+        self.best_format.render()
+        self.best_precision.render()
         self.start_optimiser_button.render()
         self.message.render()
 
@@ -152,45 +158,55 @@ def on_start_optimise(
     model_b: str | list,
     device: str,
     payloads_dir: str,
+    wildcards_dir: str,
     scorer_model: str,
     optimiser: str,
-    batch_count: int,
+    batch_size: int,
     init_points: int,
-    iterations: int,
+    n_iters: int,
     scorer_method: str,
-    save_model: bool,
-    save_model_format: str,
-    save_model_precision: str,
+    save_best: bool,
+    best_format: str,
+    best_precision: str,
 ) -> str:
     if not model_a or not model_b:
-        return 'Error: models A and B need to be selected'
+        return "Error: models A and B need to be selected"
 
     clip_skip = shared.opts.CLIP_stop_at_last_layers - 1
     cli_args = [
-        sys.executable, 'bayesian_merger.py',
-        '--url', api_url,
-        '--model_a', model_a,
-        '--model_b', model_b,
-        '--skip_position_ids', str(clip_skip),
-        '--device', device,
-        '--payloads_dir', payloads_dir,
-        '--scorer_model_dir', str(Path(scorer_model).parent.resolve()),
-        '--optimiser', optimiser,
-        '--batch_size', str(batch_count),
+        sys.executable, "bayesian_merger.py",
+        "--url", api_url,
+        "--model_a", model_a,
+        "--model_b", model_b,
+        "--skip_position_ids", str(clip_skip),
+        "--device", device,
+        "--batch_size", str(batch_size),
         "--init_points", str(init_points),
-        "--n_iters", str(iterations),
+        "--n_iters", str(n_iters),
         "--scorer_method", scorer_method,
-        "--scorer_model_name", Path(scorer_model).name,
+        "--optimiser", optimiser,
     ]
 
-    if save_model:
-        cli_args.extend([
+    if payloads_dir:
+        cli_args += ["--payloads_dir", payloads_dir]
+
+    if payloads_dir:
+        cli_args += ["--wildcards_dir", wildcards_dir]
+
+    if scorer_model:
+        cli_args += [
+            "--scorer_model_dir", str(Path(scorer_model).parent.resolve()),
+            "--scorer_model_name", Path(scorer_model).name,
+        ]
+
+    if save_best:
+        cli_args += [
             "--save_best",
-            "--best_format", save_model_format,
-            "--best_precision", save_model_precision,
-        ])
+            "--best_format", best_format,
+            "--best_precision", best_precision,
+        ]
     else:
-        cli_args.append("--no_save_best")
+        cli_args += ["--no_save_best"]
 
     script_root = Path(__file__).parent.parent.resolve()
     process = subprocess.Popen(cli_args, cwd=script_root, stdout=sys.stdout, stderr=sys.stderr)
