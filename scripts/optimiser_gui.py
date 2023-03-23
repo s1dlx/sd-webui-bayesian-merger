@@ -97,12 +97,12 @@ class OptimiserGui:
     )
 
     def __post_init__(self):
-        self.start_optimiser_button = gr.Button(
-            value="Start Optimizer",
+        self.start_merge_button = gr.Button(
+            value="Auto Merge",
             variant="primary",
         )
-        self.message = gr.Textbox(
-            label="Message",
+        self.status = gr.Textbox(
+            label="Status",
             interactive=False,
         )
 
@@ -113,31 +113,51 @@ class OptimiserGui:
     def get_webui_tab(self) -> Tuple[gr.Blocks, str, str]:
         return self.root, "Bayesian Merger", "bayesian_merger"
 
-    def connect_events(self):
-        self.start_optimiser_button.click(
-            fn=on_start_optimise,
-            inputs=[getattr(self, self_field.name) for self_field in fields(self)],
-            outputs=[self.message],
-        )
-
     def rearrange_components(self):
         self.api_url.render()
-        self.model_a.render()
-        self.model_b.render()
-        self.device.render()
-        self.payloads_dir.render()
-        self.wildcards_dir.render()
-        self.scorer_model.render()
-        self.scorer_method.render()
-        self.optimiser.render()
-        self.batch_size.render()
-        self.init_points.render()
-        self.n_iters.render()
-        self.save_best.render()
-        self.best_format.render()
-        self.best_precision.render()
-        self.start_optimiser_button.render()
-        self.message.render()
+
+        with gr.Row():
+            with gr.Column(scale=5):
+                with gr.Row():
+                    self.model_a.render()
+                    self.model_b.render()
+
+                with gr.Row():
+                    self.optimiser.render()
+                    self.scorer_method.render()
+
+                self.payloads_dir.render()
+                self.scorer_model.render()
+
+                with gr.Row(variant="compact"):
+                    self.batch_size.render()
+                    self.init_points.render()
+                    self.n_iters.render()
+                    self.device.render()
+
+                self.wildcards_dir.render()
+
+                with gr.Row(variant="compact"):
+                    self.save_best.render()
+                    self.best_format.render()
+                    self.best_precision.render()
+
+            with gr.Column(variant="panel", scale=3):
+                with gr.Row():
+                    self.status.render()
+
+                with gr.Row():
+                    self.start_merge_button.render()
+
+                with gr.Row():
+                    gr.Image(interactive=False)
+
+    def connect_events(self):
+        self.start_merge_button.click(
+            fn=on_start_optimise,
+            inputs=[getattr(self, self_field.name) for self_field in fields(self)],
+            outputs=[self.status],
+        )
 
 
 def on_start_optimise(
@@ -201,6 +221,7 @@ def on_start_optimise(
     print(script_args)
     process = subprocess.Popen(script_args, cwd=script_root, stdout=sys.stdout, stderr=sys.stderr)
     process.wait()
+    return 'Merge complete.'
 
 
 def get_model_absolute_path(model_name: str) -> Optional[Path]:
