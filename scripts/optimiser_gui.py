@@ -9,10 +9,6 @@ import gradio as gr
 import torch
 from sd_webui_bayesian_merger import DefaultCliArgs
 
-# personal notes
-### wildcards. use extensions instead?
-### draw unet merge chart
-
 
 def factory_field(cls, **kwargs):
     return field(default_factory=lambda: cls(**kwargs))
