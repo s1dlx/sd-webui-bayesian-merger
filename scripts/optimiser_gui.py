@@ -103,6 +103,7 @@ class OptimiserGui:
         )
         self.status = gr.Textbox(
             label="Status",
+            value='Idle.',
             interactive=False,
         )
 
@@ -178,7 +179,7 @@ def on_start_optimise(
     best_precision: str,
 ) -> str:
     if not model_a or not model_b:
-        return "Error: models A and B need to be selected"
+        return "Error: models A and B need to be selected."
 
     clip_skip = shared.opts.CLIP_stop_at_last_layers - 1
     script_args = [
