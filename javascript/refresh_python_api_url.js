@@ -1,17 +1,17 @@
-function bayesian_merger_load() {
+function bayesian_merger_onload() {
     api_url_textarea = gradioApp().querySelector("#bayesian_merger_api_url textarea");
 
     // on some browsers, the load event is triggered too soon
     // retry to pass the url to gradio every 100ms
     if (api_url_textarea === null) {
-        setTimeout(bayesian_merger_load, 100);
+        setTimeout(bayesian_merger_onload, 100);
         return;
     }
 
     refresh_python_api_url(api_url_textarea)
 }
 
-window.addEventListener("load", bayesian_merger_load);
+window.addEventListener("load", bayesian_merger_onload);
 
 function refresh_python_api_url(api_url_textarea) {
     api_url = window.location.href.split('?')[0].slice(0, -1);
