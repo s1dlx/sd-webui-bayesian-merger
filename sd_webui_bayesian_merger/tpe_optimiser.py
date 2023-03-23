@@ -24,14 +24,14 @@ class TPEOptimiser(Optimiser):
         space["base_alpha"] = hp.uniform("base_alpha", 0.0, 1.0)
 
         self.trials = Trials()
-        tpe._default_n_startup_jobs = self.cgf.init_points
-        algo = partial(tpe.suggest, n_startup_jobs=self.cgf.init_points)
+        tpe._default_n_startup_jobs = self.cfg.init_points
+        algo = partial(tpe.suggest, n_startup_jobs=self.cfg.init_points)
         fmin(
             self._target_function,
             space=space,
             algo=algo,
             trials=self.trials,
-            max_evals=self.cgf.init_points + self.cgf.n_iters,
+            max_evals=self.cfg.init_points + self.cfg.n_iters,
         )
 
         # clean up and remove the last merge
