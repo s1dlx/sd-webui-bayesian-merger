@@ -28,7 +28,6 @@ class Optimiser:
 
     def __post_init__(self) -> None:
         self.generator = Generator(self.cfg.url, self.cfg.batch_size)
-        self.init_merger()
         self.merger = Merger(self.cfg)
         self.start_logging()
         self.scorer = AestheticScorer(self.cfg, self.log_dir)
@@ -44,7 +43,7 @@ class Optimiser:
         str_now = datetime.strftime(now, "%Y-%m-%d-%H-%M-%S")
         h, e, l, _ = self.merger.output_file.stem.split("-")
         dir_name = "-".join([h, e, l])
-        self.log_name = f"{dir_name}-{self.cfg.method}"
+        self.log_name = f"{dir_name}-{self.cfg.optimiser}"
         self.log_dir = Path(
             "logs",
             f"{self.log_name}-{str_now}",

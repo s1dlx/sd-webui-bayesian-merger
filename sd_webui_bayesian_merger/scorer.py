@@ -77,7 +77,7 @@ class AestheticScorer:
     log_dir: PathT
 
     def __post_init__(self):
-        self.model_path = Path(self.cfg.model_dir, self.cfg.model_name)
+        self.model_path = Path(self.cfg.scorer_model_dir, self.cfg.scorer_model_name,)
         self.get_model()
         if not self.cfg.scorer_method.startswith("cafe"):
             self.load_model()
@@ -107,7 +107,7 @@ class AestheticScorer:
         elif self.cfg.scorer_method == "aes":
             url = AES_URL
 
-        url += f"{self.cfg.model_name}?raw=true"
+        url += f"{self.cfg.scorer_model_name}?raw=true"
 
         r = requests.get(url)
         r.raise_for_status()
@@ -117,7 +117,7 @@ class AestheticScorer:
             f.write(r.content)
 
     def load_model(self) -> None:
-        print(f"Loading {self.cfg.model_name}")
+        print(f"Loading {self.cfg.scorer_model_name}")
 
         if self.cfg.scorer_method in ["chad", "laion"]:
             self.model = AestheticPredictor(768).to(self.cfg.device).eval()
