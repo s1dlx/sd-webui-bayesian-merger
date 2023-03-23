@@ -22,8 +22,8 @@ class BayesOptimiser(Optimiser):
         self.optimizer.subscribe(Events.OPTIMIZATION_STEP, self.logger)
 
         self.optimizer.maximize(
-            init_points=self.init_points,
-            n_iter=self.n_iters,
+            init_points=self.cgf.init_points,
+            n_iter=self.cgf.n_iters,
         )
 
         # clean up and remove the last merge
