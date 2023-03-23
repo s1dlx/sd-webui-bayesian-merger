@@ -1,13 +1,12 @@
 import subprocess
 import sys
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Optional
 
-from modules import shared
+from modules import shared, sd_models
 from dataclasses import dataclass, fields, field
 import gradio as gr
-import torch
-from sd_webui_bayesian_merger import DefaultCliArgs
+from sd_webui_bayesian_merger import cli_args
 
 
 def factory_field(cls, **kwargs):
@@ -34,74 +33,67 @@ class OptimiserGui:
     device: ... = factory_field(
         gr.Dropdown,
         label="Merge on device",
-        choices=["cpu"] + [f"cuda:{i}" for i in range(torch.cuda.device_count())],
-        value=DefaultCliArgs.device,
+        choices=cli_args.Choices.device,
+        value=cli_args.Defaults.device,
     )
     payloads_dir: ... = factory_field(
         gr.Textbox,
         label="Payloads directory",
-        placeholder=str(DefaultCliArgs.payloads_dir),
+        placeholder=str(cli_args.Defaults.payloads_dir),
     )
     wildcards_dir: ... = factory_field(
         gr.Textbox,
         label="Wildcards directory",
-        placeholder=str(DefaultCliArgs.wildcards_dir),
+        placeholder=str(cli_args.Defaults.wildcards_dir),
     )
     scorer_model: ... = factory_field(
         gr.Textbox,
         label="Path to scorer model",
-        placeholder=str(DefaultCliArgs.scorer_model_dir / DefaultCliArgs.scorer_model_name)
+        placeholder=str(cli_args.Defaults.scorer_model_dir / cli_args.Defaults.scorer_model_name)
     )
     optimiser: ... = factory_field(
         gr.Dropdown,
         label="Optimiser",
-        choices=["bayes", "tpe"],
-        value=DefaultCliArgs.device,
+        choices=cli_args.Choices.optimiser,
+        value=cli_args.Defaults.optimiser,
     )
     batch_size: ... = factory_field(
         gr.Number,
-        label="Batch count",
-        value=DefaultCliArgs.batch_size,
+        label="Batch size",
+        value=cli_args.Defaults.batch_size,
     )
     init_points: ... = factory_field(
         gr.Number,
         label="Initialization points",
-        value=DefaultCliArgs.init_points,
+        value=cli_args.Defaults.init_points,
     )
     n_iters: ... = factory_field(
         gr.Number,
         label="Iterations",
-        value=DefaultCliArgs.n_iters,
+        value=cli_args.Defaults.n_iters,
     )
     scorer_method: ... = factory_field(
         gr.Dropdown,
         label="Scorer method",
-        choices=[
-            "chad",
-            "laion",
-            "aes",
-            "cafe_aesthetic",
-            "cafe_style",
-            "cafe_waifu",
-        ],
-        value=DefaultCliArgs.scorer_method,
+        choices=cli_args.Choices.scorer_method,
+        value=cli_args.Defaults.scorer_method,
     )
     save_best: ... = factory_field(
         gr.Checkbox,
         label="Save best model",
-        value=DefaultCliArgs.save_best,
+        value=cli_args.Defaults.save_best,
     )
     best_format: ... = factory_field(
         gr.Dropdown,
         label="Model format",
-        choices=["safetensors", "ckpt"],
-        value=DefaultCliArgs.best_format,
+        choices=cli_args.Choices.best_format,
+        value=cli_args.Defaults.best_format,
     )
     best_precision: ... = factory_field(
         gr.Dropdown,
         label="Model precision",
-        choices=["16", "32"],
-        value=DefaultCliArgs.best_precision,
+        choices=cli_args.Choices.best_precision,
+        value=cli_args.Defaults.best_precision,
     )
 
     def __post_init__(self):
@@ -157,9 +149,9 @@ def on_start_optimise(
     wildcards_dir: str,
     scorer_model: str,
     optimiser: str,
-    batch_size: int,
-    init_points: int,
-    n_iters: int,
+    batch_size: float,
+    init_points: float,
+    n_iters: float,
     scorer_method: str,
     save_best: bool,
     best_format: str,
@@ -169,41 +161,60 @@ def on_start_optimise(
         return "Error: models A and B need to be selected"
 
     clip_skip = shared.opts.CLIP_stop_at_last_layers - 1
-    cli_args = [
+    script_args = [
         sys.executable, "bayesian_merger.py",
         "--url", api_url,
-        "--model_a", model_a,
-        "--model_b", model_b,
+        "--model_a", get_model_absolute_path(model_a),
+        "--model_b", get_model_absolute_path(model_b),
         "--skip_position_ids", str(clip_skip),
         "--device", device,
-        "--batch_size", str(batch_size),
-        "--init_points", str(init_points),
-        "--n_iters", str(n_iters),
+        "--batch_size", str(int(batch_size)),
+        "--init_points", str(int(init_points)),
+        "--n_iters", str(int(n_iters)),
         "--scorer_method", scorer_method,
         "--optimiser", optimiser,
     ]
 
     if payloads_dir:
-        cli_args += ["--payloads_dir", payloads_dir]
+        script_args += ["--payloads_dir", payloads_dir]
 
     if payloads_dir:
-        cli_args += ["--wildcards_dir", wildcards_dir]
+        script_args += ["--wildcards_dir", wildcards_dir]
 
     if scorer_model:
-        cli_args += [
+        script_args += [
             "--scorer_model_dir", str(Path(scorer_model).parent.resolve()),
             "--scorer_model_name", Path(scorer_model).name,
         ]
 
     if save_best:
-        cli_args += [
+        script_args += [
             "--save_best",
             "--best_format", best_format,
             "--best_precision", best_precision,
         ]
     else:
-        cli_args += ["--no_save_best"]
+        script_args += ["--no_save_best"]
 
-    script_root = Path(__file__).parent.parent.resolve()
-    process = subprocess.Popen(cli_args, cwd=script_root, stdout=sys.stdout, stderr=sys.stderr)
+    script_root = cli_args.extension_dir
+
+    print(script_args)
+    process = subprocess.Popen(script_args, cwd=script_root, stdout=sys.stdout, stderr=sys.stderr)
     process.wait()
+
+
+def get_model_absolute_path(model_name: str) -> Optional[Path]:
+    model_name = sd_models.checkpoint_alisases[model_name].name
+    model_path = Path(sd_models.model_path) / model_name
+    if model_path.exists():
+        return model_path
+
+    if shared.cmd_opts.ckpt is not None and shared.cmd_opts.ckpt.endswith(model_name):
+        return Path(shared.cmd_opts.ckpt)
+
+    if shared.cmd_opts.ckpt_dir is not None:
+        model_path = Path(shared.cmd_opts.ckpt_dir) / model_name
+        if model_path.exists():
+            return model_path
+
+    return None

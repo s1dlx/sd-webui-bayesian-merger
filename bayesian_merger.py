@@ -3,7 +3,7 @@ from configparser import ConfigParser
 
 import click
 
-from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser, DefaultCliArgs
+from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser, cli_args
 from sd_webui_bayesian_merger.artist import draw_unet
 
 
@@ -22,7 +22,7 @@ def configure(ctx, param, filename):
     "-c",
     "--config",
     type=click.Path(dir_okay=False),
-    default=DefaultCliArgs.config,
+    default=cli_args.Defaults.config,
     callback=configure,
     is_eager=True,
     expose_value=False,
@@ -33,7 +33,7 @@ def configure(ctx, param, filename):
     "--url",
     type=str,
     help="where webui api is running, by default http://127.0.0.1:7860",
-    default=DefaultCliArgs.url,
+    default=cli_args.Defaults.url,
 )
 @click.option(
     "--model_a",
@@ -50,116 +50,101 @@ def configure(ctx, param, filename):
 @click.option(
     "--skip_position_ids",
     type=int,
-    default=DefaultCliArgs.skip_position_ids,
+    default=cli_args.Defaults.skip_position_ids,
     help="clip skip, default 0",
 )
 @click.option(
     "--device",
-    type=str,
-    default=DefaultCliArgs.device,
+    type=click.Choice(cli_args.Choices.device),
+    default=cli_args.Defaults.device,
     help='where to merge models and score images, default and recommended "cpu"',
 )
 @click.option(
     "--payloads_dir",
     type=click.Path(exists=True),
-    default=DefaultCliArgs.payloads_dir,
+    default=cli_args.Defaults.payloads_dir,
     help="absolute path to payloads directory",
 )
 @click.option(
     "--wildcards_dir",
     type=click.Path(exists=True),
-    default=DefaultCliArgs.wildcards_dir,
+    default=cli_args.Defaults.wildcards_dir,
     help="absolute path to wildcards directory",
 )
 @click.option(
     "--scorer_model_dir",
     type=click.Path(exists=True),
-    default=DefaultCliArgs.scorer_model_dir,
+    default=cli_args.Defaults.scorer_model_dir,
     help="absolute path to scorer models directory",
 )
 @click.option(
     "--optimiser",
-    type=click.Choice(["bayes", "tpe"]),
-    default=DefaultCliArgs.optimiser,
+    type=click.Choice(cli_args.Choices.optimiser),
+    default=cli_args.Defaults.optimiser,
     help="optimiser, bayes (default) or tpe",
 )
 @click.option(
     "--batch_size",
     type=int,
-    default=DefaultCliArgs.batch_size,
+    default=cli_args.Defaults.batch_size,
     help="number of images to generate for each payload",
 )
 @click.option(
     "--init_points",
     type=int,
-    default=DefaultCliArgs.init_points,
+    default=cli_args.Defaults.init_points,
     help="exploratory/warmup phase sample size",
 )
 @click.option(
     "--n_iters",
     type=int,
-    default=DefaultCliArgs.n_iters,
+    default=cli_args.Defaults.n_iters,
     help="exploitation/optimisation phase sample size",
 )
 @click.option(
     "--save_imgs/--no_save_imgs",
-    default=DefaultCliArgs.save_imgs,
+    default=cli_args.Defaults.save_imgs,
     help="save all the generated images",
 )
 @click.option(
     "--scorer_method",
-    type=click.Choice(
-        [
-            "chad",
-            "laion",
-            "aes",
-            "cafe_aesthetic",
-            "cafe_style",
-            "cafe_waifu",
-        ]
-    ),
-    default=DefaultCliArgs.scorer_method,
+    type=click.Choice(cli_args.Choices.scorer_method),
+    default=cli_args.Defaults.scorer_method,
     help="scoring methods, chad (default)",
 )
 @click.option(
     "--scorer_model_name",
-    type=click.Choice(
-        [
-            "sac+logos+ava1-l14-linearMSE.pth",  # chad
-            "ava+logos-l14-linearMSE.pth",
-            "ava+logos-l14-reluMSE.pth",
-        ]
-    ),
-    default=DefaultCliArgs.scorer_model_name,
+    type=click.Choice(cli_args.Choices.scorer_model_name),
+    default=cli_args.Defaults.scorer_model_name,
     help="scoring model options for chad method",
 )
 @click.option(
     "--save_best/--no_save_best",
-    default=DefaultCliArgs.save_best,
+    default=cli_args.Defaults.save_best,
     help="save best model across the whole run",
 )
 @click.option(
     "--best_format",
     type=click.Choice(["safetensors", "ckpt"]),
-    default=DefaultCliArgs.best_format,
+    default=cli_args.Defaults.best_format,
     help="best model saving format, either safetensors (default) or ckpt",
 )
 @click.option(
     "--best_precision",
     type=click.Choice(["16", "32"]),
-    default=DefaultCliArgs.best_precision,
+    default=cli_args.Defaults.best_precision,
     help="best model saving precision, either 16 (default) or 32 bit",
 )
 @click.option(
     "--draw_unet_weights",
     type=str,
     help="list of weights for drawing mode",
-    default=DefaultCliArgs.draw_unet_weights,
+    default=cli_args.Defaults.draw_unet_weights,
 )
 @click.option(
     "--draw_unet_base_alpha",
     type=float,
-    default=DefaultCliArgs.draw_unet_base_alpha,
+    default=cli_args.Defaults.draw_unet_base_alpha,
     help="base alpha value for drawing mode",
 )
 def main(*args, **kwargs) -> None:
