@@ -107,7 +107,6 @@ class OptimiserGui:
             value='Start Optimizer',
             variant='primary',
         )
-
         self.message = gr.Textbox(
             label='Message',
             interactive=False,
@@ -134,11 +133,11 @@ class OptimiserGui:
         self.device.render()
         self.payloads_dir.render()
         self.scorer_model.render()
+        self.scorer_method.render()
         self.optimiser.render()
         self.batch_count.render()
         self.init_points.render()
         self.iterations.render()
-        self.scorer_method.render()
         self.save_model.render()
         self.save_model_format.render()
         self.save_model_precision.render()
