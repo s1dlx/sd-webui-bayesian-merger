@@ -1,6 +1,7 @@
 import subprocess
 import sys
 from pathlib import Path
+from typing import Tuple
 
 from modules import shared
 from dataclasses import dataclass, fields, field
@@ -116,7 +117,7 @@ class OptimiserGui:
             self.rearrange_components()
             self.connect_events()
 
-    def get_webui_tab(self):
+    def get_webui_tab(self) -> Tuple[gr.Blocks, str, str]:
         return self.root, 'Bayesian Merger', 'bayesian_merger'
 
     def connect_events(self):
@@ -160,7 +161,7 @@ def on_start_optimise(
     save_model: bool,
     save_model_format: str,
     save_model_precision: str,
-):
+) -> str:
     if not model_a or not model_b:
         return 'Error: models A and B need to be selected'
 
