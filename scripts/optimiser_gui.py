@@ -217,10 +217,8 @@ def on_start_optimise(
     else:
         script_args += ["--no_save_best"]
 
-    script_root = cli_args.extension_dir
-
-    print(script_args)
-    process = subprocess.Popen(script_args, cwd=script_root, stdout=sys.stdout, stderr=sys.stderr)
+    print(" ".join(script_args))
+    process = subprocess.Popen(script_args, cwd=cli_args.extension_dir, stdout=sys.stdout, stderr=sys.stderr)
     process.wait()
     return 'Merge complete.'
 
