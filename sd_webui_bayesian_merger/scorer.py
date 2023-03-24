@@ -204,7 +204,7 @@ class AestheticScorer:
         for i, (img, name) in enumerate(zip(images, payload_names)):
             score = self.score(img)
             print(f"{name}-{i} {score:4.3f}")
-            if self.save_imgs:
+            if self.cfg.save_imgs:
                 self.save_img(img, name, score, it, i)
             scores.append(score)
 
@@ -223,7 +223,7 @@ class AestheticScorer:
     ) -> None:
         img_path = Path(
             self.imgs_dir,
-            f"{path.stem}-{batch_n}-{it}-{score:4.3f}.png",
+            f"{name}-{batch_n}-{it}-{score:4.3f}.png",
         )
         image.save(img_path)
         return
