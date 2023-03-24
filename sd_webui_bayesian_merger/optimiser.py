@@ -96,7 +96,7 @@ class Optimiser:
         weights_str = ",".join(list(map(str, weights)))
         print(weights_str)
 
-        if avg_score > self.besbest_rolling_score:
+        if avg_score > self.best_rolling_score:
             self.best_rolling_score = avg_score
             print('\n NEW BEST!')
             save_best_log(base_alpha, weights_str)
