@@ -82,7 +82,7 @@ class AestheticScorer:
             self.load_model()
 
         if self.cfg.save_imgs:
-            self.imgs_dir = Path(HydraConfig.get().output_dir, "imgs")
+            self.imgs_dir = Path(HydraConfig.get().runtime.output_dir, "imgs")
             if not self.imgs_dir.exists():
                 self.imgs_dir.mkdir()
 

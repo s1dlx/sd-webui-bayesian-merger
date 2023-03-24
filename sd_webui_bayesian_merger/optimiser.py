@@ -111,7 +111,6 @@ class Optimiser:
         best_weights: List[float],
         minimise: bool,
     ) -> None:
-
         img_path = f"{self.log_name}.png"
         convergence_plot(scores, figname=img_path, minimise=minimise)
 
