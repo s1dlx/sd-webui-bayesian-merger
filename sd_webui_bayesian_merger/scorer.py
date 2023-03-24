@@ -69,7 +69,6 @@ class AestheticPredictor(nn.Module):
 @dataclass
 class AestheticScorer:
     cfg: DictConfig
-    log_dir: PathT
 
     def __post_init__(self):
         self.model_path = Path(

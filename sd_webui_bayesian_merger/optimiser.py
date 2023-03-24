@@ -1,6 +1,5 @@
 import os
 from abc import abstractmethod
-from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
@@ -30,7 +29,7 @@ class Optimiser:
         self.generator = Generator(self.cfg.url, self.cfg.batch_size)
         self.merger = Merger(self.cfg)
         self.start_logging()
-        self.scorer = AestheticScorer(self.cfg, self.log_dir)
+        self.scorer = AestheticScorer(self.cfg)
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
 
