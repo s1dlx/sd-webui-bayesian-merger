@@ -27,7 +27,7 @@ class BayesOptimiser(Optimiser):
         )
 
         # clean up and remove the last merge
-        self._cleanup()
+        self.cleanup()
 
     def postprocess(self) -> None:
         for i, res in enumerate(self.optimizer.res):

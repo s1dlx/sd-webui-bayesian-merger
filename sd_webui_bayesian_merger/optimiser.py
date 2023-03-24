@@ -33,10 +33,14 @@ class Optimiser:
         self.scorer = AestheticScorer(self.cfg)
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
+        self._clean = True
 
-    def _cleanup(self) -> None:
-        # clean up and remove the last merge
-        self.merger.remove_previous_ckpt(self.iteration + 1)
+    def cleanup(self) -> None:
+        if self._clean:
+            # clean up and remove the last merge
+            self.merger.remove_previous_ckpt(self.iteration)
+        else:
+            self._clean = True
 
     def start_logging(self) -> None:
         h, e, l, _ = self.merger.output_file.stem.split("-")
@@ -63,7 +67,8 @@ class Optimiser:
             weights,
             base_alpha,
         )
-        self.merger.remove_previous_ckpt(self.iteration)
+        self.cleanup()
+        # merger.remove_previous_ckpt(self.iteration)
 
         # TODO: is this forcing the model load despite the same name?
         self.generator.switch_model(self.merger.model_out_name)
@@ -102,6 +107,7 @@ class Optimiser:
             save_best_log(base_alpha, weights_str)
             print('Keeping this merge')
             self.merger.keep_best_ckpt()
+            self._clean = False
 
         return avg_score
 

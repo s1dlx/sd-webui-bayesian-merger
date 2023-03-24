@@ -35,7 +35,7 @@ class TPEOptimiser(Optimiser):
         )
 
         # clean up and remove the last merge
-        self._cleanup()
+        self.cleanup()
 
     def postprocess(self) -> None:
         scores = []
