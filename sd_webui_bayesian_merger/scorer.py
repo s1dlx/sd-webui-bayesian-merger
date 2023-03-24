@@ -8,13 +8,14 @@ from pathlib import Path
 from PIL import Image
 from transformers import CLIPModel, CLIPProcessor, pipeline
 from omegaconf import DictConfig
+from hydra.core.hydra_config import HydraConfig
+
 
 import torch
 import torch.nn as nn
 import clip
 import safetensors
 import numpy as np
-import hydra
 
 PathT = os.PathLike
 
@@ -81,7 +82,7 @@ class AestheticScorer:
             self.load_model()
 
         if self.cfg.save_imgs:
-            self.imgs_dir = Path(hydra.runtime.output_dir, "imgs")
+            self.imgs_dir = Path(HydraConfig.get().output_dir, "imgs")
             if not self.imgs_dir.exists():
                 self.imgs_dir.mkdir()
 
