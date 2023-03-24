@@ -11,6 +11,7 @@ import seaborn as sns
 from tqdm import tqdm
 from omegaconf import DictConfig
 from bayes_opt.logger import JSONLogger
+from hydra.core.hydra_config import HydraConfig
 
 from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
@@ -103,9 +104,9 @@ class Optimiser:
 
         if avg_score > self.best_rolling_score:
             self.best_rolling_score = avg_score
-            print('\n NEW BEST!')
+            print("\n NEW BEST!")
             save_best_log(base_alpha, weights_str)
-            print('Keeping this merge')
+            print("Keeping this merge")
             self.merger.keep_best_ckpt()
             self._clean = False
 
@@ -151,9 +152,13 @@ class Optimiser:
 
 
 def save_best_log(alpha, weights):
-    print('Saving best.log')
-    with open('best.log', 'w', encoding='utf-8') as f:
-        f.write(f'{alpha}\n\n{weights}')
+    print("Saving best.log")
+    with open(
+        Path(HydraConfig.get().runtime.output_dir, "best.log"),
+        "w",
+        encoding="utf-8",
+    ) as f:
+        f.write(f"{alpha}\n\n{weights}")
 
 
 def load_log(log: PathT) -> List[Dict]:
