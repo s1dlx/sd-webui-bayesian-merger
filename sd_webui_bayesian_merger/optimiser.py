@@ -146,7 +146,7 @@ class Optimiser:
             figname=unet_path,
         )
 
-        if self.save_best:
+        if self.cfg.save_best:
             print(f"Saving best merge: {self.merger.best_output_file}")
             self.merger.merge(best_weights, best_base_alpha, best=True)
 
