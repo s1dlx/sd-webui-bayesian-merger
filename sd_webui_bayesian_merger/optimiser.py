@@ -47,7 +47,12 @@ class Optimiser:
         h, e, l, _ = self.merger.output_file.stem.split("-")
         run_name = "-".join([h, e, l])
         self.log_name = f"{run_name}-{self.cfg.optimiser}"
-        self.logger = JSONLogger(path=f"{self.log_name}.json")
+        self.logger = JSONLogger(
+            path=Path(
+                HydraConfig.get().runtime.output_dir,
+                f"{self.log_name}.json",
+            )
+        )
 
     def sd_target_function(self, **params):
         self.iteration += 1
@@ -125,10 +130,10 @@ class Optimiser:
         best_weights: List[float],
         minimise: bool,
     ) -> None:
-        img_path = Path(f"{self.log_name}.png")
+        img_path = Path(HydraConfig.get().runtime.output_dir, f"{self.log_name}.png",)
         convergence_plot(scores, figname=img_path, minimise=minimise)
 
-        unet_path = f"{self.log_name}-unet.png"
+        unet_path = Path(HydraConfig.get().runtime.output_dir, f"{self.log_name}-unet.png",)
         print("\nBest run:")
         print("best base_alpha:")
         print(best_base_alpha)
