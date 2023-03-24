@@ -87,7 +87,7 @@ class Optimiser:
         ):
             images.extend(self.generator.batch_generate(payload))
             gen_paths.extend(
-                [paths[i]] * self.cfg.batch_size * self.cfg.webui_batch_size
+                [paths[i]] * self.cfg.batch_size * payload['batch_size']
             )
 
         # score images

@@ -42,9 +42,3 @@ s_churn: 0
 s_tmax: 0
 s_tmin: 0
 s_noise: 1
-
-override_settings: {}
-override_settings_restore_afterwards: true
-
-script_args: []
-script_name: ""
