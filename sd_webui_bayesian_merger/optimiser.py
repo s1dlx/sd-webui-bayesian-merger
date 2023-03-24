@@ -24,6 +24,7 @@ PathT = os.PathLike
 @dataclass
 class Optimiser:
     cfg: DictConfig
+    best_rolling_score: float = 0.0
 
     def __post_init__(self) -> None:
         self.generator = Generator(self.cfg.url, self.cfg.batch_size)
@@ -92,7 +93,15 @@ class Optimiser:
 
         print(f"\nrun base_alpha: {base_alpha}")
         print("run weights:")
-        print(",".join(list(map(str, weights))))
+        weights_str = ",".join(list(map(str, weights)))
+        print(weights_str)
+
+        if avg_score > self.besbest_rolling_score:
+            self.best_rolling_score = avg_score
+            print('\n NEW BEST!')
+            save_best_log(base_alpha, weights_str)
+            print('Keeping this merge')
+            self.merger.keep_best_ckpt()
 
         return avg_score
 
@@ -119,7 +128,9 @@ class Optimiser:
         print("best base_alpha:")
         print(best_base_alpha)
         print("\nbest weights:")
-        print(",".join(list(map(str, best_weights))))
+        best_weights_str = ",".join(list(map(str, best_weights)))
+        print(best_weights_str)
+        save_best_log(best_base_alpha, best_weights_str)
         draw_unet(
             best_base_alpha,
             best_weights,
@@ -131,6 +142,12 @@ class Optimiser:
         if self.cfg.save_best:
             print(f"Saving best merge: {self.merger.best_output_file}")
             self.merger.merge(best_weights, best_base_alpha, best=True)
+
+
+def save_best_log(alpha, weights):
+    print('Saving best.log')
+    with open('best.log', 'w', encoding='utf-8') as f:
+        f.write(f'{alpha}\n\n{weights}')
 
 
 def load_log(log: PathT) -> List[Dict]:
