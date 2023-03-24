@@ -69,9 +69,7 @@ class Optimiser:
             base_alpha,
         )
         self.cleanup()
-        # merger.remove_previous_ckpt(self.iteration)
 
-        # TODO: is this forcing the model load despite the same name?
         self.generator.switch_model(self.merger.model_out_name)
 
         # generate images
@@ -106,7 +104,7 @@ class Optimiser:
             self.best_rolling_score = avg_score
             print("\n NEW BEST!")
             save_best_log(base_alpha, weights_str)
-            print("Keeping this merge")
+            print("Saving best model merge")
             self.merger.keep_best_ckpt()
             self._clean = False
 
@@ -127,7 +125,7 @@ class Optimiser:
         best_weights: List[float],
         minimise: bool,
     ) -> None:
-        img_path = f"{self.log_name}.png"
+        img_path = Path(f"{self.log_name}.png")
         convergence_plot(scores, figname=img_path, minimise=minimise)
 
         unet_path = f"{self.log_name}-unet.png"
@@ -221,7 +219,6 @@ def convergence_plot(
     sns.despine()
 
     if figname:
-        figname.parent.mkdir(exist_ok=True)
         plt.title(figname.stem)
         print("Saving fig to:", figname)
         plt.savefig(figname)
