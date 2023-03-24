@@ -61,11 +61,10 @@ class Merger:
         self.best_output_file = Path(self.model_a.parent, model_out_name)
 
     def remove_previous_ckpt(self, current_it: int) -> None:
-        if current_it > 1:
-            if self.output_file.exists():
-                self.create_model_out_name(current_it - 1)
-                print(f"Removing {self.output_file}")
-                self.output_file.unlink()
+        if current_it > 1 and self.output_file.exists():
+            self.create_model_out_name(current_it - 1)
+            print(f"Removing {self.output_file}")
+            self.output_file.unlink()
         self.create_model_out_name(current_it)
 
     def keep_best_ckpt(self) -> None:

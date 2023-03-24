@@ -35,7 +35,10 @@ class TPEOptimiser(Optimiser):
         )
 
         # clean up and remove the last merge
-        self.cleanup()
+        try:
+            self.cleanup()
+        except FileNotFoundError:
+            return
 
     def postprocess(self) -> None:
         scores = []

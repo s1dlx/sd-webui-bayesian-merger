@@ -203,10 +203,7 @@ def convergence_plot(
 
     plt.plot(scores)
 
-    if minimise:
-        star_i, star_score = minwhere(scores)
-    else:
-        star_i, star_score = maxwhere(scores)
+    star_i, star_score = minwhere(scores) if minimise else maxwhere(scores)
     plt.plot(star_i, star_score, "or")
 
     plt.xlabel("iterations")

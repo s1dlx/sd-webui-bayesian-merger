@@ -56,11 +56,10 @@ def unpack_cargo(cargo: DictConfig) -> Tuple[Dict, Dict]:
         if k == "cargo":
             for p_name, p in v.items():
                 payloads[p_name] = OmegaConf.to_container(p)
+        elif isinstance(v, (DictConfig, ListConfig)):
+            defaults[k] = OmegaConf.to_container(v)
         else:
-            if isinstance(v, DictConfig) or isinstance(v, ListConfig):
-                defaults[k] = OmegaConf.to_container(v)
-            else:
-                defaults[k] = v
+            defaults[k] = v
     return defaults, payloads
 
 
