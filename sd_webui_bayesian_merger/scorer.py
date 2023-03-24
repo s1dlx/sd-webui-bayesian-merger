@@ -69,11 +69,6 @@ class AestheticPredictor(nn.Module):
 @dataclass
 class AestheticScorer:
     cfg: DictConfig
-    # scorer_method: str
-    # model_dir: PathT
-    # model_name: str
-    # device: str
-    # save_imgs: bool
     log_dir: PathT
 
     def __post_init__(self):
@@ -186,7 +181,7 @@ class AestheticScorer:
             return (result / np.linalg.norm(result)).squeeze(axis=0)
 
     def score(self, image: Image.Image) -> float:
-        if self.scorer_method.startswith("cafe"):
+        if self.cfg.scorer_method.startswith("cafe"):
             # TODO: this returns also a 'label', what can we do with it?
             # TODO: does it make sense to use top_k != 1?
             data = self.judge(image, top_k=1)

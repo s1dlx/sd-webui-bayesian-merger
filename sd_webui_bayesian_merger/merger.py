@@ -38,12 +38,6 @@ KEY_POSITION_IDS = ".".join(
 @dataclass
 class Merger:
     cfg: DictConfig
-    # model_a: PathT
-    # model_b: PathT
-    # device: str
-    # skip_position_ids: int
-    # best_format: str
-    # best_precision: str
 
     def __post_init__(self):
         self.model_a = Path(self.cfg.model_a)
