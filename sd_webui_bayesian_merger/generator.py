@@ -4,10 +4,9 @@ from typing import List, Dict, Tuple
 
 import io
 import base64
-import requests
 
+import requests
 from PIL import Image
-from omegaconf import OmegaConf
 
 
 @dataclass
@@ -18,7 +17,7 @@ class Generator:
     def generate(self, payload: Dict) -> List[Image.Image]:
         r = requests.post(
             url=f"{self.url}/sdapi/v1/txt2img",
-            json= OmegaConf.to_container(payload),
+            json=payload,
         )
         r.raise_for_status()
 

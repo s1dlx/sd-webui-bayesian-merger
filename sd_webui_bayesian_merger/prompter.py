@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
 
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 
 PathT = os.PathLike
@@ -55,9 +55,12 @@ def unpack_cargo(cargo: DictConfig) -> Tuple[Dict, Dict]:
     for k, v in cargo.items():
         if k == "cargo":
             for p_name, p in v.items():
-                payloads[p_name] = OmegaConf.to_container(p) 
+                payloads[p_name] = OmegaConf.to_container(p)
         else:
-            defaults[k] = v
+            if isinstance(v, DictConfig) or isinstance(v, ListConfig):
+                defaults[k] = OmegaConf.to_container(v)
+            else:
+                defaults[k] = v
     return defaults, payloads
 
 

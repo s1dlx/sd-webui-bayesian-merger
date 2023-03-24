@@ -1,17 +1,16 @@
 from pathlib import Path
 
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 import hydra
 
 from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser
 from sd_webui_bayesian_merger.artist import draw_unet
-from sd_webui_bayesian_merger.prompter import Prompter
 
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: DictConfig) -> None:
-    if cfg['scorer_method'] == 'laion':
-        cfg['scorer_model_name'] = "laion-sac-logos-ava-v2.safetensors"
+    if cfg["scorer_method"] == "laion":
+        cfg["scorer_model_name"] = "laion-sac-logos-ava-v2.safetensors"
     elif cfg["scorer_method"] == "aes":
         cfg["scorer_model_name"] = "aes-B32-v0.safetensors"
     elif cfg["scorer_method"].startswith("cafe"):
@@ -28,9 +27,9 @@ def main(cfg: DictConfig) -> None:
         )
         return
 
-    if cfg['optimiser'] == "bayes":
+    if cfg["optimiser"] == "bayes":
         cls = BayesOptimiser
-    elif cfg['optimiser'] == "tpe":
+    elif cfg["optimiser"] == "tpe":
         cls = TPEOptimiser
     else:
         exit(f"Invalid optimiser:{cfg['optimiser']}")
@@ -42,4 +41,3 @@ def main(cfg: DictConfig) -> None:
 
 if __name__ == "__main__":
     main()
-

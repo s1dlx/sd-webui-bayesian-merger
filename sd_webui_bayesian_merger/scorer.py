@@ -77,7 +77,10 @@ class AestheticScorer:
     log_dir: PathT
 
     def __post_init__(self):
-        self.model_path = Path(self.cfg.scorer_model_dir, self.cfg.scorer_model_name,)
+        self.model_path = Path(
+            self.cfg.scorer_model_dir,
+            self.cfg.scorer_model_name,
+        )
         self.get_model()
         if not self.cfg.scorer_method.startswith("cafe"):
             self.load_model()
@@ -156,7 +159,9 @@ class AestheticScorer:
             )
         elif self.cfg.scorer_method in ["aes"]:
             self.clip_model = (
-                CLIPModel.from_pretrained(self.clip_model_name).to(self.cfg.device).eval()
+                CLIPModel.from_pretrained(self.clip_model_name)
+                .to(self.cfg.device)
+                .eval()
             )
             self.clip_preprocess = CLIPProcessor.from_pretrained(self.clip_model_name)
 
