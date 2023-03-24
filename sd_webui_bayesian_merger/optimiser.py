@@ -48,9 +48,11 @@ class Optimiser:
         run_name = "-".join([h, e, l])
         self.log_name = f"{run_name}-{self.cfg.optimiser}"
         self.logger = JSONLogger(
-            path=Path(
-                HydraConfig.get().runtime.output_dir,
-                f"{self.log_name}.json",
+            path=str(
+                Path(
+                    HydraConfig.get().runtime.output_dir,
+                    f"{self.log_name}.json",
+                )
             )
         )
 
@@ -130,10 +132,16 @@ class Optimiser:
         best_weights: List[float],
         minimise: bool,
     ) -> None:
-        img_path = Path(HydraConfig.get().runtime.output_dir, f"{self.log_name}.png",)
+        img_path = Path(
+            HydraConfig.get().runtime.output_dir,
+            f"{self.log_name}.png",
+        )
         convergence_plot(scores, figname=img_path, minimise=minimise)
 
-        unet_path = Path(HydraConfig.get().runtime.output_dir, f"{self.log_name}-unet.png",)
+        unet_path = Path(
+            HydraConfig.get().runtime.output_dir,
+            f"{self.log_name}-unet.png",
+        )
         print("\nBest run:")
         print("best base_alpha:")
         print(best_base_alpha)
