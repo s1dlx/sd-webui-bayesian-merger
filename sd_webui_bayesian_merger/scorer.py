@@ -14,6 +14,7 @@ import torch.nn as nn
 import clip
 import safetensors
 import numpy as np
+import hydra
 
 PathT = os.PathLike
 
@@ -80,7 +81,7 @@ class AestheticScorer:
             self.load_model()
 
         if self.cfg.save_imgs:
-            self.imgs_dir = Path("imgs")
+            self.imgs_dir = Path(hydra.runtime.output_dir, "imgs")
             if not self.imgs_dir.exists():
                 self.imgs_dir.mkdir()
 
