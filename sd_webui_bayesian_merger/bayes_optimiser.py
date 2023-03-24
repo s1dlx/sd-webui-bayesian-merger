@@ -22,14 +22,18 @@ class BayesOptimiser(Optimiser):
         self.optimizer.subscribe(Events.OPTIMIZATION_STEP, self.logger)
 
         self.optimizer.maximize(
-            init_points=self.init_points,
-            n_iter=self.n_iters,
+            init_points=self.cfg.init_points,
+            n_iter=self.cfg.n_iters,
         )
 
         # clean up and remove the last merge
-        self._cleanup()
+        try:
+            self.cleanup()
+        except FileNotFoundError:
+            return
 
     def postprocess(self) -> None:
+        print("\nRecap!")
         for i, res in enumerate(self.optimizer.res):
             print(f"Iteration {i}: \n\t{res}")
 

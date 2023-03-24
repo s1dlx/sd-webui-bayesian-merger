@@ -1,7 +1,5 @@
 import os
 from abc import abstractmethod
-from datetime import datetime
-
 from pathlib import Path
 from typing import Dict, List, Tuple
 from dataclasses import dataclass
@@ -11,8 +9,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from tqdm import tqdm
-
+from omegaconf import DictConfig
 from bayes_opt.logger import JSONLogger
+from hydra.core.hydra_config import HydraConfig
 
 from sd_webui_bayesian_merger.generator import Generator
 from sd_webui_bayesian_merger.prompter import Prompter
@@ -25,93 +24,47 @@ PathT = os.PathLike
 
 @dataclass
 class Optimiser:
-    url: str
-    batch_size: int
-    model_a: PathT
-    model_b: PathT
-    device: str
-    payloads_dir: PathT
-    wildcards_dir: PathT
-    scorer_model_dir: PathT
-    init_points: int
-    n_iters: int
-    skip_position_ids: int
-    best_format: str
-    best_precision: int
-    save_best: bool
-    method: str
-    scorer_method: str
-    scorer_model_name: str
-    save_imgs: bool
+    cfg: DictConfig
+    best_rolling_score: float = 0.0
 
-    def __post_init__(self):
-        self.generator = Generator(self.url, self.batch_size)
-        self.init_merger()
+    def __post_init__(self) -> None:
+        self.generator = Generator(self.cfg.url, self.cfg.batch_size)
+        self.merger = Merger(self.cfg)
         self.start_logging()
-        self.init_scorer()
-        self.prompter = Prompter(self.payloads_dir, self.wildcards_dir)
+        self.scorer = AestheticScorer(self.cfg)
+        self.prompter = Prompter(self.cfg)
         self.iteration = 0
+        self._clean = True
 
-    def init_merger(self):
-        self.merger = Merger(
-            self.model_a,
-            self.model_b,
-            self.device,
-            self.skip_position_ids,
-            self.best_format,
-            self.best_precision,
-        )
-
-    def init_scorer(self):
-        if self.scorer_method in [
-            "chad",
-            "laion",
-            "aes",
-            "cafe_aesthetic",
-            "cafe_style",
-            "cafe_waifu",
-        ]:
-            self.scorer = AestheticScorer(
-                self.scorer_method,
-                self.scorer_model_dir,
-                self.scorer_model_name,
-                self.device,
-                self.save_imgs,
-                self.log_dir,
-            )
+    def cleanup(self) -> None:
+        if self._clean:
+            # clean up and remove the last merge
+            self.merger.remove_previous_ckpt(self.iteration)
         else:
-            raise NotImplementedError(
-                f"{self.scorer_method} scorer not implemented",
-            )
+            self._clean = True
 
-    def _cleanup(self):
-        # clean up and remove the last merge
-        self.merger.remove_previous_ckpt(self.iteration + 1)
-
-    def start_logging(self):
-        now = datetime.now()
-        str_now = datetime.strftime(now, "%Y-%m-%d-%H-%M-%S")
+    def start_logging(self) -> None:
         h, e, l, _ = self.merger.output_file.stem.split("-")
-        dir_name = "-".join([h, e, l])
-        self.log_name = f"{dir_name}-{self.method}"
-        self.log_dir = Path(
-            "logs",
-            f"{self.log_name}-{str_now}",
+        run_name = "-".join([h, e, l])
+        self.log_name = f"{run_name}-{self.cfg.optimiser}"
+        self.logger = JSONLogger(
+            path=str(
+                Path(
+                    HydraConfig.get().runtime.output_dir,
+                    f"{self.log_name}.json",
+                )
+            )
         )
-        if not self.log_dir.exists():
-            self.log_dir.mkdir()
-        log_path = Path(self.log_dir, "log.json")
-        self.logger = JSONLogger(path=str(log_path))
 
     def sd_target_function(self, **params):
         self.iteration += 1
 
         if self.iteration == 1:
             print("\n" + "-" * 10 + " warmup " + "-" * 10 + ">")
-        elif self.iteration == self.init_points + 1:
+        elif self.iteration == self.cfg.init_points + 1:
             print("\n" + "-" * 10 + " optimisation " + "-" * 10 + ">")
 
-        it_type = "warmup" if self.iteration <= self.init_points else "optimisation"
+        it_type = "warmup" if self.iteration <= self.cfg.init_points else "optimisation"
         print(f"\n{it_type} - Iteration: {self.iteration}")
 
         weights = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
@@ -122,9 +75,8 @@ class Optimiser:
             weights,
             base_alpha,
         )
-        self.merger.remove_previous_ckpt(self.iteration)
+        self.cleanup()
 
-        # TODO: is this forcing the model load despite the same name?
         self.generator.switch_model(self.merger.model_out_name)
 
         # generate images
@@ -136,7 +88,7 @@ class Optimiser:
             desc="Batches generation",
         ):
             images.extend(self.generator.batch_generate(payload))
-            gen_paths.extend([paths[i]] * self.batch_size)
+            gen_paths.extend([paths[i]] * self.cfg.batch_size * payload["batch_size"])
 
         # score images
         print("\nScoring")
@@ -152,7 +104,16 @@ class Optimiser:
 
         print(f"\nrun base_alpha: {base_alpha}")
         print("run weights:")
-        print(",".join(list(map(str, weights))))
+        weights_str = ",".join(list(map(str, weights)))
+        print(weights_str)
+
+        if avg_score > self.best_rolling_score:
+            self.best_rolling_score = avg_score
+            print("\n NEW BEST!")
+            save_best_log(base_alpha, weights_str)
+            print("Saving best model merge")
+            self.merger.keep_best_ckpt()
+            self._clean = False
 
         return avg_score
 
@@ -172,31 +133,44 @@ class Optimiser:
         minimise: bool,
     ) -> None:
         img_path = Path(
-            self.log_dir,
+            HydraConfig.get().runtime.output_dir,
             f"{self.log_name}.png",
         )
         convergence_plot(scores, figname=img_path, minimise=minimise)
 
         unet_path = Path(
-            self.log_dir,
+            HydraConfig.get().runtime.output_dir,
             f"{self.log_name}-unet.png",
         )
+        print("\n" + "-" * 10 + "> Done!")
         print("\nBest run:")
         print("best base_alpha:")
         print(best_base_alpha)
         print("\nbest weights:")
-        print(",".join(list(map(str, best_weights))))
+        best_weights_str = ",".join(list(map(str, best_weights)))
+        print(best_weights_str)
+        save_best_log(best_base_alpha, best_weights_str)
         draw_unet(
             best_base_alpha,
             best_weights,
-            model_a=Path(self.model_a).stem,
-            model_b=Path(self.model_b).stem,
+            model_a=Path(self.cfg.model_a).stem,
+            model_b=Path(self.cfg.model_b).stem,
             figname=unet_path,
         )
 
-        if self.save_best:
+        if self.cfg.save_best:
             print(f"Saving best merge: {self.merger.best_output_file}")
             self.merger.merge(best_weights, best_base_alpha, best=True)
+
+
+def save_best_log(alpha, weights):
+    print("Saving best.log")
+    with open(
+        Path(HydraConfig.get().runtime.output_dir, "best.log"),
+        "w",
+        encoding="utf-8",
+    ) as f:
+        f.write(f"{alpha}\n\n{weights}")
 
 
 def load_log(log: PathT) -> List[Dict]:
@@ -243,10 +217,7 @@ def convergence_plot(
 
     plt.plot(scores)
 
-    if minimise:
-        star_i, star_score = minwhere(scores)
-    else:
-        star_i, star_score = maxwhere(scores)
+    star_i, star_score = minwhere(scores) if minimise else maxwhere(scores)
     plt.plot(star_i, star_score, "or")
 
     plt.xlabel("iterations")
@@ -259,7 +230,6 @@ def convergence_plot(
     sns.despine()
 
     if figname:
-        figname.parent.mkdir(exist_ok=True)
         plt.title(figname.stem)
         print("Saving fig to:", figname)
         plt.savefig(figname)
