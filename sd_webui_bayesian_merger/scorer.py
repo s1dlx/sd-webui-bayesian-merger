@@ -81,7 +81,7 @@ class AestheticScorer:
             self.load_model()
 
         if self.cfg.save_imgs:
-            self.imgs_dir = Path(self.log_dir, "imgs")
+            self.imgs_dir = Path("imgs")
             if not self.imgs_dir.exists():
                 self.imgs_dir.mkdir()
 

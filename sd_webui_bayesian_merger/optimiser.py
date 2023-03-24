@@ -39,19 +39,10 @@ class Optimiser:
         self.merger.remove_previous_ckpt(self.iteration + 1)
 
     def start_logging(self) -> None:
-        now = datetime.now()
-        str_now = datetime.strftime(now, "%Y-%m-%d-%H-%M-%S")
         h, e, l, _ = self.merger.output_file.stem.split("-")
-        dir_name = "-".join([h, e, l])
-        self.log_name = f"{dir_name}-{self.cfg.optimiser}"
-        self.log_dir = Path(
-            "logs",
-            f"{self.log_name}-{str_now}",
-        )
-        if not self.log_dir.exists():
-            self.log_dir.mkdir()
-        log_path = Path(self.log_dir, "log.json")
-        self.logger = JSONLogger(path=str(log_path))
+        run_name = "-".join([h, e, l])
+        self.log_name = f"{run_name}-{self.cfg.optimiser}"
+        self.logger = JSONLogger(path=f"{self.log_name}.json")
 
     def sd_target_function(self, **params):
         self.iteration += 1
@@ -121,16 +112,11 @@ class Optimiser:
         best_weights: List[float],
         minimise: bool,
     ) -> None:
-        img_path = Path(
-            self.log_dir,
-            f"{self.log_name}.png",
-        )
+
+        img_path = f"{self.log_name}.png"
         convergence_plot(scores, figname=img_path, minimise=minimise)
 
-        unet_path = Path(
-            self.log_dir,
-            f"{self.log_name}-unet.png",
-        )
+        unet_path = f"{self.log_name}-unet.png"
         print("\nBest run:")
         print("best base_alpha:")
         print(best_base_alpha)

@@ -2,6 +2,10 @@ defaults:
   - _self_
   - payloads: cargo
 
+hydra:
+  run:
+    dir: logs/${now:%Y-%m-%d_%H-%M-%S}
+
 url: http://127.0.0.1:7860
 device: cpu
 
