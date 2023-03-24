@@ -142,6 +142,7 @@ class Optimiser:
             HydraConfig.get().runtime.output_dir,
             f"{self.log_name}-unet.png",
         )
+        print("\n" + "-" * 10 + "> Done!")
         print("\nBest run:")
         print("best base_alpha:")
         print(best_base_alpha)

@@ -41,6 +41,7 @@ class TPEOptimiser(Optimiser):
             return
 
     def postprocess(self) -> None:
+        print("\nRecap!")
         scores = []
         for i, res in enumerate(self.trials.losses()):
             print(f"Iteration {i} loss: \n\t{res}")

@@ -33,6 +33,7 @@ class BayesOptimiser(Optimiser):
             return
 
     def postprocess(self) -> None:
+        print("\nRecap!")
         for i, res in enumerate(self.optimizer.res):
             print(f"Iteration {i}: \n\t{res}")
 
