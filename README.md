@@ -26,7 +26,7 @@ At the end of the exploitation phase, the set of weights scoring the highest sco
 
 ## OK, How Do I Use It In Practice?
 
-Head to the [wiki](https://github.com/s1dlx/sd-webui-bayesian-merger/wiki/Bayesian-Merger-Wiki) for all the instructions to get you started.
+Head to the [wiki](https://github.com/s1dlx/sd-webui-bayesian-merger/wiki/Home) for all the instructions to get you started.
 
 ### FAQ
 
