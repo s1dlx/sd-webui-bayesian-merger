@@ -1,0 +1,35 @@
+defaults:
+  - _self_
+  - payloads: cargo
+
+run_name: ${optimiser}_${scorer_method}
+hydra:
+  run:
+    dir: logs/${now:%Y-%m-%d_%H-%M-%S}_${run_name}
+
+url: http://127.0.0.1:7860
+device: cpu
+
+wildcards_dir: path/to/wildcards/folder
+scorer_model_dir: path/to/scorer/models/folder
+
+model_a: path/to/model_a/file
+model_b: path/to/model_b/file
+skip_position_ids: 0
+
+batch_size: 1
+optimiser: bayes # tpe
+init_points: 1
+n_iters: 1
+
+save_imgs: False
+
+scorer_method: chad # laion, aes, cafe_aesthetic, cafe_style, cafe_waifu
+scorer_model_name: sac+logos+ava1-l14-linearMSE.pth # ava+logos-l14-linearMSE.pth, ava+logos-l14-reluMSE.pth
+
+save_best: False
+best_format: safetensors # ckpt
+best_precision: 16 # 32
+
+draw_unet_weights: False
+draw_unet_base_alpha: False

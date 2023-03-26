@@ -1,0 +1,8 @@
+payloadname:
+  prompt: "your prompt, even with __wildcard__"
+  neg_prompt: "your negative prompt"
+  steps: 20
+  cfg: 7
+  width: 512
+  height: 512
+  sampler_name: "Euler a"

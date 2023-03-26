@@ -2,17 +2,17 @@
 # bbc-mc/sdweb-merge-block-weighted-gui/scripts/mbw/merge_block_weighted.py
 
 import os
+import re
 
 from dataclasses import dataclass
 from typing import List
 from pathlib import Path
 
-import re
-
 import torch
 import safetensors.torch
 
 from tqdm import tqdm
+from omegaconf import DictConfig
 
 from sd_webui_bayesian_merger.model import SDModel
 
@@ -37,16 +37,11 @@ KEY_POSITION_IDS = ".".join(
 
 @dataclass
 class Merger:
-    model_a: PathT
-    model_b: PathT
-    device: str
-    skip_position_ids: int
-    best_format: str
-    best_precision: str
+    cfg: DictConfig
 
     def __post_init__(self):
-        self.model_a = Path(self.model_a)
-        self.model_b = Path(self.model_b)
+        self.model_a = Path(self.cfg.model_a)
+        self.model_b = Path(self.cfg.model_b)
         self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}"
         self.create_model_out_name(0)
         self.create_best_model_out_name()
@@ -61,16 +56,21 @@ class Merger:
     def create_best_model_out_name(self):
         model_out_name = self.model_name_suffix
         model_out_name += "-best"
-        model_out_name += f"-{self.best_precision}bit"
-        model_out_name += f".{self.best_format}"
+        model_out_name += f"-{self.cfg.best_precision}bit"
+        model_out_name += f".{self.cfg.best_format}"
         self.best_output_file = Path(self.model_a.parent, model_out_name)
 
     def remove_previous_ckpt(self, current_it: int) -> None:
-        if current_it > 1:
+        if current_it > 1 and self.output_file.exists():
             self.create_model_out_name(current_it - 1)
             print(f"Removing {self.output_file}")
             self.output_file.unlink()
         self.create_model_out_name(current_it)
+
+    def keep_best_ckpt(self) -> None:
+        if self.best_output_file.exists():
+            self.bebest_output_file.unlink()
+        self.output_file.rename(self.best_output_file)
 
     def merge(
         self,
@@ -81,8 +81,8 @@ class Merger:
         if len(weights) != NUM_TOTAL_BLOCKS:
             raise ValueError(f"weights value must be {NUM_TOTAL_BLOCKS}")
 
-        theta_0 = SDModel(self.model_a, self.device).load_model()
-        theta_1 = SDModel(self.model_b, self.device).load_model()
+        theta_0 = SDModel(self.model_a, self.cfg.device).load_model()
+        theta_1 = SDModel(self.model_b, self.cfg.device).load_model()
 
         re_inp = re.compile(r"\.input_blocks\.(\d+)\.")  # 12
         re_mid = re.compile(r"\.middle_block\.(\d+)\.")  # 1
@@ -90,8 +90,8 @@ class Merger:
 
         for key in tqdm(theta_0.keys(), desc="merging 1/2"):
             if "model" in key and key in theta_1:
-                if KEY_POSITION_IDS in key and self.skip_position_ids in [1, 2]:
-                    if self.skip_position_ids == 2:
+                if KEY_POSITION_IDS in key and self.cfg.skip_position_ids in [1, 2]:
+                    if self.cfg.skip_position_ids == 2:
                         theta_0[key] = torch.tensor(
                             [list(range(MAX_TOKENS))], dtype=torch.int64
                         )
@@ -121,24 +121,24 @@ class Merger:
                         c_alpha = weights[weight_index]
 
                 theta_0[key] = (1 - c_alpha) * theta_0[key] + c_alpha * theta_1[key]
-                if best and self.best_precision == "16":
+                if best and self.cfg.best_precision == "16":
                     theta_0[key] = theta_0[key].half()
 
         for key in tqdm(theta_1.keys(), desc="merging 2/2"):
             if "model" in key and key not in theta_0:
-                if KEY_POSITION_IDS in key and self.skip_position_ids in [1, 2]:
-                    if self.skip_position_ids == 2:
+                if KEY_POSITION_IDS in key and self.cfg.skip_position_ids in [1, 2]:
+                    if self.cfg.skip_position_ids == 2:
                         theta_1[key] = torch.tensor(
                             [list(range(MAX_TOKENS))], dtype=torch.int64
                         )
                     continue
                 theta_0.update({key: theta_1[key]})
-                if best and self.best_precision == "16":
+                if best and self.cfg.best_precision == "16":
                     theta_0[key] = theta_0[key].half()
 
         if best:
             print(f"Saving {self.best_output_file}")
-            if self.best_format == "safetensors":
+            if self.cfg.best_format == "safetensors":
                 safetensors.torch.save_file(
                     theta_0,
                     self.best_output_file,

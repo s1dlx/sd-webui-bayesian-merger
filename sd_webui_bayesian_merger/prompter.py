@@ -1,10 +1,12 @@
 import os
-from typing import Dict, List
-
 import random
-import yaml
 
 from pathlib import Path
+from typing import Dict, List, Tuple
+from dataclasses import dataclass
+
+from omegaconf import DictConfig, ListConfig, OmegaConf
+
 
 PathT = os.PathLike
 
@@ -40,75 +42,50 @@ class CardDealer:
         return "".join(chunks)
 
 
-def load_yaml(yaml_file: PathT) -> Dict:
-    with open(yaml_file, "r", encoding="utf-8") as f:
-        return yaml.safe_load(f)
-
-
-def check_payload(payload: Dict) -> Dict:
-    if "prompt" not in payload:
-        raise ValueError(f"{payload['path']} doesn't have a prompt")
-
-    # set defaults
-    # TODO: get default values from args
-    for k, v in zip(
-        [
-            "neg_prompt",
-            "seed",
-            "steps",
-            "cfg",
-            "width",
-            "height",
-            "sampler_name",
-        ],
-        [
-            "",
-            -1,
-            20,
-            7,
-            512,
-            512,
-            "Euler",
-        ],
-    ):
-        if k not in payload:
+def assemble_payload(defaults: Dict, payload: Dict) -> Dict:
+    for k, v in defaults.items():
+        if k not in payload.keys():
             payload[k] = v
-
     return payload
 
 
-class Prompter:
-    def __init__(self, payloads_dir: str, wildcards_dir: str):
-        self.find_payloads(payloads_dir)
-        self.load_payloads()
-        self.dealer = CardDealer(wildcards_dir)
-
-    def find_payloads(self, payloads_dir: str) -> None:
-        # TODO: allow for listing payloads instead of taking all of them
-        pdir = Path(payloads_dir)
-        if pdir.exists():
-            self.raw_payloads = {
-                p.stem: {"path": p}
-                for p in pdir.glob("*.yaml")
-                if ".tmpl.yaml" not in p.name
-            }
-
+def unpack_cargo(cargo: DictConfig) -> Tuple[Dict, Dict]:
+    defaults = {}
+    payloads = {}
+    for k, v in cargo.items():
+        if k == "cargo":
+            for p_name, p in v.items():
+                payloads[p_name] = OmegaConf.to_container(p)
+        elif isinstance(v, (DictConfig, ListConfig)):
+            defaults[k] = OmegaConf.to_container(v)
         else:
-            # TODO: pick a better error
-            raise ValueError("payloads directory not found!")
+            defaults[k] = v
+    return defaults, payloads
+
+
+@dataclass
+class Prompter:
+    cfg: DictConfig
+
+    def __post_init__(self):
+        self.load_payloads()
+        self.dealer = CardDealer(self.cfg.wildcards_dir)
 
     def load_payloads(self) -> None:
-        for payload_name, payload in self.raw_payloads.items():
-            raw_payload = load_yaml(payload["path"])
-            checked_payload = check_payload(raw_payload)
-            self.raw_payloads[payload_name].update(checked_payload)
+        self.raw_payloads = {}
+        defaults, payloads = unpack_cargo(self.cfg.payloads)
+        for payload_name, payload in payloads.items():
+            self.raw_payloads[payload_name] = assemble_payload(
+                defaults,
+                payload,
+            )
 
     def render_payloads(self) -> List[Dict]:
         payloads = []
         paths = []
-        for _, p in self.raw_payloads.items():
+        for p_name, p in self.raw_payloads.items():
             rendered_payload = p.copy()
             rendered_payload["prompt"] = self.dealer.replace_wildcards(p["prompt"])
-            paths.append(rendered_payload.pop("path"))
+            paths.append(p_name)
             payloads.append(rendered_payload)
         return payloads, paths
