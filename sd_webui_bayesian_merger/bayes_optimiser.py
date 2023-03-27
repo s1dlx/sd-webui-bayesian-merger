@@ -69,6 +69,9 @@ def parse_scores(iterations: List[Dict]) -> List[float]:
 def parse_params(params: Dict) -> Tuple[float, List[float]]:
     weights = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
     base_alpha = params["base_alpha"]
-    base_beta = params["base_beta"]
-    weights_beta = [params[f"block_{i}_beta"] for i in range(NUM_TOTAL_BLOCKS)]
+    if "base_beta" in params:
+        base_beta = params["base_beta"]
+        weights_beta = [params[f"block_{i}_beta"] for i in range(NUM_TOTAL_BLOCKS)]
+    else:
+        base_beta, weights_beta = None, None
     return base_alpha, weights, base_beta, weights_beta
