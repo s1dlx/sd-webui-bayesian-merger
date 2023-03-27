@@ -121,7 +121,7 @@ class Merger:
                         c_alpha = weights[weight_index]
 
                 theta_0[key] = (1 - c_alpha) * theta_0[key] + c_alpha * theta_1[key]
-                if best and self.cfg.best_precision == "16":
+                if not best or (best and self.cfg.best_precision == "16"):
                     theta_0[key] = theta_0[key].half()
 
         for key in tqdm(theta_1.keys(), desc="merging 2/2"):
@@ -133,7 +133,7 @@ class Merger:
                         )
                     continue
                 theta_0.update({key: theta_1[key]})
-                if best and self.cfg.best_precision == "16":
+                if not best or (best and self.cfg.best_precision == "16"):
                     theta_0[key] = theta_0[key].half()
 
         if best:
@@ -151,5 +151,5 @@ class Merger:
             safetensors.torch.save_file(
                 theta_0,
                 self.output_file,
-                metadata={"format": "pt"},
+                metadata={"format": "pt", "precision": "fp16"},
             )
