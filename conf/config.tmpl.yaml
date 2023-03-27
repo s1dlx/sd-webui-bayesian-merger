@@ -19,8 +19,9 @@ model_c: path/to/model_c/file
 skip_position_ids: 0
 merge_mode: weighted_sum  # weighted_sum (default), add_difference, sum_twice, triple_sum
 
-batch_size: 1
 optimiser: bayes # tpe
+bounds_transformer: False
+batch_size: 1
 init_points: 1
 n_iters: 1
 

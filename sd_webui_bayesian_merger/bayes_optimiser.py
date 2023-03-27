@@ -2,17 +2,23 @@ from typing import Dict, Tuple, List
 
 from bayes_opt import BayesianOptimization, Events
 
+from bayes_opt.domain_reduction import SequentialDomainReductionTransformer
+
 from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.optimiser import Optimiser
 
 
 class BayesOptimiser(Optimiser):
+    bounds_transformer = SequentialDomainReductionTransformer()
+
     def optimise(self) -> None:
         # TODO: what if we want to optimise only certain blocks?
         pbounds = {f"block_{i}": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
         pbounds["base_alpha"] = (0.0, 1.0)
-        if self.cfg.merge_mode in ['sum_twice', 'triple_sum']:
-            pbounds.update({f"block_{i}_beta": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)})
+        if self.cfg.merge_mode in ["sum_twice", "triple_sum"]:
+            pbounds.update(
+                {f"block_{i}_beta": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
+            )
             pbounds["base_beta"] = (0.0, 1.0)
 
         # TODO: fork bayesian-optimisation and add LHS
@@ -20,6 +26,9 @@ class BayesOptimiser(Optimiser):
             f=self.sd_target_function,
             pbounds=pbounds,
             random_state=1,
+            bounds_transformer=self.bounds_transformer
+            if self.cfg.bounds_transformer
+            else None,
         )
 
         self.optimizer.subscribe(Events.OPTIMIZATION_STEP, self.logger)
