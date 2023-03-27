@@ -67,14 +67,17 @@ class Optimiser:
         it_type = "warmup" if self.iteration <= self.cfg.init_points else "optimisation"
         print(f"\n{it_type} - Iteration: {self.iteration}")
 
-        weights = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
+        weights_alpha = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
         base_alpha = params["base_alpha"]
+        if 'base_beta' in params:
+            base_beta = params['base_beta']
+            weights_beta = [params[f'block_{i}_beta'] for i in range(NUM_TOTAL_BLOCKS)]
+        else:
+            base_beta = None
+            weights_beta = None
 
         self.merger.create_model_out_name(self.iteration)
-        self.merger.merge(
-            weights,
-            base_alpha,
-        )
+        self.merger.merge(weights_alpha, weights_beta, base_alpha, base_beta)
         self.cleanup()
 
         self.generator.switch_model(self.merger.model_out_name)

@@ -15,7 +15,9 @@ scorer_model_dir: path/to/scorer/models/folder
 
 model_a: path/to/model_a/file
 model_b: path/to/model_b/file
+model_c: path/to/model_c/file
 skip_position_ids: 0
+merge_mode: weighted_sum  # weighted_sum (default), add_difference, sum_twice, triple_sum
 
 batch_size: 1
 optimiser: bayes # tpe

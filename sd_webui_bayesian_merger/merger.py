@@ -42,6 +42,9 @@ class Merger:
     def __post_init__(self):
         self.model_a = Path(self.cfg.model_a)
         self.model_b = Path(self.cfg.model_b)
+        self.model_c = Path(self.cfg.model_c)
+        if not self.model_c.exists():
+            self.model_c = None
         self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}"
         self.create_model_out_name(0)
         self.create_best_model_out_name()
@@ -78,11 +81,14 @@ class Merger:
     def merge_key(
         self,
         key: str,
-        weights: List[float],
+        weights_alpha: List[float],
+        weights_beta: List[float],
         base_alpha: float,
+        base_beta: float,
         best: bool,
         theta_0: Dict,
         theta_1: Dict,
+        theta_2: Dict,
     ) -> Tuple[str, Dict]:
         if "model" not in key or key not in theta_1:
             return
@@ -97,6 +103,7 @@ class Merger:
         re_mid = re.compile(r"\.middle_block\.(\d+)\.")  # 1
         re_out = re.compile(r"\.output_blocks\.(\d+)\.")  # 12
         c_alpha = base_alpha
+        c_beta = base_beta
         if "model.diffusion_model." in key:
             weight_index = -1
 
@@ -115,30 +122,68 @@ class Merger:
                 raise ValueError(f"illegal block index {key}")
 
             if weight_index >= 0:
-                c_alpha = weights[weight_index]
+                c_alpha = weights_alpha[weight_index]
+                if weights_beta:
+                    c_beta = weights_beta[weight_index]
 
-        merged = (1 - c_alpha) * theta_0[key] + c_alpha * theta_1[key]
+        merged = self.merge_block(
+            c_alpha,
+            c_beta,
+            theta_0[key],
+            theta_1[key],
+            theta_2[key] if self.cfg.merge_mode != "weighted_sum" else None,
+            key in theta_2 if self.cfg.merge_mode != "weighted_sum" else None,
+        )
+
         if not best or self.cfg.best_precision == "16":
             merged = merged.half()
 
         return (key, merged)
 
+    def merge_block(self, alpha, beta, t0, t1, t2, k_in_t2):
+        if self.cfg.merge_mode == "weighted_sum":
+            return (1 - alpha) * t0 + alpha * t1
+        elif self.cfg.merge_mode == "add_difference":
+            if k_in_t2:
+                return t0 + alpha * (t1 - t2)
+            else:
+                return t0
+        elif self.cfg.merge_mode == "sum_twice":
+            merged = (1 - alpha) * t0 + alpha * t1
+            return (1 - beta) * merged + beta * t2
+        elif self.cfg.merge_mode == "triple_sum":
+            return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
+
     def merge(
         self,
-        weights: List[float],
+        weights_alpha: List[float],
+        weights_beta: List[float],
         base_alpha: float,
+        base_beta: float,
         best: bool = False,
     ) -> None:
-        if len(weights) != NUM_TOTAL_BLOCKS:
+        if len(weights_alpha) != NUM_TOTAL_BLOCKS:
             raise ValueError(f"weights value must be {NUM_TOTAL_BLOCKS}")
 
         theta_0 = self.load_sd_model(self.model_a)
         theta_1 = self.load_sd_model(self.model_b)
+        if self.model_c:
+            theta_2 = self.load_sd_model(self.model_c)
+        else:
+            theta_2 = None
 
         merged_model = {}
         for key in tqdm(theta_0.keys(), desc="merging 1/1"):
             if result := self.merge_key(
-                key, weights, base_alpha, best, theta_0, theta_1
+                key,
+                weights_alpha,
+                weights_beta,
+                base_alpha,
+                base_beta,
+                best,
+                theta_0,
+                theta_1,
+                theta_2,
             ):
                 merged_model[key] = result[1]
 
