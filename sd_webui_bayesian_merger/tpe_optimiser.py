@@ -23,7 +23,10 @@ class TPEOptimiser(Optimiser):
         }
         space["base_alpha"] = hp.uniform("base_alpha", 0.0, 1.0)
         if self.cfg.merge_mode in ["sum_twice", "triple_sum"]:
-            space |= {f"block_{i}_beta": hp.uniform(f"block{i}_beta", 0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
+            space |= {
+                f"block_{i}_beta": hp.uniform(f"block{i}_beta", 0.0, 1.0)
+                for i in range(NUM_TOTAL_BLOCKS)
+            }
             space["base_beta"] = hp.uniform("base_beta", 0.0, 1.0)
 
         self.trials = Trials()

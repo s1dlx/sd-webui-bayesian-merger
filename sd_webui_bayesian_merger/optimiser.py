@@ -166,8 +166,13 @@ class Optimiser:
             best_weights_str_beta = ",".join(list(map(str, best_weights_beta)))
             print(best_weights_str_beta)
         else:
-            best_weights_str_beta = ''
-        save_best_log(best_base_alpha, best_weights_str, best_base_beta, best_weights_str_beta,)
+            best_weights_str_beta = ""
+        save_best_log(
+            best_base_alpha,
+            best_weights_str,
+            best_base_beta,
+            best_weights_str_beta,
+        )
         draw_unet(
             best_base_alpha,
             best_weights_alpha,
@@ -190,7 +195,14 @@ class Optimiser:
 
         if self.cfg.save_best:
             print(f"Saving best merge: {self.merger.best_output_file}")
-            self.merger.merge(best_weights_alpha, best_weights_beta, best_base_alpha, best_base_beta, best=True,)
+            self.merger.merge(
+                best_weights_alpha,
+                best_weights_beta,
+                best_base_alpha,
+                best_base_beta,
+                best=True,
+            )
+
 
 def save_best_log(alpha, weights, beta, weights_beta):
     print("Saving best.log")

@@ -49,7 +49,7 @@ class BayesOptimiser(Optimiser):
 
         scores = parse_scores(self.optimizer.res)
         best_base_alpha, best_weights, best_base_beta, best_beta_weights = parse_params(
-            self.optimizer.max["params"]
+            self.optimizer.max["params"],
         )
 
         self.plot_and_save(
@@ -69,9 +69,9 @@ def parse_scores(iterations: List[Dict]) -> List[float]:
 def parse_params(params: Dict) -> Tuple[float, List[float]]:
     weights = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
     base_alpha = params["base_alpha"]
-    if "base_beta" in params:
+    try:
         base_beta = params["base_beta"]
         weights_beta = [params[f"block_{i}_beta"] for i in range(NUM_TOTAL_BLOCKS)]
-    else:
+    except KeyError:
         base_beta, weights_beta = None, None
     return base_alpha, weights, base_beta, weights_beta
