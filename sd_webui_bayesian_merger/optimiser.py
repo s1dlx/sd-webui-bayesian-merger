@@ -157,14 +157,14 @@ class Optimiser:
         print("\nBest run:")
         print("best base_alpha:")
         print(best_base_alpha)
-        print("\nbest weights:")
+        print("\nbest weights alpha:")
         best_weights_str = ",".join(list(map(str, best_weights_alpha)))
         print(best_weights_str)
 
         if self.has_beta:
             print("\nbest base_beta:")
             print(best_base_beta)
-            print("\nbest weights:")
+            print("\nbest weights beta:")
             best_weights_str_beta = ",".join(list(map(str, best_weights_beta)))
             print(best_weights_str_beta)
         else:
