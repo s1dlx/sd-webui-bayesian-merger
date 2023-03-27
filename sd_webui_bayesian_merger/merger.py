@@ -45,7 +45,9 @@ class Merger:
         self.model_c = Path(self.cfg.model_c)
         if not self.model_c.exists():
             self.model_c = None
-        self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}"
+            self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}"
+        else:
+            self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}-{self.model_c.stem}"
         self.create_model_out_name(0)
         self.create_best_model_out_name()
 
