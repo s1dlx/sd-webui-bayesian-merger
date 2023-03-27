@@ -69,7 +69,7 @@ class Optimiser:
 
         weights_alpha = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
         base_alpha = params["base_alpha"]
-        if 'base_beta' in params:
+        if self.cfg.merge_mode in ['sum_twice', 'triple_sum']:
             base_beta = params['base_beta']
             weights_beta = [params[f'block_{i}_beta'] for i in range(NUM_TOTAL_BLOCKS)]
         else:
