@@ -137,7 +137,9 @@ class Optimiser:
         self,
         scores: List[float],
         best_base_alpha: float,
-        best_weights: List[float],
+        best_weights_alpha: List[float],
+        best_base_beta: float,
+        best_weights_beta: List[float],
         minimise: bool,
     ) -> None:
         img_path = Path(
@@ -155,21 +157,40 @@ class Optimiser:
         print("best base_alpha:")
         print(best_base_alpha)
         print("\nbest weights:")
-        best_weights_str = ",".join(list(map(str, best_weights)))
+        best_weights_str = ",".join(list(map(str, best_weights_alpha)))
         print(best_weights_str)
-        save_best_log(best_base_alpha, best_weights_str)
+        if best_base_beta:
+            print("\nbest base_beta:")
+            print(best_base_beta)
+            print("\nbest weights:")
+            best_weights_str_beta = ",".join(list(map(str, best_weights_beta)))
+            print(best_weights_str_beta)
+        else:
+            best_weights_str_beta = ''
+        save_best_log(best_base_alpha, best_weights_str, best_base_beta, best_weights_str_beta,)
         draw_unet(
             best_base_alpha,
-            best_weights,
+            best_weights_alpha,
             model_a=Path(self.cfg.model_a).stem,
             model_b=Path(self.cfg.model_b).stem,
             figname=unet_path,
         )
+        if best_base_beta:
+            unet_path_beta = Path(
+                HydraConfig.get().runtime.output_dir,
+                f"{self.log_name}-unet_beta.png",
+            )
+            draw_unet(
+                best_base_beta,
+                best_weights_beta,
+                model_a=Path(self.cfg.model_a).stem,
+                model_b=Path(self.cfg.model_b).stem,
+                figname=unet_path_beta,
+            )
 
         if self.cfg.save_best:
             print(f"Saving best merge: {self.merger.best_output_file}")
-            self.merger.merge(best_weights, best_base_alpha, best=True)
-
+            self.merger.merge(best_weights_alpha, best_weights_beta, best_base_alpha, best_base_beta, best=True,)
 
 def save_best_log(alpha, weights, beta, weights_beta):
     print("Saving best.log")
