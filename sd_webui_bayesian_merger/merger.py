@@ -47,7 +47,9 @@ class Merger:
             self.model_c = None
             self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}"
         else:
-            self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}-{self.model_c.stem}"
+            self.model_name_suffix = (
+                f"bbwm-{self.model_a.stem}-{self.model_b.stem}-{self.model_c.stem}"
+            )
         self.create_model_out_name(0)
         self.create_best_model_out_name()
 
@@ -142,19 +144,24 @@ class Merger:
 
         return (key, merged)
 
-    def merge_block(self, alpha, beta, t0, t1, t2, k_in_t2):
-        if self.cfg.merge_mode == "weighted_sum":
-            return (1 - alpha) * t0 + alpha * t1
-        elif self.cfg.merge_mode == "add_difference":
-            if k_in_t2:
-                return t0 + alpha * (t1 - t2)
-            else:
-                return t0
+    def merge_block(
+        self,
+        alpha: float,
+        beta: float,
+        t0: Dict,
+        t1: Dict,
+        t2: Dict,
+        k_in_t2: bool,
+    ) -> Dict:
+        if self.cfg.merge_mode == "add_difference":
+            return t0 + alpha * (t1 - t2) if k_in_t2 else t0
         elif self.cfg.merge_mode == "sum_twice":
             merged = (1 - alpha) * t0 + alpha * t1
             return (1 - beta) * merged + beta * t2
         elif self.cfg.merge_mode == "triple_sum":
             return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
+        elif self.cfg.merge_mode == "weighted_sum":
+            return (1 - alpha) * t0 + alpha * t1
 
     def merge(
         self,
@@ -169,11 +176,7 @@ class Merger:
 
         theta_0 = self.load_sd_model(self.model_a)
         theta_1 = self.load_sd_model(self.model_b)
-        if self.model_c:
-            theta_2 = self.load_sd_model(self.model_c)
-        else:
-            theta_2 = None
-
+        theta_2 = self.load_sd_model(self.model_c) if self.model_c else None
         merged_model = {}
         for key in tqdm(theta_0.keys(), desc="merging 1/1"):
             if result := self.merge_key(
