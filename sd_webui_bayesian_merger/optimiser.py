@@ -33,6 +33,7 @@ class Optimiser:
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
         self._clean = True
+        self.has_beta = self.cfg.merge_mode in ["sum_twice", "triple_sum"]
 
     def cleanup(self) -> None:
         if self._clean:
@@ -66,7 +67,7 @@ class Optimiser:
 
         weights_alpha = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
         base_alpha = params["base_alpha"]
-        if self.cfg.merge_mode in ["sum_twice", "triple_sum"]:
+        if self.has_beta:
             base_beta = params["base_beta"]
             weights_beta = [params[f"block_{i}_beta"] for i in range(NUM_TOTAL_BLOCKS)]
         else:
@@ -107,7 +108,7 @@ class Optimiser:
         weights_str = ",".join(list(map(str, weights_alpha)))
         print(weights_str)
 
-        if self.cfg.merge_mode in ["sum_twice", "triple_sum"]:
+        if self.has_beta:
             print(f"\nrun base_beta: {base_beta}")
             print("run weights_beta:")
             weights_beta_str = ",".join(list(map(str, weights_beta)))
@@ -159,7 +160,8 @@ class Optimiser:
         print("\nbest weights:")
         best_weights_str = ",".join(list(map(str, best_weights_alpha)))
         print(best_weights_str)
-        if best_base_beta:
+
+        if self.has_beta:
             print("\nbest base_beta:")
             print(best_base_beta)
             print("\nbest weights:")
@@ -167,6 +169,7 @@ class Optimiser:
             print(best_weights_str_beta)
         else:
             best_weights_str_beta = ""
+
         save_best_log(
             best_base_alpha,
             best_weights_str,
@@ -180,7 +183,7 @@ class Optimiser:
             model_b=Path(self.cfg.model_b).stem,
             figname=unet_path,
         )
-        if best_base_beta:
+        if self.has_beta:
             unet_path_beta = Path(
                 HydraConfig.get().runtime.output_dir,
                 f"{self.log_name}-unet_beta.png",

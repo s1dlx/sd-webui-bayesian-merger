@@ -15,7 +15,7 @@ class BayesOptimiser(Optimiser):
         # TODO: what if we want to optimise only certain blocks?
         pbounds = {f"block_{i}": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
         pbounds["base_alpha"] = (0.0, 1.0)
-        if self.cfg.merge_mode in ["sum_twice", "triple_sum"]:
+        if self.has_beta:
             pbounds |= {f"block_{i}_beta": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
             pbounds["base_beta"] = (0.0, 1.0)
 
