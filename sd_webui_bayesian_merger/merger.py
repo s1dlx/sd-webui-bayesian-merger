@@ -69,7 +69,7 @@ class Merger:
 
     def keep_best_ckpt(self) -> None:
         if self.best_output_file.exists():
-            self.bebest_output_file.unlink()
+            self.best_output_file.unlink()
         self.output_file.rename(self.best_output_file)
 
     def merge(
