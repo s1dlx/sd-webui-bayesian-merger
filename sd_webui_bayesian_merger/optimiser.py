@@ -42,12 +42,7 @@ class Optimiser:
             self._clean = True
 
     def start_logging(self) -> None:
-        try:
-            h, e, l, _ = self.merger.output_file.stem.split("-")
-            run_name = "-".join([h, e, l])
-        except ValueError:
-            h, e, l, l, _ = self.merger.output_file.stem.split("-")
-            run_name = "-".join([h, e, l, l])
+        run_name = "-".join(self.merger.output_file.stem.split("-")[:-1])
         self.log_name = f"{run_name}-{self.cfg.optimiser}"
         self.logger = JSONLogger(
             path=str(
