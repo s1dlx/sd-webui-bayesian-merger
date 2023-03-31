@@ -96,12 +96,8 @@ class Merger:
     ) -> Tuple[str, Dict]:
         if "model" not in key or key not in theta_1:
             return
-        if KEY_POSITION_IDS in key and self.cfg.skip_position_ids in [1, 2]:
-            if self.cfg.skip_position_ids == 2:
-                theta_0[key] = torch.tensor(
-                    [list(range(MAX_TOKENS))], dtype=torch.int64
-                )
-            return
+        if KEY_POSITION_IDS in key:
+            return 
 
         re_inp = re.compile(r"\.input_blocks\.(\d+)\.")  # 12
         re_mid = re.compile(r"\.middle_block\.(\d+)\.")  # 1
@@ -195,11 +191,7 @@ class Merger:
         for key in tqdm(theta_1.keys(), desc="merging 2/2"):
             if "model" in key and key not in theta_0:
                 continue
-            if KEY_POSITION_IDS in key and self.cfg.skip_position_ids in [1, 2]:
-                if self.cfg.skip_position_ids == 2:
-                    theta_1[key] = torch.tensor(
-                        [list(range(MAX_TOKENS))], dtype=torch.int64
-                    ).half()
+            if KEY_POSITION_IDS in key:
                 continue
             merged_model[key] = theta_1[key]
             if not best or self.cfg.best_precision == "16":
