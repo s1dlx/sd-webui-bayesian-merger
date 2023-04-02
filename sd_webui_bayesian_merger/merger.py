@@ -45,12 +45,12 @@ class Merger:
         self.model_c = Path(self.cfg.model_c)
         self.model_d = Path(self.cfg.model_d)
         self.model_e = Path(self.cfg.model_e)
-        if self.cfg.merge_mode in ['sum_twice', 'triple_sum', 'double_diff']:
+        if self.cfg.merge_mode in ["sum_twice", "triple_sum", "double_diff"]:
             self.model_name_suffix = (
                 f"bbwm-{self.model_a.stem}-{self.model_b.stem}-{self.model_c.stem}"
             )
-            if self.cfg.merge_mode == 'double_diff':
-                self.model_name_suffix += f'-{self.model_d.stem}-{self.model_e.stem}'
+            if self.cfg.merge_mode == "double_diff":
+                self.model_name_suffix += f"-{self.model_d.stem}-{self.model_e.stem}"
         else:
             self.model_c = None
             self.model_d = None
@@ -146,8 +146,8 @@ class Merger:
             theta_0[key],
             theta_1[key],
             theta_2[key] if self.cfg.merge_mode != "weighted_sum" else None,
-            theta_3[key] if self.cfg.merge_mode == 'double_diff' else None,
-            theta_4[key] if self.cfg.merge_mode == 'double_diff' else None,
+            theta_3[key] if self.cfg.merge_mode == "double_diff" else None,
+            theta_4[key] if self.cfg.merge_mode == "double_diff" else None,
             key in theta_2 if self.cfg.merge_mode != "weighted_sum" else None,
         )
 
@@ -176,7 +176,7 @@ class Merger:
             return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
         elif self.cfg.merge_mode == "weighted_sum":
             return (1 - alpha) * t0 + alpha * t1
-        elif self.cfg.merge_mode == 'double_diff':
+        elif self.cfg.merge_mode == "double_diff":
             return t0 + alpha * (t1 - t2 + t3 - t4)
 
     def merge(
