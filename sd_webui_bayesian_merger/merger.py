@@ -96,6 +96,8 @@ class Merger:
     ) -> Tuple[str, Dict]:
         if "model" not in key or key not in theta_1:
             return
+        if theta_2 and key not in theta_2:
+            return
         if KEY_POSITION_IDS in key:
             return 
 
@@ -190,6 +192,8 @@ class Merger:
 
         for key in tqdm(theta_1.keys(), desc="merging 2/2"):
             if "model" in key and key not in theta_0:
+                continue
+            if theta_2 and key not in theta_2:
                 continue
             if KEY_POSITION_IDS in key:
                 continue
