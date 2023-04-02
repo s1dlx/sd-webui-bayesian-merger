@@ -43,13 +43,19 @@ class Merger:
         self.model_a = Path(self.cfg.model_a)
         self.model_b = Path(self.cfg.model_b)
         self.model_c = Path(self.cfg.model_c)
-        if not self.model_c.exists():
-            self.model_c = None
-            self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}"
-        else:
+        self.model_d = Path(self.cfg.model_d)
+        self.model_e = Path(self.cfg.model_e)
+        if self.cfg.merge_mode in ['sum_twice', 'triple_sum', 'double_diff']:
             self.model_name_suffix = (
                 f"bbwm-{self.model_a.stem}-{self.model_b.stem}-{self.model_c.stem}"
             )
+            if self.cfg.merge_mode == 'double_diff':
+                self.model_name_suffix += f'-{self.model_d.stem}-{self.model_e.stem}'
+        else:
+            self.model_c = None
+            self.model_d = None
+            self.model_e = None
+            self.model_name_suffix = f"bbwm-{self.model_a.stem}-{self.model_b.stem}"
         self.create_model_out_name(0)
         self.create_best_model_out_name()
 
@@ -93,13 +99,19 @@ class Merger:
         theta_0: Dict,
         theta_1: Dict,
         theta_2: Dict,
+        theta_3: Dict,
+        theta_4: Dict,
     ) -> Tuple[str, Dict]:
         if "model" not in key or key not in theta_1:
             return
         if theta_2 and key not in theta_2:
             return
+        if theta_3 and key not in theta_3:
+            return
+        if theta_4 and key not in theta_4:
+            return
         if KEY_POSITION_IDS in key:
-            return 
+            return
 
         re_inp = re.compile(r"\.input_blocks\.(\d+)\.")  # 12
         re_mid = re.compile(r"\.middle_block\.(\d+)\.")  # 1
@@ -134,6 +146,8 @@ class Merger:
             theta_0[key],
             theta_1[key],
             theta_2[key] if self.cfg.merge_mode != "weighted_sum" else None,
+            theta_3[key] if self.cfg.merge_mode == 'double_diff' else None,
+            theta_4[key] if self.cfg.merge_mode == 'double_diff' else None,
             key in theta_2 if self.cfg.merge_mode != "weighted_sum" else None,
         )
 
@@ -149,6 +163,8 @@ class Merger:
         t0: Dict,
         t1: Dict,
         t2: Dict,
+        t3: Dict,
+        t4: Dict,
         k_in_t2: bool,
     ) -> Dict:
         if self.cfg.merge_mode == "add_difference":
@@ -160,6 +176,8 @@ class Merger:
             return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
         elif self.cfg.merge_mode == "weighted_sum":
             return (1 - alpha) * t0 + alpha * t1
+        elif self.cfg.merge_mode == 'double_diff':
+            return t0 + alpha * (t1 - t2 + t3 - t4)
 
     def merge(
         self,
