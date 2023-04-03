@@ -176,8 +176,12 @@ class Merger:
             return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
         elif self.cfg.merge_mode == "weighted_sum":
             return (1 - alpha) * t0 + alpha * t1
-        elif self.cfg.merge_mode == "double_diff":
-            return t0 + alpha * (t1 - t2 + t3 - t4)
+        elif self.cfg.merge_mode == "weighted_double_difference":
+            return (1 - alpha) * t0 + alpha * (
+                (1 - beta) * (t1 - t2) + beta * (t3 - t4)
+            )
+        elif self.cfg.merge_mode == "weighted_add_difference":
+            return (1 - alpha) * t0 + alpha * (t1 - t2) if k_in_t2 else t0
 
     def merge(
         self,
