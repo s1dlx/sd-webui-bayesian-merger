@@ -17,8 +17,6 @@ import clip
 import safetensors
 import numpy as np
 
-PathT = os.PathLike
-
 LAION_URL = (
     "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
 )
