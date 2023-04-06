@@ -1,12 +1,9 @@
-# adapted from
-# bbc-mc/sdweb-merge-block-weighted-gui/scripts/mbw/merge_block_weighted.py
-
 import os
 import re
 import sys
 
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import Dict, Tuple
 from pathlib import Path
 
 import torch
@@ -60,9 +57,12 @@ class Merger:
         self.models = {"model_a": self.model_a, "model_b": self.model_b}
         self.model_names = ["model_a", "model_b"]
         self.greek_letters = ["alpha", "beta"]
+        seen_models = 2
         for m, l in zip(
             ["model_c", "model_d", "model_e"], ["gamma", "delta", "epsilon"]
         ):
+            if seen_models == NUM_MODELS_NEEDED[self.cfg.merge_mode]:
+                break
             if m in self.cfg:
                 p = Path(self.cfg[m])
             else:
@@ -73,6 +73,7 @@ class Merger:
                 self.greek_letters.append(l)
             else:
                 break
+            seen_models += 1
         self.model_name_suffix = f"bbwm-{'-'.join(self.model_names)}"
 
         try:
@@ -183,13 +184,13 @@ class Merger:
         bases: Dict,
         best: bool = False,
     ) -> None:
-        # TODO: useless?
-        if len(weights["alpha"]) != NUM_TOTAL_BLOCKS:
-            raise ValueError(f"weights value must be {NUM_TOTAL_BLOCKS}")
-
         thetas = {k: self.load_sd_model(m) for k, m in self.models.items()}
+        all_keys = [list(set(t.keys())) for t in thetas.values()]
+        pair_of_keys = all_keys.pop()
+        assert all([k == pair_of_keys for k in all_keys])
+
         merged_model = {}
-        for key in tqdm(thetas["model_a"].keys(), desc="merging 1/1"):
+        for key in tqdm(thetas["model_a"].keys(), desc="merging"):
             if result := self.merge_key(
                 key,
                 thetas,
@@ -198,15 +199,6 @@ class Merger:
                 best,
             ):
                 merged_model[key] = result[1]
-
-        for key in tqdm(thetas["model_b"].keys(), desc="merging 2/2"):
-            if KEY_POSITION_IDS in key:
-                continue
-            if "model" in key and key not in thetas["model_a"]:
-                merged_model[key] = thetas["model_b"][key]
-                if not best or self.cfg.best_precision == "16":
-                    merged_model[key] = merged_model[key].half()
-            # TODO: what about theta_2 -> theta_4?
 
         if best:
             print(f"Saving {self.best_output_file}")
