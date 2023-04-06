@@ -18,16 +18,17 @@ class TPEOptimiser(Optimiser):
     def optimise(self) -> None:
         # TODO: what if we want to optimise only certain blocks?
         space = {
-            f"block_{i}": hp.uniform(f"block_{i}", 0.0, 1.0)
+            f"block_{i}": hp.uniform(f"block_{i}_alpha", 0.0, 1.0)
             for i in range(NUM_TOTAL_BLOCKS)
         }
         space["base_alpha"] = hp.uniform("base_alpha", 0.0, 1.0)
-        if self.has_beta:
+
+        for gl in self.merger.greek_letters:
             space |= {
-                f"block_{i}_beta": hp.uniform(f"block{i}_beta", 0.0, 1.0)
+                f"block_{i}_{gl}": hp.uniform(f"block{i}_{gl}", 0.0, 1.0)
                 for i in range(NUM_TOTAL_BLOCKS)
             }
-            space["base_beta"] = hp.uniform("base_beta", 0.0, 1.0)
+            space["base_{gl}"] = hp.uniform(f"base_{gl}", 0.0, 1.0)
 
         self.trials = Trials()
         tpe._default_n_startup_jobs = self.cfg.init_points
@@ -54,14 +55,21 @@ class TPEOptimiser(Optimiser):
             scores.append(res)
         best = self.trials.best_trial
 
-        best_base_alpha = best["result"]["params"]["base_alpha"]
-        best_weights = [
-            best["result"]["params"][f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)
-        ]
+        best_bases = {
+            gl: best["result"]["params"][f"base_{gl}"]
+            for gl in self.merger.greek_letters
+        }
+        best_weights = {
+            gl: [
+                best["result"]["params"][f"block_{i}_{gl}"]
+                for i in range(NUM_TOTAL_BLOCKS)
+            ]
+            for gl in self.merger.greek_letters
+        }
 
         self.plot_and_save(
             scores,
-            best_base_alpha,
+            best_bases,
             best_weights,
             minimise=True,
         )

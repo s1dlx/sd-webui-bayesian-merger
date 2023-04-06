@@ -13,11 +13,11 @@ class BayesOptimiser(Optimiser):
 
     def optimise(self) -> None:
         # TODO: what if we want to optimise only certain blocks?
-        pbounds = {f"block_{i}": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
+        pbounds = {f"block_{i}_alpha": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
         pbounds["base_alpha"] = (0.0, 1.0)
-        if self.has_beta:
-            pbounds |= {f"block_{i}_beta": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
-            pbounds["base_beta"] = (0.0, 1.0)
+        for gl in self.merger.greek_letters:
+            pbounds |= {f"block_{i}_{gl}": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
+            pbounds[f"base_{gl}"] = (0.0, 1.0)
 
         # TODO: fork bayesian-optimisation and add LHS
         self.optimizer = BayesianOptimization(
@@ -48,30 +48,28 @@ class BayesOptimiser(Optimiser):
             print(f"Iteration {i}: \n\t{res}")
 
         scores = parse_scores(self.optimizer.res)
-        best_base_alpha, best_weights, best_base_beta, best_beta_weights = parse_params(
+        best_bases, best_weights = self.parse_params(
             self.optimizer.max["params"],
         )
 
         self.plot_and_save(
             scores,
-            best_base_alpha,
+            best_bases,
             best_weights,
-            best_base_beta,
-            best_beta_weights,
             minimise=False,
         )
+
+    def parse_params(self, params: Dict) -> Tuple[Dict, Dict]:
+        bases = {"model_a": params["base_alpha"]}
+        weights = {
+            "model_a": [params[f"block_{i}_alpha"] for i in range(NUM_TOTAL_BLOCKS)]
+        }
+        for m, gl in zip(self.merge.model_names, self.merger.greek_letters):
+            bases[m] = params[f"base_{gl}"]
+            weights[m] = [params[f"block_{i}_{gl}"] for i in range(NUM_TOTAL_BLOCKS)]
+
+        return bases, weights
 
 
 def parse_scores(iterations: List[Dict]) -> List[float]:
     return [r["target"] for r in iterations]
-
-
-def parse_params(params: Dict) -> Tuple[float, List[float]]:
-    weights = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
-    base_alpha = params["base_alpha"]
-    try:
-        base_beta = params["base_beta"]
-        weights_beta = [params[f"block_{i}_beta"] for i in range(NUM_TOTAL_BLOCKS)]
-    except KeyError:
-        base_beta, weights_beta = None, None
-    return base_alpha, weights, base_beta, weights_beta

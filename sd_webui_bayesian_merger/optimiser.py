@@ -65,17 +65,14 @@ class Optimiser:
         it_type = "warmup" if self.iteration <= self.cfg.init_points else "optimisation"
         print(f"\n{it_type} - Iteration: {self.iteration}")
 
-        weights_alpha = [params[f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)]
-        base_alpha = params["base_alpha"]
-        if self.has_beta:
-            base_beta = params["base_beta"]
-            weights_beta = [params[f"block_{i}_beta"] for i in range(NUM_TOTAL_BLOCKS)]
-        else:
-            base_beta = None
-            weights_beta = None
+        weights = {
+            gl: [params[f"block_{i}_{gl}"] for i in range(NUM_TOTAL_BLOCKS)]
+            for gl in self.merger.greek_letters
+        }
+        bases = {gl: params[f"base_{gl}"] for gl in self.merger.greek_letters}
 
         self.merger.create_model_out_name(self.iteration)
-        self.merger.merge(weights_alpha, weights_beta, base_alpha, base_beta)
+        self.merger.merge(weights, bases)
         self.cleanup()
 
         self.generator.switch_model(self.merger.model_out_name)
@@ -103,24 +100,19 @@ class Optimiser:
         avg_score = self.scorer.average_score(scores)
         print(f"{'-'*10}\nRun score: {avg_score}")
 
-        print(f"\nrun base_alpha: {base_alpha}")
-        print("run weights:")
-        weights_str = ",".join(list(map(str, weights_alpha)))
-        print(weights_str)
-
-        if self.has_beta:
-            print(f"\nrun base_beta: {base_beta}")
-            print("run weights_beta:")
-            weights_beta_str = ",".join(list(map(str, weights_beta)))
-            print(weights_beta_str)
-        else:
-            weights_beta_str = ""
+        weights_strings = {}
+        for gl in self.merger.greek_letters:
+            print(f"\nrun base_{gl}: {bases[gl]}")
+            print(f"run weights_{gl}:")
+            w_str = ",".join(list(map(str, weights[gl])))
+            print(w_str)
+            weights_strings[gl] = w_str
 
         if avg_score > self.best_rolling_score:
-            self.best_rolling_score = avg_score
             print("\n NEW BEST!")
-            save_best_log(base_alpha, weights_str, base_beta, weights_beta_str)
             print("Saving best model merge")
+            self.best_rolling_score = avg_score
+            save_best_log(bases, weights_strings)
             self.merger.keep_best_ckpt()
             self._clean = False
 
@@ -137,10 +129,8 @@ class Optimiser:
     def plot_and_save(
         self,
         scores: List[float],
-        best_base_alpha: float,
-        best_weights_alpha: List[float],
-        best_base_beta: float,
-        best_weights_beta: List[float],
+        best_bases: Dict,
+        best_weights: Dict,
         minimise: bool,
     ) -> None:
         img_path = Path(
@@ -155,68 +145,44 @@ class Optimiser:
         )
         print("\n" + "-" * 10 + "> Done!")
         print("\nBest run:")
-        print("best base_alpha:")
-        print(best_base_alpha)
-        print("\nbest weights alpha:")
-        best_weights_str = ",".join(list(map(str, best_weights_alpha)))
-        print(best_weights_str)
 
-        if self.has_beta:
-            print("\nbest base_beta:")
-            print(best_base_beta)
-            print("\nbest weights beta:")
-            best_weights_str_beta = ",".join(list(map(str, best_weights_beta)))
-            print(best_weights_str_beta)
-        else:
-            best_weights_str_beta = ""
+        best_weights_strings = {}
+        for gl in self.merger.greek_letters:
+            print(f"\nbest base_{gl}: {best_bases[gl]}")
+            print(f"best weights_{gl}:")
+            w_str = ",".join(list(map(str, best_weights[gl])))
+            print(w_str)
+            best_weights_strings[gl] = w_str
 
-        save_best_log(
-            best_base_alpha,
-            best_weights_str,
-            best_base_beta,
-            best_weights_str_beta,
-        )
+        save_best_log(best_bases, best_weights_strings)
         draw_unet(
-            best_base_alpha,
-            best_weights_alpha,
+            best_bases["alpha"],
+            best_weights["alpha"],
             model_a=Path(self.cfg.model_a).stem,
             model_b=Path(self.cfg.model_b).stem,
             figname=unet_path,
         )
-        if self.has_beta:
-            unet_path_beta = Path(
-                HydraConfig.get().runtime.output_dir,
-                f"{self.log_name}-unet_beta.png",
-            )
-            draw_unet(
-                best_base_beta,
-                best_weights_beta,
-                model_a=Path(self.cfg.model_a).stem,
-                model_b=Path(self.cfg.model_b).stem,
-                figname=unet_path_beta,
-            )
+        # TODO: draw more UNETs?
 
+        # TODO: is this really necessary?
         if self.cfg.save_best:
             print(f"Saving best merge: {self.merger.best_output_file}")
             self.merger.merge(
-                best_weights_alpha,
-                best_weights_beta,
-                best_base_alpha,
-                best_base_beta,
+                best_weights,
+                best_bases,
                 best=True,
             )
 
 
-def save_best_log(alpha, weights, beta, weights_beta):
+def save_best_log(bases: Dict, weights_strings: Dict) -> None:
     print("Saving best.log")
     with open(
         Path(HydraConfig.get().runtime.output_dir, "best.log"),
         "w",
         encoding="utf-8",
     ) as f:
-        f.write(f"{alpha}\n\n{weights}")
-        if beta:
-            f.write(f"\n{beta}\n\n{weights_beta}")
+        for m, b in bases.items():
+            f.write(f"{bases[m]}\n\nweights_strings[m]")
 
 
 def load_log(log: PathT) -> List[Dict]:
@@ -227,7 +193,5 @@ def load_log(log: PathT) -> List[Dict]:
                 iteration = next(j)
             except StopIteration:
                 break
-
             iterations.append(json.loads(iteration))
-
     return iterations
