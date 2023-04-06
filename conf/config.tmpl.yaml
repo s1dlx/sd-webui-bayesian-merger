@@ -19,7 +19,7 @@ model_c: path/to/model_c/file
 model_d: path/to/model_d/file
 model_e: path/to/model_e/file
 skip_position_ids: 0
-merge_mode: weighted_sum  # weighted_sum (default), add_difference, sum_twice, triple_sum, double_diff
+merge_mode: weighted_sum  # weighted_sum (default), add_difference, weighted_add_difference,  sum_twice, triple_sum, weighted_double_difference
 
 optimiser: bayes # tpe
 bounds_transformer: False
