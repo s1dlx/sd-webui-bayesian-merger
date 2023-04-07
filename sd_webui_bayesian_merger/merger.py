@@ -197,11 +197,11 @@ class Merger:
             ):
                 merged_model[key] = result[1]
 
-        for key in tqdm(thetas['model_b'].keys(), desc="stage 2"):
+        for key in tqdm(thetas["model_b"].keys(), desc="stage 2"):
             if KEY_POSITION_IDS in key or "model" not in key:
                 continue
             if key not in merged_model:
-                merged_model.update({key: thetas['model_b'][key]})
+                merged_model.update({key: thetas["model_b"][key]})
 
         if best:
             print(f"Saving {self.best_output_file}")

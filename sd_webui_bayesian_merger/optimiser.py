@@ -71,15 +71,15 @@ class Optimiser:
             for gl in self.merger.greek_letters:
                 greek_weights = []
                 for i in range(NUM_TOTAL_BLOCKS):
-                    block_name = f'block_{i}'
-                    greek_block_name = f'{block_name}_{gl}'
+                    block_name = f"block_{i}"
+                    greek_block_name = f"{block_name}_{gl}"
                     if greek_block_name in params:
                         greek_weights.append(params[greek_block_name])
                     else:
                         fixed_block_weight = self.cfg.fix_block_values[block_name]
                         greek_weights.append(fixed_block_weight)
                 weights[gl] = greek_weights
-                greek_base = f'base_{gl}'
+                greek_base = f"base_{gl}"
                 if greek_base in params:
                     bases[gl] = params[greek_base]
                 else:
