@@ -55,7 +55,7 @@ class Merger:
         self.model_a = Path(self.cfg.model_a)
         self.model_b = Path(self.cfg.model_b)
         self.models = {"model_a": self.model_a, "model_b": self.model_b}
-        self.model_names = ["model_a", "model_b"]
+        self.model_names = [self.models["model_a"].stem, self.models["model_b"].stem]
         self.greek_letters = ["alpha"]
         seen_models = 2
         for m in ["model_c", "model_d", "model_e"]:
@@ -67,7 +67,7 @@ class Merger:
                 break
             if p.exists():
                 self.models[m] = p
-                self.model_names.append(m)
+                self.model_names.append(self.models[m].stem)
             else:
                 break
             seen_models += 1
@@ -197,10 +197,13 @@ class Merger:
                 merged_model[key] = result[1]
 
         for key in tqdm(thetas["model_b"].keys(), desc="stage 2"):
-            if KEY_POSITION_IDS in key or "model" not in key:
-                continue
-            if key not in merged_model:
-                merged_model.update({key: thetas["model_b"][key]})
+            if "model" in key and key not in merged_model:
+                if KEY_POSITION_IDS in key:
+                    #print(key)
+                    pass
+                merged_model.update({key:thetas["model_b"][key]})
+                if not best or self.cfg.best_precision == "16":
+                    merged_model[key] = merged_model[key].half()
 
         if best:
             print(f"Saving {self.best_output_file}")
