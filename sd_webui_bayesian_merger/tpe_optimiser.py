@@ -16,19 +16,28 @@ class TPEOptimiser(Optimiser):
         }
 
     def optimise(self) -> None:
-        # TODO: what if we want to optimise only certain blocks?
-        space = {
-            f"block_{i}": hp.uniform(f"block_{i}_alpha", 0.0, 1.0)
-            for i in range(NUM_TOTAL_BLOCKS)
-        }
-        space["base_alpha"] = hp.uniform("base_alpha", 0.0, 1.0)
-
-        for gl in self.merger.greek_letters:
-            space |= {
-                f"block_{i}_{gl}": hp.uniform(f"block{i}_{gl}", 0.0, 1.0)
+        if self.cfg.enable_fix_blocks:
+            space = {}
+            for i in range(NUM_TOTAL_BLOCKS):
+                block_name = f"block_{i}"
+                if block_name not in self.cfg.fix_blocks:
+                    for gl in self.merger.greek_letters:
+                        space[f"{block_name}_{gl}"] = hp.uniform(f"{block_name}_{gl}")
+            for gl in self.merger.greek_letters:
+                if f"base_{gl}" not in self.cfg.fix_blocks:
+                    space[f"base_{gl}"] = hp.uniform(f"base_{gl}")
+        else:
+            space = {
+                f"block_{i}_alpha": hp.uniform(f"block_{i}_alpha")
                 for i in range(NUM_TOTAL_BLOCKS)
             }
-            space["base_{gl}"] = hp.uniform(f"base_{gl}", 0.0, 1.0)
+            space["base_alpha"] = hp.uniform("base_alpha")
+            for gl in self.merger.greek_letters:
+                space |= {
+                    f"block_{i}_{gl}": hp.uniform(f"block{i}_{gl}")
+                    for i in range(NUM_TOTAL_BLOCKS)
+                }
+                space[f"base_{gl}"] = hp.uniform(f"base_{gl}")
 
         self.trials = Trials()
         tpe._default_n_startup_jobs = self.cfg.init_points

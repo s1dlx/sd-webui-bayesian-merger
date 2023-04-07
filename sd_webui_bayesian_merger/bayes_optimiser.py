@@ -13,11 +13,22 @@ class BayesOptimiser(Optimiser):
 
     def optimise(self) -> None:
         # TODO: what if we want to optimise only certain blocks?
-        pbounds = {f"block_{i}_alpha": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
-        pbounds["base_alpha"] = (0.0, 1.0)
-        for gl in self.merger.greek_letters:
-            pbounds |= {f"block_{i}_{gl}": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
-            pbounds[f"base_{gl}"] = (0.0, 1.0)
+        if self.cfg.enable_fix_blocks:
+            pbounds = {}
+            for i in range(NUM_TOTAL_BLOCKS):
+                block_name = f'block_{i}'
+                if block_name not in self.cfg.fix_blocks:
+                    for gl in self.merger.greek_letters:
+                        pbounds[f'{block_name}_{gl}'] = (0.0, 1.0)
+            for gl in self.merger.greek_letters:
+                if f'base_{gl}' not in self.cfg.fix_blocks:
+                    pbounds[f'base_{gl}'] = (0.0, 1.0)
+        else:
+            pbounds = {f"block_{i}_alpha": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
+            pbounds["base_alpha"] = (0.0, 1.0)
+            for gl in self.merger.greek_letters:
+                pbounds |= {f"block_{i}_{gl}": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
+                pbounds[f"base_{gl}"] = (0.0, 1.0)
 
         # TODO: fork bayesian-optimisation and add LHS
         self.optimizer = BayesianOptimization(

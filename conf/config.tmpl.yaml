@@ -15,11 +15,21 @@ scorer_model_dir: path/to/scorer/models/folder
 
 model_a: path/to/model_a/file
 model_b: path/to/model_b/file
-model_c: path/to/model_c/file
-model_d: path/to/model_d/file
-model_e: path/to/model_e/file
+model_c: path/to/model_c/file # optional
+model_d: path/to/model_d/file # optional
+model_e: path/to/model_e/file # optional
 skip_position_ids: 0
 merge_mode: weighted_sum  # weighted_sum (default), add_difference, weighted_add_difference,  sum_twice, triple_sum, weighted_double_difference
+
+enable_fix_blocks: False
+fix_block_values:
+  - block_0: 0.9
+  - block_1: 0.1
+
+enable_block_groups: False
+block_groups:
+  - [block_0, block_1]
+  - [block_2, block_3]
 
 optimiser: bayes # tpe
 bounds_transformer: False
