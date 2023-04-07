@@ -56,11 +56,9 @@ class Merger:
         self.model_b = Path(self.cfg.model_b)
         self.models = {"model_a": self.model_a, "model_b": self.model_b}
         self.model_names = ["model_a", "model_b"]
-        self.greek_letters = ["alpha", "beta"]
+        self.greek_letters = ["alpha"]
         seen_models = 2
-        for m, l in zip(
-            ["model_c", "model_d", "model_e"], ["gamma", "delta", "epsilon"]
-        ):
+        for m in ["model_c", "model_d", "model_e"]:
             if seen_models == NUM_MODELS_NEEDED[self.cfg.merge_mode]:
                 break
             if m in self.cfg:
@@ -70,10 +68,11 @@ class Merger:
             if p.exists():
                 self.models[m] = p
                 self.model_names.append(m)
-                self.greek_letters.append(l)
             else:
                 break
             seen_models += 1
+        if self.cfg.merge_mode in ['weighted_double_difference', 'sum_twice', 'triple_sum']:
+            self.greek_letters.append('beta')
         self.model_name_suffix = f"bbwm-{'-'.join(self.model_names)}"
 
         try:
