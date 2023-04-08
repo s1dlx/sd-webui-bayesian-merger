@@ -55,7 +55,8 @@ class Merger:
         self.model_a = Path(self.cfg.model_a)
         self.model_b = Path(self.cfg.model_b)
         self.models = {"model_a": self.model_a, "model_b": self.model_b}
-        self.model_names = [self.models["model_a"].stem, self.models["model_b"].stem]
+        self.model_names = ["model_a", "model_b"]
+        self.model_real_names=[self.models["model_a"].stem, self.models["model_b"].stem]
         self.greek_letters = ["alpha"]
         seen_models = 2
         for m in ["model_c", "model_d", "model_e"]:
@@ -67,13 +68,14 @@ class Merger:
                 break
             if p.exists():
                 self.models[m] = p
-                self.model_names.append(self.models[m].stem)
+                self.model_names.append(m)
+                self.model_real_names.append(self.models[m].stem)
             else:
                 break
             seen_models += 1
         if self.cfg.merge_mode in ['weighted_double_difference', 'sum_twice', 'triple_sum']:
             self.greek_letters.append('beta')
-        self.model_name_suffix = f"bbwm-{'-'.join(self.model_names)}"
+        self.model_name_suffix = f"bbwm-{'-'.join(self.model_real_names)}"
 
         try:
             assert len(self.model_names) == NUM_MODELS_NEEDED[self.cfg.merge_mode]
@@ -116,7 +118,7 @@ class Merger:
         self, key: str, thetas: Dict, weights: Dict, bases: Dict, best: bool
     ) -> Tuple[str, Dict]:
         if KEY_POSITION_IDS in key or "model" not in key:
-            return
+            pass
         for theta in thetas.values():
             if key not in theta:
                 return
