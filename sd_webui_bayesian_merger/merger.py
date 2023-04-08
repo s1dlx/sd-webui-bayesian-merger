@@ -122,7 +122,7 @@ class Merger:
         for theta in thetas.values():
             if key not in theta:
                 return
-
+        current_bases=bases
         if "model.diffusion_model." in key:
             weight_index = -1
 
@@ -147,12 +147,12 @@ class Merger:
             if weight_index >= 0:
                 current_bases = {k: w[weight_index] for k, w in weights.items()}
 
-            merged = self.merge_block(current_bases, thetas, key)
+        merged = self.merge_block(current_bases, thetas, key)
 
-            if not best or self.cfg.best_precision == "16":
-                merged = merged.half()
+        if not best or self.cfg.best_precision == "16":
+            merged = merged.half()
 
-            return (key, merged)
+        return (key, merged)
 
     def merge_block(self, current_bases: Dict, thetas: Dict, key: str) -> Dict:
         t0 = thetas["model_a"][key]
