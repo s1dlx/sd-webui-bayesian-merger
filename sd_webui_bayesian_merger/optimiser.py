@@ -203,7 +203,7 @@ def save_best_log(bases: Dict, weights_strings: Dict) -> None:
         encoding="utf-8",
     ) as f:
         for m, b in bases.items():
-            f.write(f"{bases[m]}\n\nweights_strings[m]")
+            f.write(f"{bases[m]}\n\n{weights_strings[m]}")
 
 
 def load_log(log: PathT) -> List[Dict]:
