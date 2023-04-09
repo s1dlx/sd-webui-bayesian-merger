@@ -117,9 +117,11 @@ class Merger:
     def merge_key(
         self, key: str, thetas: Dict, weights: Dict, bases: Dict, best: bool
     ) -> Tuple[str, Dict]:
-        if KEY_POSITION_IDS in key or "model" not in key:
+        if KEY_POSITION_IDS in key:
             if self.cfg.skip_position_ids == 1:
-                return
+                if not best or self.cfg.best_precision == "16":
+                    return (key, thetas["model_a"][key].half())
+                return (key, thetas["model_a"][key]) # Skip position_ids key to eject effect. Value of Model A used.
             elif self.cfg.skip_position_ids == 2: 
                 thetas["model_a"][key] = torch.tensor([list(range(MAX_TOKENS))], dtype=torch.int64 ) 
                 if not best or self.cfg.best_precision == "16":
