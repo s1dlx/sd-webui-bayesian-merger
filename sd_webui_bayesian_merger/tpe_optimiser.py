@@ -28,16 +28,16 @@ class TPEOptimiser(Optimiser):
                     space[f"base_{gl}"] = hp.uniform(f"base_{gl}")
         else:
             space = {
-                f"block_{i}_alpha": hp.uniform(f"block_{i}_alpha")
+                f"block_{i}_alpha": hp.uniform(f"block_{i}_alpha",0.0,1.0)
                 for i in range(NUM_TOTAL_BLOCKS)
             }
-            space["base_alpha"] = hp.uniform("base_alpha")
+            space["base_alpha"] = hp.uniform("base_alpha",0.0,1.0)
             for gl in self.merger.greek_letters:
                 space |= {
-                    f"block_{i}_{gl}": hp.uniform(f"block{i}_{gl}")
+                    f"block_{i}_{gl}": hp.uniform(f"block{i}_{gl}",0.0,1.0)
                     for i in range(NUM_TOTAL_BLOCKS)
                 }
-                space[f"base_{gl}"] = hp.uniform(f"base_{gl}")
+                space[f"base_{gl}"] = hp.uniform(f"base_{gl}",0.0,1.0)
 
         self.trials = Trials()
         tpe._default_n_startup_jobs = self.cfg.init_points

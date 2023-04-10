@@ -73,13 +73,13 @@ class BayesOptimiser(Optimiser):
         )
 
     def parse_params(self, params: Dict) -> Tuple[Dict, Dict]:
-        bases = {"model_a": params["base_alpha"]}
+        bases = {"alpha": params["base_alpha"]}
         weights = {
-            "model_a": [params[f"block_{i}_alpha"] for i in range(NUM_TOTAL_BLOCKS)]
+            "alpha": [params[f"block_{i}_alpha"] for i in range(NUM_TOTAL_BLOCKS)]
         }
-        for m, gl in zip(self.merge.model_names, self.merger.greek_letters):
-            bases[m] = params[f"base_{gl}"]
-            weights[m] = [params[f"block_{i}_{gl}"] for i in range(NUM_TOTAL_BLOCKS)]
+        for m, gl in zip(self.merger.model_names, self.merger.greek_letters):
+            bases[gl] = params[f"base_{gl}"]
+            weights[gl] = [params[f"block_{i}_{gl}"] for i in range(NUM_TOTAL_BLOCKS)]
 
         return bases, weights
 
