@@ -41,6 +41,42 @@ NUM_MODELS_NEEDED = {
     "weighted_double_difference": 5,
 }
 
+NAI_KEYS = {
+    "cond_stage_model.transformer.embeddings.": "cond_stage_model.transformer.text_model.embeddings.",
+    "cond_stage_model.transformer.encoder.": "cond_stage_model.transformer.text_model.encoder.",
+    "cond_stage_model.transformer.final_layer_norm.": "cond_stage_model.transformer.text_model.final_layer_norm.",
+}
+
+
+def fix_clip(model: Dict) -> Dict:
+    if KEY_POSITION_IDS in model:
+        model[KEY_POSITION_IDS] = torch.tensor(
+            [list(range(MAX_TOKENS))], dtype=torch.int64
+        )
+
+    return model
+
+
+def fix_key(model: Dict, key: str) -> Dict:
+    for nk in NAI_KEYS:
+        if key.startswith(nk):
+            model[key.replace(nk, NAI_KEYS[nk])] = model[key]
+            del model[key]
+
+            return model
+
+
+def fix_nai_keys(model: Dict) -> Dict:
+    for k in list(model):
+        model = fix_key(k)
+
+    return model
+
+
+def fix_model(model: Dict) -> Dict:
+    model = fix_nai_keys(model)
+    return fix_clip(model)
+
 
 @dataclass
 class Merger:
@@ -122,7 +158,12 @@ class Merger:
         return SDModel(model_path, self.cfg.device).load_model()
 
     def merge_key(
-        self, key: str, thetas: Dict, weights: Dict, bases: Dict, best: bool
+        self,
+        key: str,
+        thetas: Dict,
+        weights: Dict,
+        bases: Dict,
+        best: bool,
     ) -> Tuple[str, Dict]:
         if KEY_POSITION_IDS in key:
             if self.cfg.skip_position_ids == 1:
@@ -233,6 +274,8 @@ class Merger:
                 merged_model.update({key: thetas["model_b"][key]})
                 if not best or self.cfg.best_precision == "16":
                     merged_model[key] = merged_model[key].half()
+
+        merged_model = fix_model(merged_model)
 
         if best:
             print(f"Saving {self.best_output_file}")

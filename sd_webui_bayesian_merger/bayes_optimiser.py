@@ -77,7 +77,7 @@ class BayesOptimiser(Optimiser):
         weights = {
             "alpha": [params[f"block_{i}_alpha"] for i in range(NUM_TOTAL_BLOCKS)]
         }
-        for m, gl in zip(self.merger.model_names, self.merger.greek_letters):
+        for m, gl in zip(self.merger.model_keys, self.merger.greek_letters):
             bases[gl] = params[f"base_{gl}"]
             weights[gl] = [params[f"block_{i}_{gl}"] for i in range(NUM_TOTAL_BLOCKS)]
 
