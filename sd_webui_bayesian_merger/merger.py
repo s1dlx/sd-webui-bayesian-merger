@@ -73,6 +73,7 @@ def fix_nai_keys(model: Dict) -> Dict:
     return model
 
 
+# https://github.com/j4ded/sdweb-merge-block-weighted-gui/blob/master/scripts/mbw/merge_block_weighted.py#L115
 def fix_model(model: Dict) -> Dict:
     model = fix_nai_keys(model)
     return fix_clip(model)
