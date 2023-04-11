@@ -55,8 +55,11 @@ class Merger:
         self.model_a = Path(self.cfg.model_a)
         self.model_b = Path(self.cfg.model_b)
         self.models = {"model_a": self.model_a, "model_b": self.model_b}
-        self.model_names = ["model_a", "model_b"]
-        self.model_real_names=[self.models["model_a"].stem, self.models["model_b"].stem]
+        self.model_keys = ["model_a", "model_b"]
+        self.model_real_names = [
+            self.models["model_a"].stem,
+            self.models["model_b"].stem,
+        ]
         self.greek_letters = ["alpha"]
         seen_models = 2
         for m in ["model_c", "model_d", "model_e"]:
@@ -68,17 +71,21 @@ class Merger:
                 break
             if p.exists():
                 self.models[m] = p
-                self.model_names.append(m)
+                self.model_keys.append(m)
                 self.model_real_names.append(self.models[m].stem)
             else:
                 break
             seen_models += 1
-        if self.cfg.merge_mode in ['weighted_double_difference', 'sum_twice', 'triple_sum']:
-            self.greek_letters.append('beta')
+        if self.cfg.merge_mode in [
+            "weighted_double_difference",
+            "sum_twice",
+            "triple_sum",
+        ]:
+            self.greek_letters.append("beta")
         self.model_name_suffix = f"bbwm-{'-'.join(self.model_real_names)}"
 
         try:
-            assert len(self.model_names) == NUM_MODELS_NEEDED[self.cfg.merge_mode]
+            assert len(self.model_keys) == NUM_MODELS_NEEDED[self.cfg.merge_mode]
         except AssertionError:
             print(
                 "number of models defined not compatible with merge mode, aborting optimisation"
@@ -121,16 +128,21 @@ class Merger:
             if self.cfg.skip_position_ids == 1:
                 if not best or self.cfg.best_precision == "16":
                     return (key, thetas["model_a"][key].half())
-                return (key, thetas["model_a"][key]) # Skip position_ids key to eject effect. Value of Model A used.
-            elif self.cfg.skip_position_ids == 2: 
-                thetas["model_a"][key] = torch.tensor([list(range(MAX_TOKENS))], dtype=torch.int64 ) 
+                return (
+                    key,
+                    thetas["model_a"][key],
+                )  # Skip position_ids key to eject effect. Value of Model A used.
+            elif self.cfg.skip_position_ids == 2:
+                thetas["model_a"][key] = torch.tensor(
+                    [list(range(MAX_TOKENS))], dtype=torch.int64
+                )
                 if not best or self.cfg.best_precision == "16":
                     return (key, thetas["model_a"][key].half())
                 return (key, thetas["model_a"][key])
         for theta in thetas.values():
             if key not in theta:
                 return
-        current_bases=bases
+        current_bases = bases
         if "model.diffusion_model." in key:
             weight_index = -1
 
@@ -211,12 +223,14 @@ class Merger:
                 if KEY_POSITION_IDS in key:
                     if self.cfg.skip_position_ids == 1:
                         continue
-                    elif self.cfg.skip_position_ids == 2: 
-                        merged_model[key] = torch.tensor([list(range(MAX_TOKENS))], dtype=torch.int64 ) 
+                    elif self.cfg.skip_position_ids == 2:
+                        merged_model[key] = torch.tensor(
+                            [list(range(MAX_TOKENS))], dtype=torch.int64
+                        )
                         if not best or self.cfg.best_precision == "16":
                             merged_model[key] = merged_model[key].half()
-                        continue    
-                merged_model.update({key:thetas["model_b"][key]})
+                        continue
+                merged_model.update({key: thetas["model_b"][key]})
                 if not best or self.cfg.best_precision == "16":
                     merged_model[key] = merged_model[key].half()
 
