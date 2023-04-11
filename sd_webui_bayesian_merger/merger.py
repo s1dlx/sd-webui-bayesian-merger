@@ -63,12 +63,12 @@ def fix_key(model: Dict, key: str) -> Dict:
             model[key.replace(nk, NAI_KEYS[nk])] = model[key]
             del model[key]
 
-            return model
+    return model
 
 
 def fix_nai_keys(model: Dict) -> Dict:
-    for k in list(model):
-        model = fix_key(k)
+    for k in model:
+        model = fix_key(model, k)
 
     return model
 
