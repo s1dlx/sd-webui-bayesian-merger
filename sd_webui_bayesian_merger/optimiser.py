@@ -54,10 +54,10 @@ class Optimiser:
             )
         )
 
-    def pbound(self, param_name: str):
+    def pbound(self, param_name: str, lb: float = 0.0, ub: float = 1.0):
         if self.optimiser == "tpe":
-            return hp.uniform(param_name, 0.0, 1.0)
-        return (0.0, 1.0)
+            return hp.uniform(param_name, lb, ub)
+        return (lb, ub)
 
     def init_params(self) -> Dict:
         if self.cfg.enable_fix_blocks:
@@ -69,9 +69,20 @@ class Optimiser:
                         pbounds[f"{block_name}_{gl}"] = self.pbound(
                             f"{block_name}_{gl}"
                         )
+                elif len(self.cfg.fix_block_values[block_name]) == 2:
+                    lb, ub = self.cfg.fix_block_values[block_name]
+                    for gl in self.merger.greek_letters:
+                        pbounds[f"{block_name}_{gl}"] = self.pbound(
+                            f"{block_name}_{gl}",
+                            lb,
+                            ub,
+                        )
             for gl in self.merger.greek_letters:
                 if f"base_{gl}" not in self.cfg.fix_blocks:
                     pbounds[f"base_{gl}"] = self.pbound(f"base_{gl}")
+                elif len(self.cfg.fix_block_values[f"base_{gl}"]) == 2:
+                    lb, ub = self.cfg.fix_block_values[f"base_{gl}"]
+                    pbounds[f"base_{gl}"] = self.pbound(f"base_{gl}", lb, ub)
         else:
             pbounds = {
                 f"block_{i}_alpha": self.pbound(f"block_{i}_alpha")

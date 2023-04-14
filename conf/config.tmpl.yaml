@@ -27,8 +27,8 @@ n_iters: 1
 
 enable_fix_blocks: False
 fix_block_values:
-  - block_0: 0.9
-  - block_1: 0.1
+  - block_0: 0.9           # constant value
+  - block_1: [0.1, 0.5]    # set range
 
 save_imgs: False
 
