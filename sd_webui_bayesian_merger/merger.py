@@ -249,7 +249,6 @@ class Merger:
     ) -> None:
         thetas = {k: self.load_sd_model(m) for k, m in self.models.items()}
 
-        merged_model = {}
         for key in tqdm(thetas["model_a"].keys(), desc="stage 1"):
             if result := self.merge_key(
                 key,
@@ -258,40 +257,38 @@ class Merger:
                 bases,
                 best,
             ):
-                merged_model[key] = result[1]
-
         for key in tqdm(thetas["model_b"].keys(), desc="stage 2"):
-            if "model" in key and key not in merged_model:
+            if "model" in key and key not in thetas["model_a"]:
                 if KEY_POSITION_IDS in key:
                     if self.cfg.skip_position_ids == 1:
                         continue
                     elif self.cfg.skip_position_ids == 2:
-                        merged_model[key] = torch.tensor(
+                        thetas["model_a"][key] = torch.tensor(
                             [list(range(MAX_TOKENS))], dtype=torch.int64
                         )
                         if not best or self.cfg.best_precision == "16":
-                            merged_model[key] = merged_model[key].half()
+                            thetas["model_a"][key] = thetas["model_a"][key].half()
                         continue
-                merged_model.update({key: thetas["model_b"][key]})
+                thetas["model_a"].update({key: thetas["model_b"][key]})
                 if not best or self.cfg.best_precision == "16":
-                    merged_model[key] = merged_model[key].half()
+                    thetas["model_a"][key] = thetas["model_a"][key].half()
 
-        merged_model = fix_model(merged_model)
+        thetas["model_a"] = fix_model(thetas["model_a"])
 
         if best:
             print(f"Saving {self.best_output_file}")
             if self.cfg.best_format == "safetensors":
                 safetensors.torch.save_file(
-                    merged_model,
+                    thetas["model_a"],
                     self.best_output_file,
                     metadata={"format": "pt"},
                 )
             else:
-                torch.save({"state_dict": merged_model}, self.best_output_file)
+                torch.save({"state_dict": thetas["model_a"]}, self.best_output_file)
         else:
             print(f"Saving {self.output_file}")
             safetensors.torch.save_file(
-                merged_model,
+                thetas["model_a"],
                 self.output_file,
                 metadata={"format": "pt", "precision": "fp16"},
             )
