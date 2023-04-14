@@ -34,11 +34,9 @@ KEY_POSITION_IDS = ".".join(
 
 NUM_MODELS_NEEDED = {
     "add_difference": 3,
-    "weighted_add_difference": 3,
     "weighted_sum": 2,
     "sum_twice": 3,
     "triple_sum": 3,
-    "weighted_double_difference": 5,
 }
 
 NAI_KEYS = {
@@ -114,7 +112,6 @@ class Merger:
                 break
             seen_models += 1
         if self.cfg.merge_mode in [
-            "weighted_double_difference",
             "sum_twice",
             "triple_sum",
         ]:
@@ -226,20 +223,12 @@ class Merger:
         t2 = thetas["model_c"][key]
         if self.cfg.merge_mode == "add_difference":
             return t0 + alpha * (t1 - t2)
-        elif self.cfg.merge_mode == "weighted_add_difference":
-            return (1 - alpha) * t0 + alpha * (t1 - t2)
 
         beta = current_bases["beta"]
         if self.cfg.merge_mode == "sum_twice":
             return (1 - beta) * ((1 - alpha) * t0 + alpha * t1) + beta * t2
         elif self.cfg.merge_mode == "triple_sum":
             return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
-        elif self.cfg.merge_mode == "weighted_double_difference":
-            t3 = thetas["model_d"][key]
-            t4 = thetas["model_e"][key]
-            return (1 - alpha) * t0 + alpha * (
-                (1 - beta) * (t1 - t2) + beta * (t3 - t4)
-            )
 
     def merge(
         self,
