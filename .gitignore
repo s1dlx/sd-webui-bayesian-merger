@@ -154,3 +154,6 @@ dmypy.json
 # configs
 !conf/config.tmpl.yaml
 !conf/payloads/cargo.tmpl.yaml
+
+# notebooks
+**/*.ipynb
