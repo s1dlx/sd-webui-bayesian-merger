@@ -54,7 +54,39 @@ class Optimiser:
             )
         )
 
-    def sd_target_function(self, **params):
+    def pbound(self, param_name: str):
+        if self.optimiser == "tpe":
+            return hp.uniform(param_name, 0.0, 1.0)
+        return (0.0, 1.0)
+
+    def init_params(self) -> Dict:
+        if self.cfg.enable_fix_blocks:
+            pbounds = {}
+            for i in range(NUM_TOTAL_BLOCKS):
+                block_name = f"block_{i}"
+                if block_name not in self.cfg.fix_blocks:
+                    for gl in self.merger.greek_letters:
+                        pbounds[f"{block_name}_{gl}"] = self.pbound(
+                            f"{block_name}_{gl}"
+                        )
+            for gl in self.merger.greek_letters:
+                if f"base_{gl}" not in self.cfg.fix_blocks:
+                    pbounds[f"base_{gl}"] = self.pbound(f"base_{gl}")
+        else:
+            pbounds = {
+                f"block_{i}_alpha": self.pbound(f"block_{i}_alpha")
+                for i in range(NUM_TOTAL_BLOCKS)
+            }
+            pbounds["base_alpha"] = self.pbound("base_alpha")
+            for gl in self.merger.greek_letters:
+                pbounds |= {
+                    f"block_{i}_{gl}": self.pbound(f"block_{i}_{gl}")
+                    for i in range(NUM_TOTAL_BLOCKS)
+                }
+                pbounds[f"base_{gl}"] = self.pbound(f"base_{gl}")
+        return pbounds
+
+    def sd_target_function(self, **params) -> float:
         self.iteration += 1
 
         if self.iteration == 1:
@@ -65,11 +97,32 @@ class Optimiser:
         it_type = "warmup" if self.iteration <= self.cfg.init_points else "optimisation"
         print(f"\n{it_type} - Iteration: {self.iteration}")
 
-        weights = {
-            gl: [params[f"block_{i}_{gl}"] for i in range(NUM_TOTAL_BLOCKS)]
-            for gl in self.merger.greek_letters
-        }
-        bases = {gl: params[f"base_{gl}"] for gl in self.merger.greek_letters}
+        if self.cfg.enable_fix_blocks:
+            weights = {}
+            bases = {}
+            for gl in self.merger.greek_letters:
+                greek_weights = []
+                for i in range(NUM_TOTAL_BLOCKS):
+                    block_name = f"block_{i}"
+                    greek_block_name = f"{block_name}_{gl}"
+                    if greek_block_name in params:
+                        greek_weights.append(params[greek_block_name])
+                    else:
+                        fixed_block_weight = self.cfg.fix_block_values[block_name]
+                        greek_weights.append(fixed_block_weight)
+                weights[gl] = greek_weights
+                greek_base = f"base_{gl}"
+                if greek_base in params:
+                    bases[gl] = params[greek_base]
+                else:
+                    fixed_base = self.cfg.fix_block_values[greek_base]
+                    bases[gl] = fixed_base
+        else:
+            weights = {
+                gl: [params[f"block_{i}_{gl}"] for i in range(NUM_TOTAL_BLOCKS)]
+                for gl in self.merger.greek_letters
+            }
+            bases = {gl: params[f"base_{gl}"] for gl in self.merger.greek_letters}
 
         self.merger.create_model_out_name(self.iteration)
         self.merger.merge(weights, bases)

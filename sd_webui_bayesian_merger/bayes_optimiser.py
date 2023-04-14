@@ -12,14 +12,7 @@ class BayesOptimiser(Optimiser):
     bounds_transformer = SequentialDomainReductionTransformer()
 
     def optimise(self) -> None:
-        # TODO: what if we want to optimise only certain blocks?
-        pbounds = {f"block_{i}_alpha": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)}
-        pbounds["base_alpha"] = (0.0, 1.0)
-        for gl in self.merger.greek_letters:
-            pbounds |= {
-                f"block_{i}_{gl}": (0.0, 1.0) for i in range(NUM_TOTAL_BLOCKS)
-            }
-            pbounds[f"base_{gl}"] = (0.0, 1.0)
+        pbounds = self.init_params()
 
         # TODO: fork bayesian-optimisation and add LHS
         self.optimizer = BayesianOptimization(

@@ -25,6 +25,11 @@ batch_size: 1
 init_points: 1
 n_iters: 1
 
+enable_fix_blocks: False
+fix_block_values:
+  - block_0: 0.9
+  - block_1: 0.1
+
 save_imgs: False
 
 scorer_method: chad # laion, aes, cafe_aesthetic, cafe_style, cafe_waifu
