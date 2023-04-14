@@ -5,7 +5,7 @@ defaults:
     - ...
 
 prompt: ""
-neg_prompt: ""
+negative_prompt: ""
 
 n_iter: 1
 batch_size: 1
