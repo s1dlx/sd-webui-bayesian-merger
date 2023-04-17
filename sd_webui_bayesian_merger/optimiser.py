@@ -96,7 +96,14 @@ class Optimiser:
 
     def init_params(self) -> Dict:
         return self.bounds_initialiser.get_bounds(
-            self.merger.greek_letters, self.cfg.optimiser
+            self.merger.greek_letters,
+            self.cfg.optimiser,
+            self.cfg.optimisation_guide.frozen_params
+            if self.cfg.guided_optimisation
+            else {},
+            self.cfg.optimisation_guide.custom_ranges
+            if self.cfg.guided_optimisation
+            else {},
         )
 
     def assemble_params(self, params: Dict) -> Tuple[Dict, Dict]:
@@ -104,18 +111,25 @@ class Optimiser:
             gl: [
                 params.get(
                     f"block_{i}_{gl}",
-                    self.cfg.guided_optimisation.frozen_params[f"block_{i}_{gl}"],
+                    self.cfg.optimisation_guide.frozen_params[f"block_{i}_{gl}"]
+                    if self.cfg.guided_optimisation
+                    else {},
                 )
                 for i in range(NUM_TOTAL_BLOCKS)
             ]
             for gl in self.merger.greek_letters
         }
+
         bases = {
             gl: params.get(
-                f"base_{gl}", self.cfg.guided_optimisation.frozen_params[f"base_{gl}"]
+                f"base_{gl}",
+                self.cfg.optimisation_guide.frozen_params[f"base_{gl}"]
+                if self.cfg.guided_optimisation
+                else {},
             )
             for gl in self.merger.greek_letters
         }
+
         return weights, bases
 
     def sd_target_function(self, **params) -> float:
