@@ -1,0 +1,7 @@
+frozen_params:
+  block_0_alpha: 0.9           # constant value
+  base_beta: 0.1
+
+custom_ranges:
+  block_1_beta: [0.1, 0.5]     # set range
+  block_23_alpha: [0.5, 0.4]

@@ -1,6 +1,7 @@
 defaults:
   - _self_
   - payloads: cargo
+  - optimisation_guide: guide
 
 run_name: ${optimiser}_${scorer_method}
 hydra:
@@ -19,8 +20,9 @@ model_c: path/to/model_c/file
 skip_position_ids: 0
 merge_mode: weighted_sum  # weighted_sum (default), add_difference, sum_twice, triple_sum
 
-optimiser: bayes # tpe
-bounds_transformer: False
+optimiser: bayes            # tpe
+bounds_transformer: False   # bayes only
+guided_optimisation: False
 batch_size: 1
 init_points: 1
 n_iters: 1
