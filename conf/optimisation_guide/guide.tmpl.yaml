@@ -1,4 +1,4 @@
-freeze_blocks:
+frozen_params:
   - block_0_alpha: 0.9           # constant value
 
 custom_ranges:

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Tuple, Union
 from bayes_opt.logger import JSONLogger
 from hydra.core.hydra_config import HydraConfig
 from hyperopt import hp
-from omegaconf import DictConfig
+from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
 from sd_webui_bayesian_merger.artist import convergence_plot, draw_unet
@@ -38,7 +38,9 @@ class BoundsInitialiser:
         block_names = [f"block_{i}_{greek_letter}" for i in range(NUM_TOTAL_BLOCKS)] + [
             f"base_{greek_letter}"
         ]
-        ranges = {b: (0.0, 1.0) for b in block_names} | custom_ranges
+        ranges = {b: (0.0, 1.0) for b in block_names} | OmegaConf.to_object(
+            custom_ranges
+        )
         return {
             b: BoundsInitialiser.get_block_bounds(optimiser, b, *ranges[b])
             for b in block_names
@@ -107,28 +109,26 @@ class Optimiser:
         )
 
     def assemble_params(self, params: Dict) -> Tuple[Dict, Dict]:
-        weights = {
-            gl: [
-                params.get(
-                    f"block_{i}_{gl}",
-                    self.cfg.optimisation_guide.frozen_params[f"block_{i}_{gl}"]
-                    if self.cfg.guided_optimisation
-                    else {},
-                )
-                for i in range(NUM_TOTAL_BLOCKS)
-            ]
-            for gl in self.merger.greek_letters
-        }
+        print(params)
+        weights = {}
+        bases = {}
+        for gl in self.merger.greek_letters:
+            w = {}
+            for i in range(NUM_TOTAL_BLOCKS):
+                block_name = f"block_{i}_{gl}"
+                if block_name in params:
+                    w[block_name] = params[block_name]
+                else:
+                    w[block_name] = self.cfg.optimisation_guide.frozen_params[
+                        block_name
+                    ]
+            weights[gl] = w
 
-        bases = {
-            gl: params.get(
-                f"base_{gl}",
-                self.cfg.optimisation_guide.frozen_params[f"base_{gl}"]
-                if self.cfg.guided_optimisation
-                else {},
-            )
-            for gl in self.merger.greek_letters
-        }
+            base_name = f"base_{gl}"
+            if base_name in params:
+                bases[gl] = params[base_name]
+            else:
+                bases[gl] = self.cfg.optimisation_guide.frozen_params[base_name]
 
         return weights, bases
 
