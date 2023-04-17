@@ -1,9 +1,9 @@
 from functools import partial
 
+from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
+
 from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.optimiser import Optimiser
-
-from hyperopt import Trials, hp, fmin, tpe, STATUS_OK
 
 
 class TPEOptimiser(Optimiser):

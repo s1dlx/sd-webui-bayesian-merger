@@ -1,0 +1,5 @@
+freeze_blocks:
+  - block_0_alpha: 0.9           # constant value
+
+custom_ranges:
+  - block_1_beta: [0.1, 0.5]     # set range

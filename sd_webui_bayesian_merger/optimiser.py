@@ -1,23 +1,63 @@
+import json
 import os
 from abc import abstractmethod
-from pathlib import Path
-from typing import Dict, List
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Dict, List, Tuple, Union
 
-import json
-
-from tqdm import tqdm
-from omegaconf import DictConfig
 from bayes_opt.logger import JSONLogger
 from hydra.core.hydra_config import HydraConfig
+from hyperopt import hp
+from omegaconf import DictConfig
+from tqdm import tqdm
 
+from sd_webui_bayesian_merger.artist import convergence_plot, draw_unet
 from sd_webui_bayesian_merger.generator import Generator
+from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS, Merger
 from sd_webui_bayesian_merger.prompter import Prompter
-from sd_webui_bayesian_merger.merger import Merger, NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.scorer import AestheticScorer
-from sd_webui_bayesian_merger.artist import draw_unet, convergence_plot
 
 PathT = os.PathLike
+
+
+class BoundsInitialiser:
+    @staticmethod
+    def get_block_bounds(
+        optimiser: str, block_name: str, lb: float = 0.0, ub: float = 1.0
+    ) -> Union[Tuple[float, float], Any]:
+        # TODO: check/clip bounds in [-1, 1]
+        return hp.uniform(block_name, lb, ub) if optimiser == "tpe" else (lb, ub)
+
+    @staticmethod
+    def get_greek_letter_bounds(
+        greek_letter: str,
+        optimiser: str,
+        frozen_params: Dict[str, float] = {},
+        custom_ranges: Dict[str, Tuple[float, float]] = {},
+    ) -> Dict:
+        block_names = [f"block_{i}_{greek_letter}" for i in range(NUM_TOTAL_BLOCKS)] + [
+            f"base_{greek_letter}"
+        ]
+        ranges = {b: (0.0, 1.0) for b in block_names} | custom_ranges
+        return {
+            b: BoundsInitialiser.get_block_bounds(optimiser, b, *ranges[b])
+            for b in block_names
+            if b not in frozen_params
+        }
+
+    @staticmethod
+    def get_bounds(
+        greek_letters: List[str],
+        optimiser: str,
+        frozen_params: Dict[str, float] = {},
+        custom_ranges: Dict[str, Tuple[float, float]] = {},
+    ) -> Dict:
+        bounds = {}
+        for greek_letter in greek_letters:
+            bounds |= BoundsInitialiser.get_greek_letter_bounds(
+                greek_letter, optimiser, frozen_params, custom_ranges
+            )
+        return bounds
 
 
 @dataclass
@@ -26,6 +66,7 @@ class Optimiser:
     best_rolling_score: float = 0.0
 
     def __post_init__(self) -> None:
+        self.bounds_initialiser = BoundsInitialiser()
         self.generator = Generator(self.cfg.url, self.cfg.batch_size)
         self.merger = Merger(self.cfg)
         self.start_logging()
@@ -33,7 +74,6 @@ class Optimiser:
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
         self._clean = True
-        self.has_beta = self.cfg.merge_mode in ["sum_twice", "triple_sum"]
 
     def cleanup(self) -> None:
         if self._clean:
@@ -54,48 +94,29 @@ class Optimiser:
             )
         )
 
-    def pbound(self, param_name: str, lb: float = 0.0, ub: float = 1.0):
-        if self.optimiser == "tpe":
-            return hp.uniform(param_name, lb, ub)
-        return (lb, ub)
-
     def init_params(self) -> Dict:
-        if self.cfg.enable_fix_blocks:
-            pbounds = {}
-            for i in range(NUM_TOTAL_BLOCKS):
-                block_name = f"block_{i}"
-                if block_name not in self.cfg.fix_blocks:
-                    for gl in self.merger.greek_letters:
-                        pbounds[f"{block_name}_{gl}"] = self.pbound(
-                            f"{block_name}_{gl}"
-                        )
-                elif len(self.cfg.fix_block_values[block_name]) == 2:
-                    lb, ub = self.cfg.fix_block_values[block_name]
-                    for gl in self.merger.greek_letters:
-                        pbounds[f"{block_name}_{gl}"] = self.pbound(
-                            f"{block_name}_{gl}",
-                            lb,
-                            ub,
-                        )
-            for gl in self.merger.greek_letters:
-                if f"base_{gl}" not in self.cfg.fix_blocks:
-                    pbounds[f"base_{gl}"] = self.pbound(f"base_{gl}")
-                elif len(self.cfg.fix_block_values[f"base_{gl}"]) == 2:
-                    lb, ub = self.cfg.fix_block_values[f"base_{gl}"]
-                    pbounds[f"base_{gl}"] = self.pbound(f"base_{gl}", lb, ub)
-        else:
-            pbounds = {
-                f"block_{i}_alpha": self.pbound(f"block_{i}_alpha")
+        return self.bounds_initialiser.get_bounds(
+            self.merger.greek_letters, self.cfg.optimiser
+        )
+
+    def assemble_params(self, params: Dict) -> Tuple[Dict, Dict]:
+        weights = {
+            gl: [
+                params.get(
+                    f"block_{i}_{gl}",
+                    self.cfg.guided_optimisation.frozen_params[f"block_{i}_{gl}"],
+                )
                 for i in range(NUM_TOTAL_BLOCKS)
-            }
-            pbounds["base_alpha"] = self.pbound("base_alpha")
-            for gl in self.merger.greek_letters:
-                pbounds |= {
-                    f"block_{i}_{gl}": self.pbound(f"block_{i}_{gl}")
-                    for i in range(NUM_TOTAL_BLOCKS)
-                }
-                pbounds[f"base_{gl}"] = self.pbound(f"base_{gl}")
-        return pbounds
+            ]
+            for gl in self.merger.greek_letters
+        }
+        bases = {
+            gl: params.get(
+                f"base_{gl}", self.cfg.guided_optimisation.frozen_params[f"base_{gl}"]
+            )
+            for gl in self.merger.greek_letters
+        }
+        return weights, bases
 
     def sd_target_function(self, **params) -> float:
         self.iteration += 1
@@ -108,32 +129,7 @@ class Optimiser:
         it_type = "warmup" if self.iteration <= self.cfg.init_points else "optimisation"
         print(f"\n{it_type} - Iteration: {self.iteration}")
 
-        if self.cfg.enable_fix_blocks:
-            weights = {}
-            bases = {}
-            for gl in self.merger.greek_letters:
-                greek_weights = []
-                for i in range(NUM_TOTAL_BLOCKS):
-                    block_name = f"block_{i}"
-                    greek_block_name = f"{block_name}_{gl}"
-                    if greek_block_name in params:
-                        greek_weights.append(params[greek_block_name])
-                    else:
-                        fixed_block_weight = self.cfg.fix_block_values[block_name]
-                        greek_weights.append(fixed_block_weight)
-                weights[gl] = greek_weights
-                greek_base = f"base_{gl}"
-                if greek_base in params:
-                    bases[gl] = params[greek_base]
-                else:
-                    fixed_base = self.cfg.fix_block_values[greek_base]
-                    bases[gl] = fixed_base
-        else:
-            weights = {
-                gl: [params[f"block_{i}_{gl}"] for i in range(NUM_TOTAL_BLOCKS)]
-                for gl in self.merger.greek_letters
-            }
-            bases = {gl: params[f"base_{gl}"] for gl in self.merger.greek_letters}
+        weights, bases = self.assemble_params(params)
 
         self.merger.create_model_out_name(self.iteration)
         self.merger.merge(weights, bases)

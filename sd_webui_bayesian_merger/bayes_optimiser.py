@@ -1,7 +1,6 @@
-from typing import Dict, Tuple, List
+from typing import Dict, List, Tuple
 
 from bayes_opt import BayesianOptimization, Events
-
 from bayes_opt.domain_reduction import SequentialDomainReductionTransformer
 
 from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS
