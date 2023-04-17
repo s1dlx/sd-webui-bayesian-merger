@@ -1,6 +1,7 @@
 defaults:
   - _self_
   - payloads: cargo
+  - optimisation_guide: guide
 
 run_name: ${optimiser}_${scorer_method}
 hydra:
@@ -31,8 +32,9 @@ block_groups:
   - [block_0, block_1]
   - [block_2, block_3]
 
-optimiser: bayes # tpe
-bounds_transformer: False
+optimiser: bayes            # tpe
+bounds_transformer: False   # bayes only
+guided_optimisation: False
 batch_size: 1
 init_points: 1
 n_iters: 1
