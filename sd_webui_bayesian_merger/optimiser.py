@@ -1,5 +1,6 @@
 import json
 import os
+import sys
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
@@ -59,6 +60,15 @@ class BoundsInitialiser:
             bounds |= BoundsInitialiser.get_greek_letter_bounds(
                 greek_letter, optimiser, frozen_params, custom_ranges
             )
+
+        try:
+            assert len(bounds) == (NUM_TOTAL_BLOCKS + 1) * len(greek_letters) - len(
+                frozen_params
+            )
+        except AssertionError:
+            print("something off with the guided optimisation, raise a github issue!")
+            sys.exit()
+
         return bounds
 
 
