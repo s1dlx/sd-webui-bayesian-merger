@@ -119,19 +119,18 @@ class Optimiser:
         )
 
     def assemble_params(self, params: Dict) -> Tuple[Dict, Dict]:
-        print(params)
         weights = {}
         bases = {}
         for gl in self.merger.greek_letters:
-            w = {}
+            w = []
             for i in range(NUM_TOTAL_BLOCKS):
                 block_name = f"block_{i}_{gl}"
                 if block_name in params:
-                    w[block_name] = params[block_name]
+                    w.append(params[block_name])
                 else:
-                    w[block_name] = self.cfg.optimisation_guide.frozen_params[
+                    w.append(self.cfg.optimisation_guide.frozen_params[
                         block_name
-                    ]
+                    ])
             weights[gl] = w
 
             base_name = f"base_{gl}"
@@ -278,4 +277,6 @@ def load_log(log: PathT) -> List[Dict]:
             except StopIteration:
                 break
             iterations.append(json.loads(iteration))
+    return iterations
+iteration))
     return iterations
