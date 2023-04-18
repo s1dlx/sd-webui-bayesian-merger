@@ -49,31 +49,56 @@ class BoundsInitialiser:
         }
 
     @staticmethod
+    def consolidate_groups(bounds: Dict, groups: List[List[str]]) -> Dict:
+        blocks_to_group = set()
+        grouped = {}
+        for group in groups:
+            blocks_to_group.update(group)
+            group_name = "-".join(group)
+            grouped |= {b: group_name for b in group}
+
+        replaced = {}
+        for block in bounds:
+            if block in blocks_to_group:
+                replaced[block] = bounds[block]
+
+        for block in replaced:
+            del bounds[block]
+
+        for b, bound in replaced.items():
+            group_name = grouped[b]
+            if group_name not in bounds:
+                bounds[group_name] = bound
+            else:
+                if not bound == bounds[group_name]:
+                    raise KeyError(
+                        f"you are tring to freeze/set range differently within the same group! {group_name}"
+                    )
+
+        return bounds
+
+    @staticmethod
     def get_bounds(
         greek_letters: List[str],
         optimiser: str,
         frozen_params: Dict[str, float] = {},
         custom_ranges: Dict[str, Tuple[float, float]] = {},
+        groups: List[List[str]] = [],
     ) -> Dict:
         bounds = {}
         if not custom_ranges:
             custom_ranges = DictConfig({})
         if not frozen_params:
             frozen_params = []
+        if not groups:
+            groups = []
+
         for greek_letter in greek_letters:
             bounds |= BoundsInitialiser.get_greek_letter_bounds(
                 greek_letter, optimiser, frozen_params, custom_ranges
             )
 
-        try:
-            assert len(bounds) == (NUM_TOTAL_BLOCKS + 1) * len(greek_letters) - len(
-                frozen_params
-            )
-        except AssertionError:
-            print("something off with the guided optimisation, raise a github issue!")
-            sys.exit()
-
-        return bounds
+        return BoundsInitialiser.consolidate_groups(bounds, groups)
 
 
 @dataclass
@@ -120,6 +145,9 @@ class Optimiser:
             self.cfg.optimisation_guide.custom_ranges
             if self.cfg.guided_optimisation
             else {},
+            self.cfg.optimisation_guide.groups
+            if self.cfg.guided_optimisation
+            else [[]],
         )
 
     def assemble_params(self, params: Dict) -> Tuple[Dict, Dict]:
@@ -131,15 +159,37 @@ class Optimiser:
                 block_name = f"block_{i}_{gl}"
                 if block_name in params:
                     w.append(params[block_name])
-                else:
+                elif (
+                    self.cfg.optimisation_guide.frozen_params
+                    and block_name in self.cfg.optimisation_guide.frozen_params
+                ):
                     w.append(self.cfg.optimisation_guide.frozen_params[block_name])
+                elif self.cfg.optimisation_guide.groups:
+                    for group in self.cfg.optimisation_guide.groups:
+                        if block_name in group:
+                            group_name = "-".join(group)
+                            w.append(params[group_name])
+                            break
+            assert len(w) == NUM_TOTAL_BLOCKS
             weights[gl] = w
 
             base_name = f"base_{gl}"
             if base_name in params:
                 bases[gl] = params[base_name]
-            else:
+            elif (
+                self.cfg.optimisation_guide.frozen_params
+                and base_name in self.cfg.optimisation_guide.frozen_params
+            ):
                 bases[gl] = self.cfg.optimisation_guide.frozen_params[base_name]
+            elif self.cfg.optimisation_guide.groups:
+                for group in self.cfg.optimisation_guide.groups:
+                    if base_name in group:
+                        group_name = "-".join(group)
+                        bases[gl] = params[group_name]
+                        break
+
+        assert len(weights) == len(self.merger.greek_letters)
+        assert len(bases) == len(self.merger.greek_letters)
 
         return weights, bases
 
