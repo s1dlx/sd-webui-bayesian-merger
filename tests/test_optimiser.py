@@ -74,11 +74,16 @@ def test_groups():
     optimiser = "bayes"
     greek_letters = ["alpha"]
     custom_ranges = DictConfig({})
-    groups = ListConfig([['block_1_alpha', 'block_2_alpha']])
+    groups = ListConfig([["block_1_alpha", "block_2_alpha"]])
     result = BoundsInitialiser.get_bounds(
-        greek_letters, optimiser, custom_ranges=custom_ranges, groups=groups,
+        greek_letters,
+        optimiser,
+        custom_ranges=custom_ranges,
+        groups=groups,
     )
-    expected = {
-        f"block_{i}_alpha": (0.0, 1.0) for i in range(25) if i not in [1,2]
-    } | {"base_alpha": (0.0, 1.0)} |{'block_1_alpha-block_2_alpha': (0.0, 1.0)}
+    expected = (
+        {f"block_{i}_alpha": (0.0, 1.0) for i in range(25) if i not in [1, 2]}
+        | {"base_alpha": (0.0, 1.0)}
+        | {"block_1_alpha-block_2_alpha": (0.0, 1.0)}
+    )
     assert result == expected
