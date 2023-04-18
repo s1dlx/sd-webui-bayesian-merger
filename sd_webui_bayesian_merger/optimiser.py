@@ -56,6 +56,10 @@ class BoundsInitialiser:
         custom_ranges: Dict[str, Tuple[float, float]] = {},
     ) -> Dict:
         bounds = {}
+        if not custom_ranges:
+            custom_ranges = DictConfig({})
+        if not frozen_params:
+            frozen_params = []
         for greek_letter in greek_letters:
             bounds |= BoundsInitialiser.get_greek_letter_bounds(
                 greek_letter, optimiser, frozen_params, custom_ranges
