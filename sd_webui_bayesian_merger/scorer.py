@@ -1,21 +1,18 @@
 import os
-import requests
-
-from typing import List
 from dataclasses import dataclass
 from pathlib import Path
+from typing import List
 
-from PIL import Image
-from transformers import CLIPModel, CLIPProcessor, pipeline
-from omegaconf import DictConfig
-from hydra.core.hydra_config import HydraConfig
-
-
+import clip
+import numpy as np
+import requests
+import safetensors
 import torch
 import torch.nn as nn
-import clip
-import safetensors
-import numpy as np
+from hydra.core.hydra_config import HydraConfig
+from omegaconf import DictConfig
+from PIL import Image
+from transformers import CLIPModel, CLIPProcessor, pipeline
 
 LAION_URL = (
     "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"

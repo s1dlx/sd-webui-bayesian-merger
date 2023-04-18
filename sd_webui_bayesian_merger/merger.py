@@ -1,16 +1,14 @@
 import os
 import re
 import sys
-
 from dataclasses import dataclass
-from typing import Dict, Tuple
 from pathlib import Path
+from typing import Dict, Tuple
 
-import torch
 import safetensors.torch
-
-from tqdm import tqdm
+import torch
 from omegaconf import DictConfig
+from tqdm import tqdm
 
 from sd_webui_bayesian_merger.model import SDModel
 

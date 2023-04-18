@@ -1,13 +1,12 @@
 import itertools
 import os
-
 from typing import List, Tuple
 
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt
 import seaborn as sns
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 PathT = os.PathLike
 

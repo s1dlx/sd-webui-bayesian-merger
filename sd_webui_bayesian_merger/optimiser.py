@@ -128,9 +128,7 @@ class Optimiser:
                 if block_name in params:
                     w.append(params[block_name])
                 else:
-                    w.append(self.cfg.optimisation_guide.frozen_params[
-                        block_name
-                    ])
+                    w.append(self.cfg.optimisation_guide.frozen_params[block_name])
             weights[gl] = w
 
             base_name = f"base_{gl}"
@@ -277,6 +275,4 @@ def load_log(log: PathT) -> List[Dict]:
             except StopIteration:
                 break
             iterations.append(json.loads(iteration))
-    return iterations
-iteration))
     return iterations
