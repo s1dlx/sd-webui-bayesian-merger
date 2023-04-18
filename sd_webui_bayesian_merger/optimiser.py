@@ -4,7 +4,7 @@ import sys
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Set, Tuple, Union
 
 from bayes_opt.logger import JSONLogger
 from hydra.core.hydra_config import HydraConfig
@@ -33,9 +33,13 @@ class BoundsInitialiser:
     def get_greek_letter_bounds(
         greek_letter: str,
         optimiser: str,
-        frozen_params: Dict[str, float] = {},
-        custom_ranges: Dict[str, Tuple[float, float]] = {},
+        frozen_params: Dict[str, float] = None,
+        custom_ranges: Dict[str, Tuple[float, float]] = None,
     ) -> Dict:
+        if frozen_params is None:
+            frozen_params = {}
+        if custom_ranges is None:
+            custom_ranges = DictConfig({})
         block_names = [f"block_{i}_{greek_letter}" for i in range(NUM_TOTAL_BLOCKS)] + [
             f"base_{greek_letter}"
         ]
@@ -49,31 +53,40 @@ class BoundsInitialiser:
         }
 
     @staticmethod
-    def consolidate_groups(bounds: Dict, groups: List[List[str]]) -> Dict:
+    def get_grouped_bounds_and_names(groups: List[List[str]]) -> Tuple[Dict, Set]:
+        grouped_bounds = {}
         blocks_to_group = set()
-        grouped = {}
         for group in groups:
             blocks_to_group.update(group)
             group_name = "-".join(group)
-            grouped |= {b: group_name for b in group}
+            grouped_bounds |= {b: group_name for b in group}
+        return grouped_bounds, blocks_to_group
 
-        replaced = {}
-        for block in bounds:
-            if block in blocks_to_group:
-                replaced[block] = bounds[block]
+    @staticmethod
+    def extract_grouped_bounds(bounds: Dict, blocks_to_group: Set) -> Dict:
+        return {block: bounds[block] for block in bounds if block in blocks_to_group}
 
-        for block in replaced:
+    @staticmethod
+    def consolidate_groups(bounds: Dict, groups: List[List[str]]) -> Dict:
+        (
+            grouped_bounds,
+            blocks_to_group,
+        ) = BoundsInitialiser.get_grouped_bounds_and_names(groups)
+        replaced_bounds = BoundsInitialiser.extract_grouped_bounds(
+            bounds, blocks_to_group
+        )
+
+        for block in replaced_bounds:
             del bounds[block]
 
-        for b, bound in replaced.items():
-            group_name = grouped[b]
+        for block, bound in replaced_bounds.items():
+            group_name = grouped_bounds[block]
             if group_name not in bounds:
                 bounds[group_name] = bound
-            else:
-                if not bound == bounds[group_name]:
-                    raise KeyError(
-                        f"you are tring to freeze/set range differently within the same group! {group_name}"
-                    )
+            elif bound != bounds[group_name]:
+                raise KeyError(
+                    f"you are tring to freeze/set range differently within the same group! {group_name}"
+                )
 
         return bounds
 
@@ -81,18 +94,18 @@ class BoundsInitialiser:
     def get_bounds(
         greek_letters: List[str],
         optimiser: str,
-        frozen_params: Dict[str, float] = {},
-        custom_ranges: Dict[str, Tuple[float, float]] = {},
-        groups: List[List[str]] = [],
+        frozen_params: Dict[str, float] = None,
+        custom_ranges: Dict[str, Tuple[float, float]] = None,
+        groups: List[List[str]] = None,
     ) -> Dict:
-        bounds = {}
-        if not custom_ranges:
+        if frozen_params is None:
+            frozen_params = {}
+        if custom_ranges is None:
             custom_ranges = DictConfig({})
-        if not frozen_params:
-            frozen_params = []
-        if not groups:
+        if groups is None:
             groups = []
 
+        bounds = {}
         for greek_letter in greek_letters:
             bounds |= BoundsInitialiser.get_greek_letter_bounds(
                 greek_letter, optimiser, frozen_params, custom_ranges
@@ -247,7 +260,7 @@ class Optimiser:
             print("\n NEW BEST!")
             print("Saving best model merge")
             self.best_rolling_score = avg_score
-            save_best_log(bases, weights_strings)
+            Optimiser.save_best_log(bases, weights_strings)
             self.merger.keep_best_ckpt()
             self._clean = False
 
@@ -289,7 +302,7 @@ class Optimiser:
             print(w_str)
             best_weights_strings[gl] = w_str
 
-        save_best_log(best_bases, best_weights_strings)
+        Optimiser.save_best_log(best_bases, best_weights_strings)
         draw_unet(
             best_bases["alpha"],
             best_weights["alpha"],
@@ -297,9 +310,7 @@ class Optimiser:
             model_b=Path(self.cfg.model_b).stem,
             figname=unet_path,
         )
-        # TODO: draw more UNETs?
 
-        # TODO: is this really necessary?
         if self.cfg.save_best:
             print(f"Saving best merge: {self.merger.best_output_file}")
             self.merger.merge(
@@ -308,25 +319,25 @@ class Optimiser:
                 best=True,
             )
 
+    @staticmethod
+    def save_best_log(bases: Dict, weights_strings: Dict) -> None:
+        print("Saving best.log")
+        with open(
+            Path(HydraConfig.get().runtime.output_dir, "best.log"),
+            "w",
+            encoding="utf-8",
+        ) as f:
+            for m, b in bases.items():
+                f.write(f"{bases[m]}\n\n{weights_strings[m]}\n\n")
 
-def save_best_log(bases: Dict, weights_strings: Dict) -> None:
-    print("Saving best.log")
-    with open(
-        Path(HydraConfig.get().runtime.output_dir, "best.log"),
-        "w",
-        encoding="utf-8",
-    ) as f:
-        for m, b in bases.items():
-            f.write(f"{bases[m]}\n\n{weights_strings[m]}\n\n")
-
-
-def load_log(log: PathT) -> List[Dict]:
-    iterations = []
-    with open(log, "r") as j:
-        while True:
-            try:
-                iteration = next(j)
-            except StopIteration:
-                break
-            iterations.append(json.loads(iteration))
-    return iterations
+    @staticmethod
+    def load_log(log: PathT) -> List[Dict]:
+        iterations = []
+        with open(log, "r") as j:
+            while True:
+                try:
+                    iteration = next(j)
+                except StopIteration:
+                    break
+                iterations.append(json.loads(iteration))
+        return iterations
