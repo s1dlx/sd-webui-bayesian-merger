@@ -113,6 +113,7 @@ class Merger:
             seen_models += 1
         if self.cfg.merge_mode in [
             "sum_twice",
+            "tensor_sum"
             "triple_sum",
             "weighted_subtraction",
         ]:
@@ -234,6 +235,40 @@ class Merger:
         beta = current_bases["beta"]
         if self.cfg.merge_mode == "sum_twice":
             return (1 - beta) * ((1 - alpha) * t0 + alpha * t1) + beta * t2
+        elif self.cfg.merge_mode == "tensor_sum":
+            dim = t0.dim()
+            if alpha+beta <= 1 :
+                tt=t0.clone()
+                talphas = int(t0.shape[0]*(beta))
+                talphae = int(t0.shape[0]*(alpha+beta))
+                if dim == 1:
+                    tt[talphas:talphae] = t1[talphas:talphae].clone()
+
+                elif dim == 2:
+                    tt[talphas:talphae,:] = t1[talphas:talphae,:].clone()
+
+                elif dim == 3:
+                    tt[talphas:talphae,:,:] = t1[talphas:talphae,:,:].clone()
+
+                elif dim == 4:
+                    tt[talphas:talphae,:,:,:] = t1[talphas:talphae,:,:,:].clone()
+                return tt
+            else:
+                talphas = int(t0.shape[0]*(alpha+beta-1))
+                talphae = int(t0.shape[0]*(beta))
+                tt = t1.clone()
+                if dim == 1:
+                    tt[talphas:talphae] = t0[talphas:talphae].clone()
+
+                elif dim == 2:
+                    tt[talphas:talphae,:] = t0[talphas:talphae,:].clone()
+
+                elif dim == 3:
+                    tt[talphas:talphae,:,:] = t0[talphas:talphae,:,:].clone()
+
+                elif dim == 4:
+                    tt[talphas:talphae,:,:,:] = t0[talphas:talphae,:,:,:].clone()
+                return tt
         elif self.cfg.merge_mode == "triple_sum":
             return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
 
