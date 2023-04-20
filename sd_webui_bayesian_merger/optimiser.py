@@ -84,10 +84,10 @@ class BoundsInitialiser:
             if group_name not in bounds:
                 bounds[group_name] = bound
             elif bound != bounds[group_name]:
-                raise KeyError(
+                print(
                     f"you are tring to freeze/set range differently within the same group! {group_name}"
                 )
-
+                print(f'we will use {group_name.split("-")[0]} values!')
         return bounds
 
     @staticmethod
