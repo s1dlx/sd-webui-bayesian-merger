@@ -4,7 +4,7 @@ import sys
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Set, Tuple, Union
 
 from bayes_opt.logger import JSONLogger
 from hydra.core.hydra_config import HydraConfig
@@ -33,9 +33,13 @@ class BoundsInitialiser:
     def get_greek_letter_bounds(
         greek_letter: str,
         optimiser: str,
-        frozen_params: Dict[str, float] = {},
-        custom_ranges: Dict[str, Tuple[float, float]] = {},
+        frozen_params: Dict[str, float] = None,
+        custom_ranges: Dict[str, Tuple[float, float]] = None,
     ) -> Dict:
+        if frozen_params is None:
+            frozen_params = {}
+        if custom_ranges is None:
+            custom_ranges = DictConfig({})
         block_names = [f"block_{i}_{greek_letter}" for i in range(NUM_TOTAL_BLOCKS)] + [
             f"base_{greek_letter}"
         ]
@@ -49,31 +53,65 @@ class BoundsInitialiser:
         }
 
     @staticmethod
+    def get_grouped_bounds_and_names(groups: List[List[str]]) -> Tuple[Dict, Set]:
+        grouped_bounds = {}
+        blocks_to_group = set()
+        for group in groups:
+            blocks_to_group.update(group)
+            group_name = "-".join(group)
+            grouped_bounds |= {b: group_name for b in group}
+        return grouped_bounds, blocks_to_group
+
+    @staticmethod
+    def extract_grouped_bounds(bounds: Dict, blocks_to_group: Set) -> Dict:
+        return {block: bounds[block] for block in bounds if block in blocks_to_group}
+
+    @staticmethod
+    def consolidate_groups(bounds: Dict, groups: List[List[str]]) -> Dict:
+        (
+            grouped_bounds,
+            blocks_to_group,
+        ) = BoundsInitialiser.get_grouped_bounds_and_names(groups)
+        replaced_bounds = BoundsInitialiser.extract_grouped_bounds(
+            bounds, blocks_to_group
+        )
+
+        for block in replaced_bounds:
+            del bounds[block]
+
+        for block, bound in replaced_bounds.items():
+            group_name = grouped_bounds[block]
+            if group_name not in bounds:
+                bounds[group_name] = bound
+            elif bound != bounds[group_name]:
+                print(
+                    f"you are tring to freeze/set range differently within the same group! {group_name}"
+                )
+                print(f'we will use {group_name.split("-")[0]} values!')
+        return bounds
+
+    @staticmethod
     def get_bounds(
         greek_letters: List[str],
         optimiser: str,
-        frozen_params: Dict[str, float] = {},
-        custom_ranges: Dict[str, Tuple[float, float]] = {},
+        frozen_params: Dict[str, float] = None,
+        custom_ranges: Dict[str, Tuple[float, float]] = None,
+        groups: List[List[str]] = None,
     ) -> Dict:
-        bounds = {}
-        if not custom_ranges:
+        if frozen_params is None:
+            frozen_params = {}
+        if custom_ranges is None:
             custom_ranges = DictConfig({})
-        if not frozen_params:
-            frozen_params = []
+        if groups is None:
+            groups = []
+
+        bounds = {}
         for greek_letter in greek_letters:
             bounds |= BoundsInitialiser.get_greek_letter_bounds(
                 greek_letter, optimiser, frozen_params, custom_ranges
             )
 
-        try:
-            assert len(bounds) == (NUM_TOTAL_BLOCKS + 1) * len(greek_letters) - len(
-                frozen_params
-            )
-        except AssertionError:
-            print("something off with the guided optimisation, raise a github issue!")
-            sys.exit()
-
-        return bounds
+        return BoundsInitialiser.consolidate_groups(bounds, groups)
 
 
 @dataclass
@@ -93,7 +131,6 @@ class Optimiser:
 
     def cleanup(self) -> None:
         if self._clean:
-            # clean up and remove the last merge
             self.merger.remove_previous_ckpt(self.iteration)
         else:
             self._clean = True
@@ -114,94 +151,98 @@ class Optimiser:
         return self.bounds_initialiser.get_bounds(
             self.merger.greek_letters,
             self.cfg.optimiser,
-            self.cfg.optimisation_guide.frozen_params
-            if self.cfg.guided_optimisation
-            else {},
-            self.cfg.optimisation_guide.custom_ranges
-            if self.cfg.guided_optimisation
-            else {},
+            self.cfg.optimisation_guide.frozen_params,
+            self.cfg.optimisation_guide.custom_ranges,
+            self.cfg.optimisation_guide.groups,
         )
 
     def assemble_params(self, params: Dict) -> Tuple[Dict, Dict]:
+        def get_value(param_name: str) -> float:
+            if param_name in params:
+                return params[param_name]
+            if (
+                self.cfg.optimisation_guide.frozen_params
+                and param_name in self.cfg.optimisation_guide.frozen_params
+            ):
+                return self.cfg.optimisation_guide.frozen_params[param_name]
+            for group in self.cfg.optimisation_guide.groups:
+                if param_name in group:
+                    group_name = "-".join(group)
+                    return params[group_name]
+
         weights = {}
         bases = {}
         for gl in self.merger.greek_letters:
             w = []
             for i in range(NUM_TOTAL_BLOCKS):
-                block_name = f"block_{i}_{gl}"
-                if block_name in params:
-                    w.append(params[block_name])
-                else:
-                    w.append(self.cfg.optimisation_guide.frozen_params[block_name])
+                w.append(get_value(f"block_{i}_{gl}"))
+            assert len(w) == NUM_TOTAL_BLOCKS
             weights[gl] = w
 
-            base_name = f"base_{gl}"
-            if base_name in params:
-                bases[gl] = params[base_name]
-            else:
-                bases[gl] = self.cfg.optimisation_guide.frozen_params[base_name]
+            bases[gl] = get_value(f"base_{gl}")
+
+        assert len(weights) == len(self.merger.greek_letters)
+        assert len(bases) == len(self.merger.greek_letters)
 
         return weights, bases
 
     def sd_target_function(self, **params) -> float:
+        def print_iteration_info(iteration_type: str):
+            print(f"\n{iteration_type} - Iteration: {self.iteration}")
+
         self.iteration += 1
+        iteration_type = (
+            "warmup" if self.iteration <= self.cfg.init_points else "optimisation"
+        )
 
-        if self.iteration == 1:
-            print("\n" + "-" * 10 + " warmup " + "-" * 10 + ">")
-        elif self.iteration == self.cfg.init_points + 1:
-            print("\n" + "-" * 10 + " optimisation " + "-" * 10 + ">")
-
-        it_type = "warmup" if self.iteration <= self.cfg.init_points else "optimisation"
-        print(f"\n{it_type} - Iteration: {self.iteration}")
+        if self.iteration in {1, self.cfg.init_points + 1}:
+            print("\n" + "-" * 10 + f" {iteration_type} " + "-" * 10 + ">")
+        print_iteration_info(iteration_type)
 
         weights, bases = self.assemble_params(params)
-
         self.merger.create_model_out_name(self.iteration)
         self.merger.merge(weights, bases)
         self.cleanup()
 
         self.generator.switch_model(self.merger.model_out_name)
 
-        # generate images
+        images, gen_paths = self.generate_images(paths, payloads)
+        scores = self.score_images(images, gen_paths)
+        avg_score = self.scorer.average_score(scores)
+        self.update_best_score(bases, weights, avg_score)
+
+        return avg_score
+
+    def generate_images(self, paths, payloads) -> Tuple[List, List]:
         images = []
-        payloads, paths = self.prompter.render_payloads()
         gen_paths = []
-        for i, payload in tqdm(
-            enumerate(payloads),
-            desc="Batches generation",
-        ):
+        payloads, paths = self.prompter.render_payloads()
+        for i, payload in tqdm(enumerate(payloads), desc="Batches generation"):
             images.extend(self.generator.batch_generate(payload))
             gen_paths.extend([paths[i]] * self.cfg.batch_size * payload["batch_size"])
+        return images, gen_paths
 
-        # score images
+    def score_images(self, images, gen_paths) -> List[float]:
         print("\nScoring")
-        scores = self.scorer.batch_score(
-            images,
-            gen_paths,
-            self.iteration,
-        )
+        return self.scorer.batch_score(images, gen_paths, self.iteration)
 
-        # spit out a single value for optimisation
-        avg_score = self.scorer.average_score(scores)
+    def update_best_score(self, bases, weights, avg_score):
         print(f"{'-'*10}\nRun score: {avg_score}")
+        weights_strings = {
+            gl: ",".join(map(str, weights[gl])) for gl in self.merger.greek_letters
+        }
 
-        weights_strings = {}
         for gl in self.merger.greek_letters:
             print(f"\nrun base_{gl}: {bases[gl]}")
-            print(f"run weights_{gl}:")
-            w_str = ",".join(list(map(str, weights[gl])))
-            print(w_str)
-            weights_strings[gl] = w_str
+            print(f"run weights_{gl}: {weights_strings[gl]}")
 
         if avg_score > self.best_rolling_score:
             print("\n NEW BEST!")
             print("Saving best model merge")
             self.best_rolling_score = avg_score
-            save_best_log(bases, weights_strings)
+            Optimiser.save_best_log(bases, weights_strings)
             self.merger.keep_best_ckpt()
             self._clean = False
-
-        return avg_score
 
     @abstractmethod
     def optimise(self) -> None:
@@ -239,7 +280,7 @@ class Optimiser:
             print(w_str)
             best_weights_strings[gl] = w_str
 
-        save_best_log(best_bases, best_weights_strings)
+        Optimiser.save_best_log(best_bases, best_weights_strings)
         draw_unet(
             best_bases["alpha"],
             best_weights["alpha"],
@@ -247,9 +288,7 @@ class Optimiser:
             model_b=Path(self.cfg.model_b).stem,
             figname=unet_path,
         )
-        # TODO: draw more UNETs?
 
-        # TODO: is this really necessary?
         if self.cfg.save_best:
             print(f"Saving best merge: {self.merger.best_output_file}")
             self.merger.merge(
@@ -258,25 +297,25 @@ class Optimiser:
                 best=True,
             )
 
+    @staticmethod
+    def save_best_log(bases: Dict, weights_strings: Dict) -> None:
+        print("Saving best.log")
+        with open(
+            Path(HydraConfig.get().runtime.output_dir, "best.log"),
+            "w",
+            encoding="utf-8",
+        ) as f:
+            for m, b in bases.items():
+                f.write(f"{bases[m]}\n\n{weights_strings[m]}\n\n")
 
-def save_best_log(bases: Dict, weights_strings: Dict) -> None:
-    print("Saving best.log")
-    with open(
-        Path(HydraConfig.get().runtime.output_dir, "best.log"),
-        "w",
-        encoding="utf-8",
-    ) as f:
-        for m, b in bases.items():
-            f.write(f"{bases[m]}\n\n{weights_strings[m]}\n\n")
-
-
-def load_log(log: PathT) -> List[Dict]:
-    iterations = []
-    with open(log, "r") as j:
-        while True:
-            try:
-                iteration = next(j)
-            except StopIteration:
-                break
-            iterations.append(json.loads(iteration))
-    return iterations
+    @staticmethod
+    def load_log(log: PathT) -> List[Dict]:
+        iterations = []
+        with open(log, "r") as j:
+            while True:
+                try:
+                    iteration = next(j)
+                except StopIteration:
+                    break
+                iterations.append(json.loads(iteration))
+        return iterations
