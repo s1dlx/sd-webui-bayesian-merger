@@ -206,14 +206,14 @@ class Optimiser:
 
         self.generator.switch_model(self.merger.model_out_name)
 
-        images, gen_paths = self.generate_images(paths, payloads)
+        images, gen_paths = self.generate_images()
         scores = self.score_images(images, gen_paths)
         avg_score = self.scorer.average_score(scores)
         self.update_best_score(bases, weights, avg_score)
 
         return avg_score
 
-    def generate_images(self, paths, payloads) -> Tuple[List, List]:
+    def generate_images(self) -> Tuple[List, List]:
         images = []
         gen_paths = []
         payloads, paths = self.prompter.render_payloads()
