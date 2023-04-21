@@ -42,7 +42,7 @@ class BayesOptimiser(Optimiser):
             print(f"Iteration {i}: \n\t{res}")
 
         scores = parse_scores(self.optimizer.res)
-        best_bases, best_weights = self.parse_params(
+        best_weights, best_bases = self.assemble_params(
             self.optimizer.max["params"],
         )
 
@@ -52,18 +52,6 @@ class BayesOptimiser(Optimiser):
             best_weights,
             minimise=False,
         )
-
-    def parse_params(self, params: Dict) -> Tuple[Dict, Dict]:
-        bases = {"alpha": params["base_alpha"]}
-        weights = {
-            "alpha": [params[f"block_{i}_alpha"] for i in range(NUM_TOTAL_BLOCKS)]
-        }
-        for m, gl in zip(self.merger.model_keys, self.merger.greek_letters):
-            bases[gl] = params[f"base_{gl}"]
-            weights[gl] = [params[f"block_{i}_{gl}"] for i in range(NUM_TOTAL_BLOCKS)]
-
-        return bases, weights
-
 
 def parse_scores(iterations: List[Dict]) -> List[float]:
     return [r["target"] for r in iterations]

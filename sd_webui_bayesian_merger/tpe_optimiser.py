@@ -43,17 +43,9 @@ class TPEOptimiser(Optimiser):
             scores.append(res)
         best = self.trials.best_trial
 
-        best_bases = {
-            gl: best["result"]["params"][f"base_{gl}"]
-            for gl in self.merger.greek_letters
-        }
-        best_weights = {
-            gl: [
-                best["result"]["params"][f"block_{i}_{gl}"]
-                for i in range(NUM_TOTAL_BLOCKS)
-            ]
-            for gl in self.merger.greek_letters
-        }
+        best_weights, best_bases = self.assemble_params(
+            best["result"]["params"],
+        )
 
         self.plot_and_save(
             scores,
