@@ -90,13 +90,11 @@ class Bounds:
     @staticmethod
     def get_value(params, block_name, frozen, groups) -> float:
         if block_name in params:
-            print(f"{block_name} in params")
             return params[block_name]
         for group in groups:
             if block_name in group:
                 group_name = "-".join(group)
                 if group_name in params:
-                    print(f"{group_name} in params: {params[group_name]}")
                     return params[group_name]
                 if group[0] in frozen:
                     return frozen[group[0]]
