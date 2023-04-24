@@ -41,7 +41,7 @@ class BayesOptimiser(Optimiser):
             print(f"Iteration {i}: \n\t{res}")
 
         scores = parse_scores(self.optimizer.res)
-        best_weights, best_bases = self.assemble_params(
+        best_weights, best_bases = self.bounds_initialiser.assemble_params(
             self.optimizer.max["params"],
         )
 

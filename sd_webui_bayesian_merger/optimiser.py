@@ -61,36 +61,6 @@ class Optimiser:
             self.cfg.optimisation_guide.groups,
         )
 
-    # def assemble_params(self, params: Dict) -> Tuple[Dict, Dict]:
-    #     def get_value(param_name: str) -> float:
-    #         if param_name in params:
-    #             return params[param_name]
-    #         if (
-    #             self.cfg.optimisation_guide.frozen_params
-    #             and param_name in self.cfg.optimisation_guide.frozen_params
-    #         ):
-    #             return self.cfg.optimisation_guide.frozen_params[param_name]
-    #         for group in self.cfg.optimisation_guide.groups:
-    #             if param_name in group:
-    #                 group_name = "-".join(group)
-    #                 return params[group_name]
-
-    #     weights = {}
-    #     bases = {}
-    #     for gl in self.merger.greek_letters:
-    #         w = []
-    #         for i in range(NUM_TOTAL_BLOCKS):
-    #             w.append(get_value(f"block_{i}_{gl}"))
-    #         assert len(w) == NUM_TOTAL_BLOCKS
-    #         weights[gl] = w
-
-    #         bases[gl] = get_value(f"base_{gl}")
-
-    #     assert len(weights) == len(self.merger.greek_letters)
-    #     assert len(bases) == len(self.merger.greek_letters)
-
-    #     return weights, bases
-
     def sd_target_function(self, **params) -> float:
         def print_iteration_info(iteration_type: str):
             print(f"\n{iteration_type} - Iteration: {self.iteration}")
@@ -104,7 +74,7 @@ class Optimiser:
             print("\n" + "-" * 10 + f" {iteration_type} " + "-" * 10 + ">")
         print_iteration_info(iteration_type)
 
-        weights, bases = Bounds.assemble_params(
+        weights, bases = self.bounds_initialiser.assemble_params(
             params,
             self.merger.greek_letters,
             self.cfg.optimisation_guide.frozen_params,

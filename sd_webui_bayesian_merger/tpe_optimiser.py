@@ -43,7 +43,7 @@ class TPEOptimiser(Optimiser):
             scores.append(res)
         best = self.trials.best_trial
 
-        best_weights, best_bases = self.assemble_params(
+        best_weights, best_bases = self.bounds_initialiser.assemble_params(
             best["result"]["params"],
         )
 
