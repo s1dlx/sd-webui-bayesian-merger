@@ -45,6 +45,9 @@ class TPEOptimiser(Optimiser):
 
         best_weights, best_bases = self.bounds_initialiser.assemble_params(
             best["result"]["params"],
+            self.merger.greek_letters,
+            self.cfg.optimisation_guide.frozen_params,
+            self.cfg.optimisation_guide.groups,
         )
 
         self.plot_and_save(
