@@ -3,8 +3,9 @@ from pathlib import Path
 import hydra
 from omegaconf import DictConfig
 
-from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser, cli_args
+from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser
 from sd_webui_bayesian_merger.artist import draw_unet
+
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: DictConfig) -> None:
