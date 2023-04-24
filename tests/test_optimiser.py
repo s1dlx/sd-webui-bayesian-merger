@@ -1,4 +1,3 @@
-import pytest
 from omegaconf import DictConfig, ListConfig
 
 from sd_webui_bayesian_merger.optimiser import BoundsInitialiser

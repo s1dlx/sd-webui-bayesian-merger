@@ -1,9 +1,8 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List
 
 from bayes_opt import BayesianOptimization, Events
 from bayes_opt.domain_reduction import SequentialDomainReductionTransformer
 
-from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.optimiser import Optimiser
 
 
@@ -52,6 +51,7 @@ class BayesOptimiser(Optimiser):
             best_weights,
             minimise=False,
         )
+
 
 def parse_scores(iterations: List[Dict]) -> List[float]:
     return [r["target"] for r in iterations]

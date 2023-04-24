@@ -2,7 +2,6 @@ from functools import partial
 
 from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
 
-from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.optimiser import Optimiser
 
 
@@ -16,7 +15,8 @@ class TPEOptimiser(Optimiser):
         }
 
     def optimise(self) -> None:
-        space = self.init_params()
+        bounds = self.init_params()
+        space = {p: hp.uniform(p, *b) for p, b in bounds.items()}
 
         self.trials = Trials()
         tpe._default_n_startup_jobs = self.cfg.init_points

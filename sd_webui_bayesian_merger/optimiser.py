@@ -1,117 +1,23 @@
 import json
 import os
-import sys
 from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Set, Tuple, Union
+from typing import Dict, List, Tuple
 
 from bayes_opt.logger import JSONLogger
 from hydra.core.hydra_config import HydraConfig
-from hyperopt import hp
-from omegaconf import DictConfig, OmegaConf
+from omegaconf import DictConfig
 from tqdm import tqdm
 
 from sd_webui_bayesian_merger.artist import convergence_plot, draw_unet
+from sd_webui_bayesian_merger.bounds import Bounds
 from sd_webui_bayesian_merger.generator import Generator
-from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS, Merger
+from sd_webui_bayesian_merger.merger import Merger
 from sd_webui_bayesian_merger.prompter import Prompter
 from sd_webui_bayesian_merger.scorer import AestheticScorer
 
 PathT = os.PathLike
-
-
-class BoundsInitialiser:
-    @staticmethod
-    def get_block_bounds(
-        optimiser: str, block_name: str, lb: float = 0.0, ub: float = 1.0
-    ) -> Union[Tuple[float, float], Any]:
-        # TODO: check/clip bounds in [-1, 1]
-        return hp.uniform(block_name, lb, ub) if optimiser == "tpe" else (lb, ub)
-
-    @staticmethod
-    def get_greek_letter_bounds(
-        greek_letter: str,
-        optimiser: str,
-        frozen_params: Dict[str, float] = None,
-        custom_ranges: Dict[str, Tuple[float, float]] = None,
-    ) -> Dict:
-        if frozen_params is None:
-            frozen_params = {}
-        if custom_ranges is None:
-            custom_ranges = DictConfig({})
-        block_names = [f"block_{i}_{greek_letter}" for i in range(NUM_TOTAL_BLOCKS)] + [
-            f"base_{greek_letter}"
-        ]
-        ranges = {b: (0.0, 1.0) for b in block_names} | OmegaConf.to_object(
-            custom_ranges
-        )
-        return {
-            b: BoundsInitialiser.get_block_bounds(optimiser, b, *ranges[b])
-            for b in block_names
-            if b not in frozen_params
-        }
-
-    @staticmethod
-    def get_grouped_bounds_and_names(groups: List[List[str]]) -> Tuple[Dict, Set]:
-        grouped_bounds = {}
-        blocks_to_group = set()
-        for group in groups:
-            blocks_to_group.update(group)
-            group_name = "-".join(group)
-            grouped_bounds |= {b: group_name for b in group}
-        return grouped_bounds, blocks_to_group
-
-    @staticmethod
-    def extract_grouped_bounds(bounds: Dict, blocks_to_group: Set) -> Dict:
-        return {block: bounds[block] for block in bounds if block in blocks_to_group}
-
-    @staticmethod
-    def consolidate_groups(bounds: Dict, groups: List[List[str]]) -> Dict:
-        (
-            grouped_bounds,
-            blocks_to_group,
-        ) = BoundsInitialiser.get_grouped_bounds_and_names(groups)
-        replaced_bounds = BoundsInitialiser.extract_grouped_bounds(
-            bounds, blocks_to_group
-        )
-
-        for block in replaced_bounds:
-            del bounds[block]
-
-        for block, bound in replaced_bounds.items():
-            group_name = grouped_bounds[block]
-            if group_name not in bounds:
-                bounds[group_name] = bound
-            elif bound != bounds[group_name]:
-                print(
-                    f"you are tring to freeze/set range differently within the same group! {group_name}"
-                )
-                print(f'we will use {group_name.split("-")[0]} values!')
-        return bounds
-
-    @staticmethod
-    def get_bounds(
-        greek_letters: List[str],
-        optimiser: str,
-        frozen_params: Dict[str, float] = None,
-        custom_ranges: Dict[str, Tuple[float, float]] = None,
-        groups: List[List[str]] = None,
-    ) -> Dict:
-        if frozen_params is None:
-            frozen_params = {}
-        if custom_ranges is None:
-            custom_ranges = DictConfig({})
-        if groups is None:
-            groups = []
-
-        bounds = {}
-        for greek_letter in greek_letters:
-            bounds |= BoundsInitialiser.get_greek_letter_bounds(
-                greek_letter, optimiser, frozen_params, custom_ranges
-            )
-
-        return BoundsInitialiser.consolidate_groups(bounds, groups)
 
 
 @dataclass
@@ -120,7 +26,7 @@ class Optimiser:
     best_rolling_score: float = 0.0
 
     def __post_init__(self) -> None:
-        self.bounds_initialiser = BoundsInitialiser()
+        self.bounds_initialiser = Bounds()
         self.generator = Generator(self.cfg.url, self.cfg.batch_size)
         self.merger = Merger(self.cfg)
         self.start_logging()
@@ -150,41 +56,40 @@ class Optimiser:
     def init_params(self) -> Dict:
         return self.bounds_initialiser.get_bounds(
             self.merger.greek_letters,
-            self.cfg.optimiser,
             self.cfg.optimisation_guide.frozen_params,
             self.cfg.optimisation_guide.custom_ranges,
             self.cfg.optimisation_guide.groups,
         )
 
-    def assemble_params(self, params: Dict) -> Tuple[Dict, Dict]:
-        def get_value(param_name: str) -> float:
-            if param_name in params:
-                return params[param_name]
-            if (
-                self.cfg.optimisation_guide.frozen_params
-                and param_name in self.cfg.optimisation_guide.frozen_params
-            ):
-                return self.cfg.optimisation_guide.frozen_params[param_name]
-            for group in self.cfg.optimisation_guide.groups:
-                if param_name in group:
-                    group_name = "-".join(group)
-                    return params[group_name]
+    # def assemble_params(self, params: Dict) -> Tuple[Dict, Dict]:
+    #     def get_value(param_name: str) -> float:
+    #         if param_name in params:
+    #             return params[param_name]
+    #         if (
+    #             self.cfg.optimisation_guide.frozen_params
+    #             and param_name in self.cfg.optimisation_guide.frozen_params
+    #         ):
+    #             return self.cfg.optimisation_guide.frozen_params[param_name]
+    #         for group in self.cfg.optimisation_guide.groups:
+    #             if param_name in group:
+    #                 group_name = "-".join(group)
+    #                 return params[group_name]
 
-        weights = {}
-        bases = {}
-        for gl in self.merger.greek_letters:
-            w = []
-            for i in range(NUM_TOTAL_BLOCKS):
-                w.append(get_value(f"block_{i}_{gl}"))
-            assert len(w) == NUM_TOTAL_BLOCKS
-            weights[gl] = w
+    #     weights = {}
+    #     bases = {}
+    #     for gl in self.merger.greek_letters:
+    #         w = []
+    #         for i in range(NUM_TOTAL_BLOCKS):
+    #             w.append(get_value(f"block_{i}_{gl}"))
+    #         assert len(w) == NUM_TOTAL_BLOCKS
+    #         weights[gl] = w
 
-            bases[gl] = get_value(f"base_{gl}")
+    #         bases[gl] = get_value(f"base_{gl}")
 
-        assert len(weights) == len(self.merger.greek_letters)
-        assert len(bases) == len(self.merger.greek_letters)
+    #     assert len(weights) == len(self.merger.greek_letters)
+    #     assert len(bases) == len(self.merger.greek_letters)
 
-        return weights, bases
+    #     return weights, bases
 
     def sd_target_function(self, **params) -> float:
         def print_iteration_info(iteration_type: str):
@@ -199,7 +104,12 @@ class Optimiser:
             print("\n" + "-" * 10 + f" {iteration_type} " + "-" * 10 + ">")
         print_iteration_info(iteration_type)
 
-        weights, bases = self.assemble_params(params)
+        weights, bases = Bounds.assemble_params(
+            params,
+            self.merger.greek_letters,
+            self.cfg.optimisation_guide.frozen_params,
+            self.cfg.optimisation_guide.groups,
+        )
         self.merger.create_model_out_name(self.iteration)
         self.merger.merge(weights, bases)
         self.cleanup()
