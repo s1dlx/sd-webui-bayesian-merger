@@ -1,5 +1,11 @@
 # sd-webui-bayesian-merger
 
+## NEWS
+
+- 2023/04/22 Manual scoring method
+- 2023/04/18 Guided optimisation: `group` parameters.
+- 2023/04/17 Guided optimisation: `freeze` parameters or set custom optimisation `ranges` other than the default `(0.0, 1.0)`.
+
 ## What is this?
 
 An opinionated take on stable-diffusion models-merging automatic-optimisation.

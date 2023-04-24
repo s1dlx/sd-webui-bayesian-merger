@@ -1,0 +1,14 @@
+# constant values
+frozen_params:
+  block_0_alpha: 0.9           
+  base_alpha: 0.5
+
+# set ranges
+custom_ranges:
+  block_1_beta: [0.1, 0.5]
+  block_2_beta: [0.4, 1.0]
+
+# group blocks
+groups:
+  - [block_1_alpha, block_2_alpha, block_3_alpha]
+  - [block_3_beta, block_4_beta, base_beta]

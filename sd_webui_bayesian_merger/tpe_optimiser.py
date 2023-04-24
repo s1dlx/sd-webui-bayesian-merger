@@ -1,9 +1,9 @@
 from functools import partial
 
+from hyperopt import STATUS_OK, Trials, fmin, hp, tpe
+
 from sd_webui_bayesian_merger.merger import NUM_TOTAL_BLOCKS
 from sd_webui_bayesian_merger.optimiser import Optimiser
-
-from hyperopt import Trials, hp, fmin, tpe, STATUS_OK
 
 
 class TPEOptimiser(Optimiser):
@@ -16,12 +16,7 @@ class TPEOptimiser(Optimiser):
         }
 
     def optimise(self) -> None:
-        # TODO: what if we want to optimise only certain blocks?
-        space = {
-            f"block_{i}": hp.uniform(f"block_{i}", 0.0, 1.0)
-            for i in range(NUM_TOTAL_BLOCKS)
-        }
-        space["base_alpha"] = hp.uniform("base_alpha", 0.0, 1.0)
+        space = self.init_params()
 
         self.trials = Trials()
         tpe._default_n_startup_jobs = self.cfg.init_points
@@ -48,14 +43,13 @@ class TPEOptimiser(Optimiser):
             scores.append(res)
         best = self.trials.best_trial
 
-        best_base_alpha = best["result"]["params"]["base_alpha"]
-        best_weights = [
-            best["result"]["params"][f"block_{i}"] for i in range(NUM_TOTAL_BLOCKS)
-        ]
+        best_weights, best_bases = self.assemble_params(
+            best["result"]["params"],
+        )
 
         self.plot_and_save(
             scores,
-            best_base_alpha,
+            best_bases,
             best_weights,
             minimise=True,
         )

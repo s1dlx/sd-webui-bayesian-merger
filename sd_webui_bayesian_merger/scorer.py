@@ -1,23 +1,20 @@
 import os
-import requests
-
-from typing import List
 from dataclasses import dataclass
 from pathlib import Path
+from typing import List
 
-from PIL import Image
-from transformers import CLIPModel, CLIPProcessor, pipeline
-from omegaconf import DictConfig
-from hydra.core.hydra_config import HydraConfig
-
-
+import platform
+import subprocess
+import clip
+import numpy as np
+import requests
+import safetensors
 import torch
 import torch.nn as nn
-import clip
-import safetensors
-import numpy as np
-
-PathT = os.PathLike
+from hydra.core.hydra_config import HydraConfig
+from omegaconf import DictConfig
+from PIL import Image
+from transformers import CLIPModel, CLIPProcessor, pipeline
 
 LAION_URL = (
     "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
@@ -81,6 +78,9 @@ class AestheticScorer:
         if not self.cfg.scorer_method.startswith("cafe"):
             self.load_model()
 
+        if self.cfg.scorer_method == "manual":
+            self.cfg.save_imgs = True
+
         if self.cfg.save_imgs:
             self.imgs_dir = Path(HydraConfig.get().runtime.output_dir, "imgs")
             if not self.imgs_dir.exists():
@@ -116,6 +116,9 @@ class AestheticScorer:
             f.write(r.content)
 
     def load_model(self) -> None:
+        # return in manual mode
+        if self.cfg.scorer_method == "manual":
+            return
         print(f"Loading {self.cfg.scorer_model_name}")
 
         if self.cfg.scorer_method in ["chad", "laion"]:
@@ -203,16 +206,28 @@ class AestheticScorer:
     ) -> List[float]:
         scores = []
         for i, (img, name) in enumerate(zip(images, payload_names)):
-            score = self.score(img)
-            print(f"{name}-{i} {score:4.3f}")
-            if self.cfg.save_imgs:
-                self.save_img(img, name, score, it, i)
+            # in manual mode, we save image first then request user input
+            if self.cfg.scorer_method == "manual":
+                path = self.save_img(img, name, 0, it, i)
+                self.open_image(path)
+                score = self.get_user_score(path)
+            else:
+                score = self.score(img)
+                print(f"{name}-{i} {score:4.3f}")
+                if self.cfg.save_imgs:
+                    self.save_img(img, name, score, it, i)
             scores.append(score)
 
         return scores
 
     def average_score(self, scores: List[float]) -> float:
         return sum(scores) / len(scores)
+
+    def image_path(self, name: str, score: float, it: int, batch_n: int) -> Path:
+        return Path(
+            self.imgs_dir,
+            f"{it:03}-{batch_n:02}-{name}-{score:4.3f}.png",
+        )
 
     def save_img(
         self,
@@ -221,10 +236,30 @@ class AestheticScorer:
         score: float,
         it: int,
         batch_n: int,
-    ) -> None:
-        img_path = Path(
-            self.imgs_dir,
-            f"{name}-{batch_n}-{it}-{score:4.3f}.png",
-        )
+    ) -> Path:
+        img_path = self.image_path(name, score, it, batch_n)
         image.save(img_path)
-        return
+        return img_path
+
+    def open_image(self, image_path: Path) -> None:
+        system = platform.system()
+
+        if system == "Windows":
+            subprocess.run(["start", str(image_path)], shell=True, check=True)
+        elif system == "Linux":
+            subprocess.run(["xdg-open", str(image_path)], check=True)
+        elif system == "Darwin":  # macOS
+            subprocess.run(["open", str(image_path)], check=True)
+        else:
+            print(f"Sorry, we do not support opening images on '{system}' operating system.")
+
+    def get_user_score(self, image_path: Path) -> float:
+        while True:
+            try:
+                score = float(input(f"\n\tPlease enter the score for the image\n\t{image_path}\n\t(a number between 0 and 10)\n\t> "))
+                if 0 <= score <= 10:
+                    return score
+                else:
+                    print("\tInvalid input. Please enter a number between 0 and 10.")
+            except ValueError:
+                print("\tInvalid input. Please enter a number between 0 and 10.")

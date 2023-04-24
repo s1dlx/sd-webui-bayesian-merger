@@ -1,9 +1,8 @@
+import base64
+import io
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Dict, Tuple
-
-import io
-import base64
+from typing import Dict, List, Tuple
 
 import requests
 from PIL import Image

@@ -1,13 +1,12 @@
 import itertools
 import os
-
-from typing import List
+from typing import List, Tuple
 
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
-from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.pyplot as plt
 import seaborn as sns
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 PathT = os.PathLike
 
@@ -198,3 +197,51 @@ def draw_unet(
         fig.savefig(figname)
 
     # TODO: weight value inside box?
+
+
+def maxwhere(li: List[float]) -> Tuple[int, float]:
+    m = 0
+    mi = -1
+    for i, v in enumerate(li):
+        if v > m:
+            m = v
+            mi = i
+    return mi, m
+
+
+def minwhere(li: List[float]) -> Tuple[int, float]:
+    m = 10
+    mi = -1
+    for i, v in enumerate(li):
+        if v < m:
+            m = v
+            mi = i
+    return mi, m
+
+
+def convergence_plot(
+    scores: List[float],
+    figname: PathT = None,
+    minimise=False,
+) -> None:
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+
+    plt.plot(scores)
+
+    star_i, star_score = minwhere(scores) if minimise else maxwhere(scores)
+    plt.plot(star_i, star_score, "or")
+
+    plt.xlabel("iterations")
+
+    if minimise:
+        plt.ylabel("loss")
+    else:
+        plt.ylabel("score")
+
+    sns.despine()
+
+    if figname:
+        plt.title(figname.stem)
+        print("Saving fig to:", figname)
+        plt.savefig(figname)

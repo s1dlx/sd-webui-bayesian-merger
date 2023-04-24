@@ -1,9 +1,8 @@
 import os
-
 from dataclasses import dataclass
 
-import torch
 import safetensors
+import torch
 
 PathT = os.PathLike
 

@@ -1,12 +1,10 @@
 import os
 import random
-
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
-from dataclasses import dataclass
 
 from omegaconf import DictConfig, ListConfig, OmegaConf
-
 
 PathT = os.PathLike
 
