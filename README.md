@@ -2,6 +2,7 @@
 
 ## NEWS
 
+- 2023/04/25 Add weighted_subtraction method
 - 2023/04/22 Manual scoring method
 - 2023/04/18 Guided optimisation: `group` parameters.
 - 2023/04/17 Guided optimisation: `freeze` parameters or set custom optimisation `ranges` other than the default `(0.0, 1.0)`.

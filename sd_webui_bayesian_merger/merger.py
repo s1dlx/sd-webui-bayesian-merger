@@ -33,6 +33,7 @@ KEY_POSITION_IDS = ".".join(
 NUM_MODELS_NEEDED = {
     "add_difference": 3,
     "weighted_sum": 2,
+    "weighted_subtraction": 2,
     "sum_twice": 3,
     "triple_sum": 3,
 }
@@ -112,6 +113,7 @@ class Merger:
         if self.cfg.merge_mode in [
             "sum_twice",
             "triple_sum",
+            "weighted_subtraction",
         ]:
             self.greek_letters.append("beta")
         self.model_name_suffix = f"bbwm-{'-'.join(self.model_real_names)}"
@@ -227,6 +229,8 @@ class Merger:
             return (1 - beta) * ((1 - alpha) * t0 + alpha * t1) + beta * t2
         elif self.cfg.merge_mode == "triple_sum":
             return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
+        elif self.cfg.merge_mode == "weighted_subtraction":
+            return (t0 - alpha * beta * t1) / (1 - alpha * beta)
 
     def merge(
         self,
