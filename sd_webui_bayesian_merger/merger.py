@@ -219,6 +219,9 @@ class Merger:
         alpha = current_bases["alpha"]
         if self.cfg.merge_mode == "weighted_sum":
             return (1 - alpha) * t0 + alpha * t1
+        elif self.cfg.merge_mode == "weighted_subtraction":
+            beta = current_bases["beta"]
+            return (t0 - alpha * beta * t1) / (1 - alpha * beta)
 
         t2 = thetas["model_c"][key]
         if self.cfg.merge_mode == "add_difference":
@@ -229,8 +232,6 @@ class Merger:
             return (1 - beta) * ((1 - alpha) * t0 + alpha * t1) + beta * t2
         elif self.cfg.merge_mode == "triple_sum":
             return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
-        elif self.cfg.merge_mode == "weighted_subtraction":
-            return (t0 - alpha * beta * t1) / (1 - alpha * beta)
 
     def merge(
         self,
