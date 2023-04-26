@@ -1,10 +1,9 @@
-import os
+import platform
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List
 
-import platform
-import subprocess
 import clip
 import numpy as np
 import requests
@@ -251,12 +250,18 @@ class AestheticScorer:
         elif system == "Darwin":  # macOS
             subprocess.run(["open", str(image_path)], check=True)
         else:
-            print(f"Sorry, we do not support opening images on '{system}' operating system.")
+            print(
+                f"Sorry, we do not support opening images on '{system}' operating system."
+            )
 
     def get_user_score(self, image_path: Path) -> float:
         while True:
             try:
-                score = float(input(f"\n\tPlease enter the score for the image\n\t{image_path}\n\t(a number between 0 and 10)\n\t> "))
+                score = float(
+                    input(
+                        f"\n\tPlease enter the score for the image\n\t{image_path}\n\t(a number between 0 and 10)\n\t> "
+                    )
+                )
                 if 0 <= score <= 10:
                     return score
                 else:
