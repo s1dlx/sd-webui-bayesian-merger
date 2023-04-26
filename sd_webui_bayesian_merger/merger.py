@@ -19,7 +19,7 @@ NUM_INPUT_BLOCKS = 12
 NUM_MID_BLOCK = 1
 NUM_OUTPUT_BLOCKS = 12
 NUM_TOTAL_BLOCKS = NUM_INPUT_BLOCKS + NUM_MID_BLOCK + NUM_OUTPUT_BLOCKS
-EPSILON = 1e-10 # Define a small constant EPSILON to prevent division by zero
+EPSILON = 1e-10  # Define a small constant EPSILON to prevent division by zero
 
 KEY_POSITION_IDS = ".".join(
     [
