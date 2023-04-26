@@ -19,6 +19,7 @@ NUM_INPUT_BLOCKS = 12
 NUM_MID_BLOCK = 1
 NUM_OUTPUT_BLOCKS = 12
 NUM_TOTAL_BLOCKS = NUM_INPUT_BLOCKS + NUM_MID_BLOCK + NUM_OUTPUT_BLOCKS
+EPSILON = 1e-10 # Define a small constant EPSILON to prevent division by zero
 
 KEY_POSITION_IDS = ".".join(
     [
@@ -33,6 +34,7 @@ KEY_POSITION_IDS = ".".join(
 NUM_MODELS_NEEDED = {
     "add_difference": 3,
     "weighted_sum": 2,
+    "weighted_subtraction": 2,
     "sum_twice": 3,
     "triple_sum": 3,
 }
@@ -112,6 +114,7 @@ class Merger:
         if self.cfg.merge_mode in [
             "sum_twice",
             "triple_sum",
+            "weighted_subtraction",
         ]:
             self.greek_letters.append("beta")
         self.model_name_suffix = f"bbwm-{'-'.join(self.model_real_names)}"
@@ -217,6 +220,12 @@ class Merger:
         alpha = current_bases["alpha"]
         if self.cfg.merge_mode == "weighted_sum":
             return (1 - alpha) * t0 + alpha * t1
+        elif self.cfg.merge_mode == "weighted_subtraction":
+            beta = current_bases["beta"]
+            # Adjust beta if both alpha and beta are 1.0 to avoid division by zero
+            if alpha == 1.0 and beta == 1.0:
+                beta -= EPSILON
+            return (t0 - alpha * beta * t1) / (1 - alpha * beta)
 
         t2 = thetas["model_c"][key]
         if self.cfg.merge_mode == "add_difference":
