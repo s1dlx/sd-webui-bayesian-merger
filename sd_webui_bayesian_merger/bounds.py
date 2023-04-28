@@ -110,6 +110,11 @@ class Bounds:
         frozen: Dict,
         groups: List[List[str]],
     ) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
+        if frozen is None:
+            frozen = {}
+        if groups is None:
+            groups = []
+
         weights = {}
         bases = {}
 
