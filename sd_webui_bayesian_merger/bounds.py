@@ -91,15 +91,16 @@ class Bounds:
     def get_value(params, block_name, frozen, groups) -> float:
         if block_name in params:
             return params[block_name]
-        for group in groups:
-            if block_name in group:
-                group_name = "-".join(group)
-                if group_name in params:
-                    return params[group_name]
-                if group[0] in frozen:
-                    return frozen[group[0]]
-                if group[0] in params:
-                    return params[group[0]]
+        if groups is not None:
+            for group in groups:
+                if block_name in group:
+                    group_name = "-".join(group)
+                    if group_name in params:
+                        return params[group_name]
+                    if group[0] in frozen:
+                        return frozen[group[0]]
+                    if group[0] in params:
+                        return params[group[0]]
         return frozen[block_name]
 
     @staticmethod
@@ -109,6 +110,11 @@ class Bounds:
         frozen: Dict,
         groups: List[List[str]],
     ) -> Tuple[Dict[str, List[float]], Dict[str, List[float]]]:
+        if frozen is None:
+            frozen = {}
+        if groups is None:
+            groups = []
+
         weights = {}
         bases = {}
 
