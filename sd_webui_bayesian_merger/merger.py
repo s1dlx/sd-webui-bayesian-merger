@@ -37,6 +37,7 @@ NUM_MODELS_NEEDED = {
     "weighted_subtraction": 2,
     "sum_twice": 3,
     "triple_sum": 3,
+    "tensor_sum": 2,
 }
 
 NAI_KEYS = {
@@ -113,7 +114,7 @@ class Merger:
             seen_models += 1
         if self.cfg.merge_mode in [
             "sum_twice",
-            "tensor_sum"
+            "tensor_sum",
             "triple_sum",
             "weighted_subtraction",
         ]:
@@ -227,15 +228,8 @@ class Merger:
             if alpha == 1.0 and beta == 1.0:
                 beta -= EPSILON
             return (t0 - alpha * beta * t1) / (1 - alpha * beta)
-
-        t2 = thetas["model_c"][key]
-        if self.cfg.merge_mode == "add_difference":
-            return t0 + alpha * (t1 - t2)
-
-        beta = current_bases["beta"]
-        if self.cfg.merge_mode == "sum_twice":
-            return (1 - beta) * ((1 - alpha) * t0 + alpha * t1) + beta * t2
         elif self.cfg.merge_mode == "tensor_sum":
+            beta = current_bases["beta"]
             dim = t0.dim()
             if alpha+beta <= 1 :
                 tt=t0.clone()
@@ -269,6 +263,12 @@ class Merger:
                 elif dim == 4:
                     tt[talphas:talphae,:,:,:] = t0[talphas:talphae,:,:,:].clone()
                 return tt
+        t2 = thetas["model_c"][key]
+        if self.cfg.merge_mode == "add_difference":
+            return t0 + alpha * (t1 - t2)
+        beta = current_bases["beta"]
+        if self.cfg.merge_mode == "sum_twice":
+            return (1 - beta) * ((1 - alpha) * t0 + alpha * t1) + beta * t2
         elif self.cfg.merge_mode == "triple_sum":
             return (1 - alpha - beta) * t0 + alpha * t1 + beta * t2
 
