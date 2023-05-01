@@ -7,6 +7,9 @@ from typing import Dict, Tuple
 
 import safetensors.torch
 import torch
+import numpy as np
+import scipy.ndimage
+from scipy.ndimage.filters import median_filter as filter
 from omegaconf import DictConfig
 from tqdm import tqdm
 
@@ -20,6 +23,8 @@ NUM_MID_BLOCK = 1
 NUM_OUTPUT_BLOCKS = 12
 NUM_TOTAL_BLOCKS = NUM_INPUT_BLOCKS + NUM_MID_BLOCK + NUM_OUTPUT_BLOCKS
 EPSILON = 1e-10  # Define a small constant EPSILON to prevent division by zero
+
+cpu_fallback=0
 
 KEY_POSITION_IDS = ".".join(
     [
@@ -38,6 +43,8 @@ NUM_MODELS_NEEDED = {
     "sum_twice": 3,
     "triple_sum": 3,
     "tensor_sum": 2,
+    "smooth_add": 3,
+    "cosine_add": 2,
 }
 
 NAI_KEYS = {
@@ -165,6 +172,8 @@ class Merger:
         weights: Dict,
         bases: Dict,
         best: bool,
+        sim,
+        sims,
     ) -> Tuple[str, Dict]:
         if KEY_POSITION_IDS in key:
             if self.cfg.skip_position_ids == 1:
@@ -209,19 +218,71 @@ class Merger:
             if weight_index >= 0:
                 current_bases = {k: w[weight_index] for k, w in weights.items()}
 
-        merged = self.merge_block(current_bases, thetas, key)
+        merged = self.merge_block(current_bases, thetas, key, sim,sims)
 
         if not best or self.cfg.best_precision == "16":
             merged = merged.half()
 
         return (key, merged)
 
-    def merge_block(self, current_bases: Dict, thetas: Dict, key: str) -> Dict:
+    def merge_block(self, current_bases: Dict, thetas: Dict, key: str, sim, sims) -> Dict:
         t0 = thetas["model_a"][key]
         t1 = thetas["model_b"][key]
         alpha = current_bases["alpha"]
         if self.cfg.merge_mode == "weighted_sum":
             return (1 - alpha) * t0 + alpha * t1
+        elif self.cfg.merge_mode == "cosine_add":
+            # skip VAE model parameters to get better results
+            if "first_stage_model" in key: return t0
+            if "model" in key and key in thetas["model_b"]:
+                simab = sim(t0.to(torch.float32), t1.to(torch.float32))
+                dot_product = torch.dot(t0.view(-1).to(torch.float32), t1.view(-1).to(torch.float32))
+                magnitude_similarity = dot_product / (torch.norm(t0.to(torch.float32)) * torch.norm(t1.to(torch.float32)))
+                combined_similarity = (simab + magnitude_similarity) / 2.0
+                k = (combined_similarity - sims.min()) / (sims.max() - sims.min())
+                k = k - alpha
+                k = k.clip(min=.0,max=1.)
+                return (1 - k) * t0 + k * t1
+        elif self.cfg.merge_mode == "smooth_add":
+            global cpu_fallback
+            if(cpu_fallback==1):
+                # Apply median filter to the weight differences
+                filtered_diff = scipy.ndimage.median_filter(t1.to(torch.float32).cpu().numpy(), size=3)
+                # Apply Gaussian filter to the filtered differences
+                filtered_diff = scipy.ndimage.gaussian_filter(filtered_diff, sigma=1)
+                t1 = torch.tensor(filtered_diff)
+                # Add the filtered differences to the original weights
+                return t0 + alpha * t1
+            try:
+                import cupy as cp
+                #import cupyx.scipy as scipy
+                import cupyx.scipy.ndimage
+                from cupyx.scipy.ndimage._filters import median_filter as filter
+                from torch.utils.dlpack import to_dlpack
+                from torch.utils.dlpack import from_dlpack
+                # CuPy hacks to avoid copying tensors to gpu.
+                tx1 = t1.to(torch.float32).cuda()
+                dx = to_dlpack(tx1)
+                cx = cp.from_dlpack(dx)
+                # Apply median filter to the weight differences
+                filtered_diff = cupyx.scipy.ndimage.median_filter(cx, size=3)
+
+                # Apply Gaussian filter to the filtered differences
+                filtered_diff = cupyx.scipy.ndimage.gaussian_filter(filtered_diff, sigma=1)
+
+                t1 = from_dlpack(filtered_diff.toDlpack()).cpu() # Let's pretend this was on the cpu the whole time
+                return t0 + alpha * t1
+            except Exception as err:
+                print(f"CuPy not installed or CuPy dependencies were not installed properly. Error: {err}")
+                print("Falling back to CPU based filtering. Expect a Significant Increase in merge times!")
+                cpu_fallback=1
+                # Apply median filter to the weight differences
+                filtered_diff = scipy.ndimage.median_filter(t1.to(torch.float32).cpu().numpy(), size=3)
+                # Apply Gaussian filter to the filtered differences
+                filtered_diff = scipy.ndimage.gaussian_filter(filtered_diff, sigma=1)
+                t1 = torch.tensor(filtered_diff)
+                # Add the filtered differences to the original weights
+                return t0 + alpha * t1
         elif self.cfg.merge_mode == "weighted_subtraction":
             beta = current_bases["beta"]
             # Adjust beta if both alpha and beta are 1.0 to avoid division by zero
@@ -258,6 +319,32 @@ class Merger:
         best: bool = False,
     ) -> None:
         thetas = {k: self.load_sd_model(m) for k, m in self.models.items()}
+        if self.cfg.merge_mode == "smooth_add":
+            for keys in tqdm(thetas["model_b"].keys(), desc="Stage 0 (Subtractive Merge)"):
+                    if 'model' in keys:
+                        if keys in thetas["model_c"]:
+                            t2=thetas["model_c"].get(keys, torch.zeros_like(thetas["model_b"][keys]))
+                            thetas["model_b"][keys]= thetas["model_b"][keys] - t2
+                        else:
+                            thetas["model_b"][keys]=torch.zeros_like(thetas["model_b"][keys])
+            del thetas["model_c"]
+        sim=None
+        sims=None
+        if self.cfg.merge_mode == "cosine_add":
+            sim = torch.nn.CosineSimilarity(dim=0)
+            sims = np.array([], dtype=np.float64)
+            for key in (tqdm(thetas["model_a"].keys(), desc="Stage 0 (Similarity Calculation)")):
+                # skip VAE model parameters to get better results
+                if "first_stage_model" in key: continue
+                if "model" in key and key in thetas["model_b"]:
+                    simab = sim(thetas["model_a"][key].to(torch.float32), thetas["model_b"][key].to(torch.float32))
+                    dot_product = torch.dot(thetas["model_a"][key].view(-1).to(torch.float32), thetas["model_b"][key].view(-1).to(torch.float32))
+                    magnitude_similarity = dot_product / (torch.norm(thetas["model_a"][key].to(torch.float32)) * torch.norm(thetas["model_b"][key].to(torch.float32)))
+                    combined_similarity = (simab + magnitude_similarity) / 2.0
+                    sims = np.append(sims, combined_similarity.numpy())
+            sims = sims[~np.isnan(sims)]
+            sims = np.delete(sims, np.where(sims < np.percentile(sims, 1, method='midpoint')))
+            sims = np.delete(sims, np.where(sims > np.percentile(sims, 99, method='midpoint')))
 
         for key in tqdm(thetas["model_a"].keys(), desc="stage 1"):
             if result := self.merge_key(
@@ -266,6 +353,8 @@ class Merger:
                 weights,
                 bases,
                 best,
+                sim,
+                sims,
             ):
                 thetas["model_a"][key] = result[1]
 

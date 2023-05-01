@@ -12,4 +12,6 @@ hyperopt
 pytest
 transformers
 numpy
+scipy
+cupy
 hydra-core
