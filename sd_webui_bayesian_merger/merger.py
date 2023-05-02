@@ -230,38 +230,17 @@ class Merger:
             return (t0 - alpha * beta * t1) / (1 - alpha * beta)
         elif self.cfg.merge_mode == "tensor_sum":
             beta = current_bases["beta"]
-            dim = t0.dim()
             if alpha+beta <= 1 :
                 tt=t0.clone()
                 talphas = int(t0.shape[0]*(beta))
                 talphae = int(t0.shape[0]*(alpha+beta))
-                if dim == 1:
-                    tt[talphas:talphae] = t1[talphas:talphae].clone()
-
-                elif dim == 2:
-                    tt[talphas:talphae,:] = t1[talphas:talphae,:].clone()
-
-                elif dim == 3:
-                    tt[talphas:talphae,:,:] = t1[talphas:talphae,:,:].clone()
-
-                elif dim == 4:
-                    tt[talphas:talphae,:,:,:] = t1[talphas:talphae,:,:,:].clone()
+                tt[talphas:talphae] = t1[talphas:talphae].clone()
                 return tt
             else:
                 talphas = int(t0.shape[0]*(alpha+beta-1))
                 talphae = int(t0.shape[0]*(beta))
                 tt = t1.clone()
-                if dim == 1:
-                    tt[talphas:talphae] = t0[talphas:talphae].clone()
-
-                elif dim == 2:
-                    tt[talphas:talphae,:] = t0[talphas:talphae,:].clone()
-
-                elif dim == 3:
-                    tt[talphas:talphae,:,:] = t0[talphas:talphae,:,:].clone()
-
-                elif dim == 4:
-                    tt[talphas:talphae,:,:,:] = t0[talphas:talphae,:,:,:].clone()
+                tt[talphas:talphae] = t0[talphas:talphae].clone()
                 return tt
         t2 = thetas["model_c"][key]
         if self.cfg.merge_mode == "add_difference":
