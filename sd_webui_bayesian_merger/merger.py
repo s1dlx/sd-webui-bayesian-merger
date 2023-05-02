@@ -242,7 +242,8 @@ class Merger:
                 k = (combined_similarity - sims.min()) / (sims.max() - sims.min())
                 k = k - alpha
                 k = k.clip(min=.0,max=1.)
-                return (1 - k) * t0 + k * t1
+                #according to the person who adapted cosine adding, the reversal of t1 and t0 here, apparently help to correspond to alpha=0 being only model a and alpha=1 only being model b
+                return (1 - k) * t1 + k * t0 
         elif self.cfg.merge_mode == "smooth_add":
             global cpu_fallback
             if(cpu_fallback==1):
@@ -255,7 +256,6 @@ class Merger:
                 return t0 + alpha * t1
             try:
                 import cupy as cp
-                #import cupyx.scipy as scipy
                 import cupyx.scipy.ndimage
                 from cupyx.scipy.ndimage._filters import median_filter as filter
                 from torch.utils.dlpack import to_dlpack
