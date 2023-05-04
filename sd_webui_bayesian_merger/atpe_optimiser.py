@@ -9,7 +9,7 @@ class ATPEOptimiser(Optimiser):
     def _target_function(self, params):
         res = self.sd_target_function(**params)
         return {
-            "loss": -res,
+            "loss": -res+10, 
             "status": STATUS_OK,
             "params": params,
         }
