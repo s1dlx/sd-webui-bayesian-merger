@@ -13,3 +13,5 @@ pytest
 transformers
 numpy
 hydra-core
+lightgbm 
+scikit-learn

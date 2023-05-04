@@ -3,7 +3,7 @@ from pathlib import Path
 import hydra
 from omegaconf import DictConfig
 
-from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser
+from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser, ATPEOptimiser
 from sd_webui_bayesian_merger.artist import draw_unet
 
 
@@ -31,6 +31,8 @@ def main(cfg: DictConfig) -> None:
         cls = BayesOptimiser
     elif cfg["optimiser"] == "tpe":
         cls = TPEOptimiser
+    elif cfg["optimiser"] == "atpe":
+        cls = ATPEOptimiser
     else:
         exit(f"Invalid optimiser:{cfg['optimiser']}")
 
