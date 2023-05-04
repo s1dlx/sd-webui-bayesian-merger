@@ -56,9 +56,15 @@ class Optimiser:
     def init_params(self) -> Dict:
         return self.bounds_initialiser.get_bounds(
             self.merger.greek_letters,
-            self.cfg.optimisation_guide.frozen_params,
-            self.cfg.optimisation_guide.custom_ranges,
-            self.cfg.optimisation_guide.groups,
+            self.cfg.optimisation_guide.frozen_params
+            if self.cfg.guided_optimisation
+            else None,
+            self.cfg.optimisation_guide.custom_ranges
+            if self.cfg.guided_optimisation
+            else None,
+            self.cfg.optimisation_guide.groups
+            if self.cfg.guided_optimisation
+            else None,
         )
 
     def sd_target_function(self, **params) -> float:

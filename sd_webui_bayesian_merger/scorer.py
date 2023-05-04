@@ -25,7 +25,8 @@ CHAD_URL = (
 
 AES_URL = "https://raw.githubusercontent.com/Xerxemi/sdweb-auto-MBW/master/scripts/classifiers/aesthetic/"
 
-printWSLFlag =0
+printWSLFlag = 0
+
 
 class AestheticClassifier(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
@@ -248,9 +249,11 @@ class AestheticScorer:
             subprocess.run(["start", str(image_path)], shell=True, check=True)
         elif system == "Linux":
             global printWSLFlag
-            if ('microsoft-standard' in platform.uname().release) and printWSLFlag == 0:
-                print("Make sure to install xdg-open-wsl from here: https://github.com/cpbotha/xdg-open-wsl otherwise the images will NOT open.")
-                printWSLFlag=1
+            if ("microsoft-standard" in platform.uname().release) and printWSLFlag == 0:
+                print(
+                    "Make sure to install xdg-open-wsl from here: https://github.com/cpbotha/xdg-open-wsl otherwise the images will NOT open."
+                )
+                printWSLFlag = 1
             subprocess.run(["xdg-open", str(image_path)], check=True)
         elif system == "Darwin":  # macOS
             subprocess.run(["open", str(image_path)], check=True)
