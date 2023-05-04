@@ -44,8 +44,12 @@ class BayesOptimiser(Optimiser):
         best_weights, best_bases = self.bounds_initialiser.assemble_params(
             self.optimizer.max["params"],
             self.merger.greek_letters,
-            self.cfg.optimisation_guide.frozen_params,
-            self.cfg.optimisation_guide.groups,
+            self.cfg.optimisation_guide.frozen_params
+            if self.cfg.guided_optimisation
+            else None,
+            self.cfg.optimisation_guide.groups
+            if self.cfg.guided_optimisation
+            else None,
         )
 
         self.plot_and_save(
