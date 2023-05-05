@@ -207,16 +207,18 @@ class AestheticScorer:
     ) -> List[float]:
         scores = []
         for i, (img, name) in enumerate(zip(images, payload_names)):
-            # in manual mode, we save image first then request user input
+            # in manual mode, we save a temp image first then request user input
             if self.cfg.scorer_method == "manual":
-                path = self.save_img(img, name, 0, it, i)
-                self.open_image(path)
-                score = self.get_user_score(path)
+                tmp_path = Path(Path.cwd(), "tmp.png")
+                img.save(tmp_path)
+                self.open_image(tmp_path)
+                score = AestheticScorer.get_user_score(tmp_path)
+                tmp_path.unlink()  # remove temporary image
             else:
                 score = self.score(img)
                 print(f"{name}-{i} {score:4.3f}")
-                if self.cfg.save_imgs:
-                    self.save_img(img, name, score, it, i)
+            if self.cfg.save_imgs:
+                self.save_img(img, name, score, it, i)
             scores.append(score)
 
         return scores
@@ -262,12 +264,13 @@ class AestheticScorer:
                 f"Sorry, we do not support opening images on '{system}' operating system."
             )
 
-    def get_user_score(self, image_path: Path) -> float:
+    @staticmethod
+    def get_user_score() -> float:
         while True:
             try:
                 score = float(
                     input(
-                        f"\n\tPlease enter the score for the image\n\t{image_path}\n\t(a number between 0 and 10)\n\t> "
+                        f"\n\tPlease enter the score for the shown image (a number between 0 and 10)\n\t> "
                     )
                 )
                 if 0 <= score <= 10:
