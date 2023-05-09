@@ -83,8 +83,12 @@ class Optimiser:
         weights, bases = self.bounds_initialiser.assemble_params(
             params,
             self.merger.greek_letters,
-            self.cfg.optimisation_guide.frozen_params,
-            self.cfg.optimisation_guide.groups,
+            self.cfg.optimisation_guide.frozen_params
+            if self.cfg.guided_optimisation
+            else None,
+            self.cfg.optimisation_guide.groups
+            if self.cfg.guided_optimisation
+            else None,
         )
         self.merger.create_model_out_name(self.iteration)
         self.merger.merge(weights, bases)
