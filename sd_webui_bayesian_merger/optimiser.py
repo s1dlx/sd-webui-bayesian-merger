@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple
 
 from bayes_opt.logger import JSONLogger
 from hydra.core.hydra_config import HydraConfig
-from omegaconf import DictConfig
+from omegaconf import DictConfig, open_dict
 from tqdm import tqdm
 
 from sd_webui_bayesian_merger.artist import convergence_plot, draw_unet
@@ -54,6 +54,10 @@ class Optimiser:
         )
 
     def init_params(self) -> Dict:
+        for guide in ["frozen_params", "custom_ranges", "groups"]:
+            if guide not in self.cfg.optimisation_guide.keys():
+                with open_dict(self.cfg):
+                    self.cfg["optimisation_guide"][guide] = None
         return self.bounds_initialiser.get_bounds(
             self.merger.greek_letters,
             self.cfg.optimisation_guide.frozen_params
