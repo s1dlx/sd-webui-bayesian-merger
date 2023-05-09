@@ -1,7 +1,0 @@
-prompt: "your prompt, even with __wildcard__"
-neg_prompt: "your negative prompt"
-seed: -1
-cfg: 7
-width: 512
-height: 512
-sampler_name: "Euler"
