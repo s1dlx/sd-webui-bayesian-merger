@@ -212,7 +212,7 @@ class AestheticScorer:
                 tmp_path = Path(Path.cwd(), "tmp.png")
                 img.save(tmp_path)
                 self.open_image(tmp_path)
-                score = AestheticScorer.get_user_score(tmp_path)
+                score = AestheticScorer.get_user_score()
                 tmp_path.unlink()  # remove temporary image
             else:
                 score = self.score(img)
