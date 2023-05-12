@@ -2,6 +2,7 @@
 
 ## NEWS
 
+- 2023/05/12 introducing [`meh`](https://github.com/s1dlx/meh) engine
 - 2023/05/03 `tensor_sum` merging method
 - 2023/04/25 `weighted_subtraction` merging method
 - 2023/04/22 `manual` scoring method
