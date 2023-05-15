@@ -110,10 +110,10 @@ class Optimiser:
     def generate_images(self) -> Tuple[List, List]:
         images = []
         gen_paths = []
-        payloads, paths = self.prompter.render_payloads()
+        payloads, paths = self.prompter.render_payloads(self.cfg.batch_size)
         for i, payload in tqdm(enumerate(payloads), desc="Batches generation"):
-            images.extend(self.generator.batch_generate(payload))
-            gen_paths.extend([paths[i]] * self.cfg.batch_size * payload["batch_size"])
+            images.extend(self.generator.generate(payload))
+            gen_paths.extend([paths[i]] * payload["batch_size"])
         return images, gen_paths
 
     def score_images(self, images, gen_paths) -> List[float]:
