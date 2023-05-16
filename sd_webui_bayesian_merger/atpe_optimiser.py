@@ -1,6 +1,4 @@
-from functools import partial
-
-from hyperopt import STATUS_OK, Trials, fmin, hp, atpe
+from hyperopt import STATUS_OK, Trials, atpe, fmin, hp
 
 from sd_webui_bayesian_merger.optimiser import Optimiser
 
@@ -9,7 +7,7 @@ class ATPEOptimiser(Optimiser):
     def _target_function(self, params):
         res = self.sd_target_function(**params)
         return {
-            "loss": -res+10, 
+            "loss": -res + 10,
             "status": STATUS_OK,
             "params": params,
         }
@@ -19,8 +17,8 @@ class ATPEOptimiser(Optimiser):
         space = {p: hp.uniform(p, *b) for p, b in bounds.items()}
 
         self.trials = Trials()
-        #tpe._default_n_startup_jobs = self.cfg.init_points
-        #algo = partial(tpe.suggest, n_startup_jobs=self.cfg.init_points)
+        # tpe._default_n_startup_jobs = self.cfg.init_points
+        # algo = partial(tpe.suggest, n_startup_jobs=self.cfg.init_points)
         fmin(
             self._target_function,
             space=space,
