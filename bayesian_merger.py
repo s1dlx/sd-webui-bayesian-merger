@@ -3,7 +3,7 @@ from pathlib import Path
 import hydra
 from omegaconf import DictConfig
 
-from sd_webui_bayesian_merger import BayesOptimiser, TPEOptimiser, ATPEOptimiser
+from sd_webui_bayesian_merger import ATPEOptimiser, BayesOptimiser, TPEOptimiser
 from sd_webui_bayesian_merger.artist import draw_unet
 
 
