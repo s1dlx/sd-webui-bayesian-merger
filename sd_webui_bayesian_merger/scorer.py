@@ -125,8 +125,7 @@ class AestheticScorer:
         if self.cfg.scorer_method in ["chad", "laion"]:
             self.model = AestheticPredictor(768).to(self.cfg.device).eval()
         elif self.cfg.scorer_method in ["aes"]:
-            self.model = AestheticClassifier(
-                512, 256, 1).to(self.cfg.device).eval()
+            self.model = AestheticClassifier(512, 256, 1).to(self.cfg.device).eval()
 
         if self.model_path.suffix == ".safetensors":
             self.model.load_state_dict(
@@ -164,13 +163,11 @@ class AestheticScorer:
                 .to(self.cfg.device)
                 .eval()
             )
-            self.clip_preprocess = CLIPProcessor.from_pretrained(
-                self.clip_model_name)
+            self.clip_preprocess = CLIPProcessor.from_pretrained(self.clip_model_name)
 
     def get_image_features(self, image: Image.Image) -> torch.Tensor:
         if self.cfg.scorer_method in ["chad", "laion"]:
-            image = self.clip_preprocess(
-                image).unsqueeze(0).to(self.cfg.device)
+            image = self.clip_preprocess(image).unsqueeze(0).to(self.cfg.device)
             with torch.no_grad():
                 image_features = self.clip_model.encode_image(image)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
