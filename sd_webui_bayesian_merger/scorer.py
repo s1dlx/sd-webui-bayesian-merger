@@ -244,7 +244,7 @@ class AestheticScorer:
     ) -> Path:
         img_path = self.image_path(name, score, it, batch_n)
         pnginfo = PngImagePlugin.PngInfo()
-        for k, v in payload.item():
+        for k, v in payload.items():
             pnginfo.add_text(k, str(v))
 
         image.save(img_path, pnginfo=pnginfo)
