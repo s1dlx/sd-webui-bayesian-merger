@@ -2,6 +2,7 @@ from typing import Dict, List
 
 from bayes_opt import BayesianOptimization, Events
 from bayes_opt.domain_reduction import SequentialDomainReductionTransformer
+from scipy.stats import qmc
 
 from sd_webui_bayesian_merger.optimiser import Optimiser
 
@@ -23,6 +24,19 @@ class BayesOptimiser(Optimiser):
         )
 
         self.optimizer.subscribe(Events.OPTIMIZATION_STEP, self.logger)
+
+        if self.cfg.latin_hypercube_sampling:
+            sampler = qmc.LatinHypercube(d=len(pbounds))
+            samples = sampler.random(self.cfg.init_points)
+            l_bounds = [b[0] for b in pbounds.values()]
+            u_bounds = [b[1] for b in pbounds.values()]
+            scaled_samples = qmc.scale(samples, l_bounds, u_bounds)
+
+            for sample in scaled_samples.tolist():
+                params = {p: s for p, s in zip(pbounds, sample)}
+                self.optimizer.probe(params=params, lazy=True)
+
+            self.cfg.init_points = 0
 
         self.optimizer.maximize(
             init_points=self.cfg.init_points,
