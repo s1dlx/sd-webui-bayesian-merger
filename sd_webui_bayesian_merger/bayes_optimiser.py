@@ -25,6 +25,7 @@ class BayesOptimiser(Optimiser):
 
         self.optimizer.subscribe(Events.OPTIMIZATION_STEP, self.logger)
 
+        init_points = self.cfg.init_points
         if self.cfg.latin_hypercube_sampling:
             sampler = qmc.LatinHypercube(d=len(pbounds))
             samples = sampler.random(self.cfg.init_points)
@@ -36,10 +37,10 @@ class BayesOptimiser(Optimiser):
                 params = {p: s for p, s in zip(pbounds, sample)}
                 self.optimizer.probe(params=params, lazy=True)
 
-            self.cfg.init_points = 0
+            init_points = 0
 
         self.optimizer.maximize(
-            init_points=self.cfg.init_points,
+            init_points=init_points,
             n_iter=self.cfg.n_iters,
         )
 

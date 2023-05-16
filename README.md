@@ -2,6 +2,7 @@
 
 ## NEWS
 
+- 2023/05/16 `latin-hypercube-sampling` for `bayes` optimiser
 - 2023/05/15 `adaptive-tpe` optimiser
 - 2023/05/03 `tensor_sum` merging method
 - 2023/04/25 `weighted_subtraction` merging method
