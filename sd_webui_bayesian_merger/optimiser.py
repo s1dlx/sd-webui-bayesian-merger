@@ -100,8 +100,8 @@ class Optimiser:
 
         self.generator.switch_model(self.merger.model_out_name)
 
-        images, gen_paths = self.generate_images()
-        scores = self.score_images(images, gen_paths)
+        images, gen_paths, payloads = self.generate_images()
+        scores = self.score_images(images, gen_paths, payloads)
         avg_score = self.scorer.average_score(scores)
         self.update_best_score(bases, weights, avg_score)
 
@@ -114,11 +114,11 @@ class Optimiser:
         for i, payload in tqdm(enumerate(payloads), desc="Batches generation"):
             images.extend(self.generator.generate(payload))
             gen_paths.extend([paths[i]] * payload["batch_size"])
-        return images, gen_paths
+        return images, gen_paths, payloads
 
-    def score_images(self, images, gen_paths) -> List[float]:
+    def score_images(self, images, gen_paths, payloads) -> List[float]:
         print("\nScoring")
-        return self.scorer.batch_score(images, gen_paths, self.iteration)
+        return self.scorer.batch_score(images, gen_paths, payloads, self.iteration)
 
     def update_best_score(self, bases, weights, avg_score):
         print(f"{'-'*10}\nRun score: {avg_score}")

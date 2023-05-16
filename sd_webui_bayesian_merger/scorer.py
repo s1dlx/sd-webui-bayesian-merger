@@ -2,7 +2,7 @@ import platform
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import Dict, List
 
 import clip
 import numpy as np
@@ -12,7 +12,7 @@ import torch
 import torch.nn as nn
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
-from PIL import Image
+from PIL import Image, PngImagePlugin
 from transformers import CLIPModel, CLIPProcessor, pipeline
 
 LAION_URL = (
@@ -125,7 +125,8 @@ class AestheticScorer:
         if self.cfg.scorer_method in ["chad", "laion"]:
             self.model = AestheticPredictor(768).to(self.cfg.device).eval()
         elif self.cfg.scorer_method in ["aes"]:
-            self.model = AestheticClassifier(512, 256, 1).to(self.cfg.device).eval()
+            self.model = AestheticClassifier(
+                512, 256, 1).to(self.cfg.device).eval()
 
         if self.model_path.suffix == ".safetensors":
             self.model.load_state_dict(
@@ -163,11 +164,13 @@ class AestheticScorer:
                 .to(self.cfg.device)
                 .eval()
             )
-            self.clip_preprocess = CLIPProcessor.from_pretrained(self.clip_model_name)
+            self.clip_preprocess = CLIPProcessor.from_pretrained(
+                self.clip_model_name)
 
     def get_image_features(self, image: Image.Image) -> torch.Tensor:
         if self.cfg.scorer_method in ["chad", "laion"]:
-            image = self.clip_preprocess(image).unsqueeze(0).to(self.cfg.device)
+            image = self.clip_preprocess(
+                image).unsqueeze(0).to(self.cfg.device)
             with torch.no_grad():
                 image_features = self.clip_model.encode_image(image)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
@@ -203,10 +206,11 @@ class AestheticScorer:
         self,
         images: List[Image.Image],
         payload_names: List[str],
+        payloads: Dict,
         it: int,
     ) -> List[float]:
         scores = []
-        for i, (img, name) in enumerate(zip(images, payload_names)):
+        for i, (img, name, payload) in enumerate(zip(images, payload_names, payloads)):
             # in manual mode, we save a temp image first then request user input
             if self.cfg.scorer_method == "manual":
                 tmp_path = Path(Path.cwd(), "tmp.png")
@@ -218,7 +222,7 @@ class AestheticScorer:
                 score = self.score(img)
                 print(f"{name}-{i} {score:4.3f}")
             if self.cfg.save_imgs:
-                self.save_img(img, name, score, it, i)
+                self.save_img(img, name, score, it, i, payload)
             scores.append(score)
 
         return scores
@@ -239,9 +243,14 @@ class AestheticScorer:
         score: float,
         it: int,
         batch_n: int,
+        payload: Dict,
     ) -> Path:
         img_path = self.image_path(name, score, it, batch_n)
-        image.save(img_path)
+        pnginfo = PngImagePlugin.PngInfo()
+        for k, v in payload.item():
+            pnginfo.add_text(k, str(v))
+
+        image.save(img_path, pnginfo=pnginfo)
         return img_path
 
     def open_image(self, image_path: Path) -> None:
