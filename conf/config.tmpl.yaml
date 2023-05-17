@@ -21,8 +21,9 @@ skip_position_ids: 0
 merge_mode: weighted_sum  # weighted_sum (default), add_difference, sum_twice, tensor_sum, triple_sum, weighted_subtraction
 
 
-optimiser: bayes            # tpe
-bounds_transformer: False   # bayes only
+optimiser: bayes                 # tpe
+bounds_transformer: False        # bayes only
+latin_hypercube_sampling: False  # bayes only
 guided_optimisation: False
 batch_size: 1
 init_points: 1
