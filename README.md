@@ -32,14 +32,6 @@ At the end of the exploitation phase, the set of weights scoring the highest sco
 
 Head to the [wiki](https://github.com/s1dlx/sd-webui-bayesian-merger/wiki/Home) for all the instructions to get you started.
 
-### FAQ
-
-- Why opinionated? Because we use webui API and lots of config files to run the show. No GUI. 
-Embrace your inner touch-typist and leave the browser for the CLI.
-- Why rely on webui API? It's a very popular platform. Chances are that if you already have a working webui, you do not need to do much to run this library.
-- How many iterations and payloads? What about the batch size? I'd suggest `--init_points 10 --n_iters 10 --batch_size 10` and at least 5 different payloads.
-Depending on your GPU this may take 2-3hrs to run on basic config.
-
 ## With the help of
 
 - [sdweb-merge-block-weighted-gui](https://github.com/bbc-mc/sdweb-merge-block-weighted-gui)
