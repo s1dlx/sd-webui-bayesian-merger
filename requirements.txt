@@ -12,6 +12,8 @@ hyperopt
 pytest
 transformers
 numpy
+scipy
+cupy
 hydra-core
 lightgbm 
 scikit-learn
