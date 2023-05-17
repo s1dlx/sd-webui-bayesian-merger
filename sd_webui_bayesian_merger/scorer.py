@@ -93,7 +93,7 @@ class AestheticScorer:
         print(f"Loading {self.scorer_model_name}")
 
         if self.cfg.scorer_method in ["chad", "laion"]:
-            self.model = AestheticPredictor(768).to(self.cfg.device).eval()
+            self.model = AestheticPredictor(768).to(self.cfg.scorer_device).eval()
 
         if self.model_path.suffix == ".safetensors":
             self.model.load_state_dict(
@@ -101,12 +101,12 @@ class AestheticScorer:
                     self.model_path,
                 )
             )
-            self.model.to(self.cfg.device)
+            self.model.to(self.cfg.scorer_device)
         else:
             self.model.load_state_dict(
                 torch.load(
                     self.model_path,
-                    map_location=self.cfg.device,
+                    map_location=self.cfg.scorer_device,
                 )
             )
         self.model.eval()
@@ -121,12 +121,12 @@ class AestheticScorer:
         if self.cfg.scorer_method in ["chad", "laion"]:
             self.clip_model, self.clip_preprocess = clip.load(
                 self.clip_model_name,
-                device=self.cfg.device,
+                device=self.cfg.scorer_device,
             )
 
     def get_image_features(self, image: Image.Image) -> torch.Tensor:
         if self.cfg.scorer_method in ["chad", "laion"]:
-            image = self.clip_preprocess(image).unsqueeze(0).to(self.cfg.device)
+            image = self.clip_preprocess(image).unsqueeze(0).to(self.cfg.scorer_device)
             with torch.no_grad():
                 image_features = self.clip_model.encode_image(image)
                 image_features /= image_features.norm(dim=-1, keepdim=True)
@@ -136,7 +136,7 @@ class AestheticScorer:
     def score(self, image: Image.Image) -> float:
         image_features = self.get_image_features(image)
         score = self.model(
-            torch.from_numpy(image_features).to(self.cfg.device).float(),
+            torch.from_numpy(image_features).to(self.cfg.scorer_device).float(),
         )
 
         return score.item()

@@ -31,6 +31,7 @@ n_iters: 1
 
 save_imgs: False
 
+scorer_device: cpu # cuda
 scorer_method: chad # chad, laion
 
 save_best: False
