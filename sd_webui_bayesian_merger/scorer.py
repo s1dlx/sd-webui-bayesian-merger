@@ -174,7 +174,11 @@ class AestheticScorer:
         return scores, norm
 
     def average_score(self, scores: List[float], norm: List[float]) -> float:
-        return sum(scores) / sum(norm)
+        num = sum(scores)
+        den = sum(norm)
+        if den == 0:
+            return 0
+        return num/den
 
     def image_path(self, name: str, score: float, it: int, batch_n: int) -> Path:
         return Path(
