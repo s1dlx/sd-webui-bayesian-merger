@@ -160,7 +160,6 @@ class AestheticScorer:
                 tmp_path.unlink()  # remove temporary image
             else:
                 score = self.score(img)
-                print(f"{name}-{i} {score:4.3f}")
             if self.cfg.save_imgs:
                 self.save_img(img, name, score, it, i, payload)
 
@@ -170,6 +169,8 @@ class AestheticScorer:
             else:
                 norm.append(1.0)
             scores.append(score)
+
+            print(f"{name}-{i} {score:4.3f}")
 
         return scores, norm
 
