@@ -1,4 +1,5 @@
 payloadname:
+  score_weight: 1.0
   prompt: "your prompt, even with __wildcard__"
   negative_prompt: "your negative prompt"
   steps: 20

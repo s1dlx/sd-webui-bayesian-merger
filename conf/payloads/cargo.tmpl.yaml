@@ -4,6 +4,8 @@ defaults:
     - payload2
     - ...
 
+score_weight: 1.0
+
 prompt: ""
 negative_prompt: ""
 

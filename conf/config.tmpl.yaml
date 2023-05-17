@@ -31,8 +31,8 @@ n_iters: 1
 
 save_imgs: False
 
-scorer_method: chad # laion, aes, cafe_aesthetic, cafe_style, cafe_waifu
-scorer_model_name: sac+logos+ava1-l14-linearMSE.pth # ava+logos-l14-linearMSE.pth, ava+logos-l14-reluMSE.pth
+scorer_device: cpu # cuda
+scorer_method: chad # chad, laion
 
 save_best: False
 best_format: safetensors # ckpt
