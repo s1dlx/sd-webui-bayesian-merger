@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Dict, List
 
 import clip
-import numpy as np
 import requests
 import safetensors
 import torch
@@ -13,7 +12,6 @@ import torch.nn as nn
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 from PIL import Image, PngImagePlugin
-from transformers import CLIPModel, CLIPProcessor, pipeline
 
 LAION_URL = (
     "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
@@ -23,28 +21,7 @@ CHAD_URL = (
     "https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/"
 )
 
-AES_URL = "https://raw.githubusercontent.com/Xerxemi/sdweb-auto-MBW/master/scripts/classifiers/aesthetic/"
-
 printWSLFlag = 0
-
-
-class AestheticClassifier(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size):
-        super().__init__()
-        self.fc1 = torch.nn.Linear(input_size, hidden_size)
-        self.fc2 = torch.nn.Linear(hidden_size, hidden_size // 2)
-        self.fc3 = torch.nn.Linear(hidden_size // 2, output_size)
-        self.relu = torch.nn.ReLU()
-        self.sigmoid = torch.nn.Sigmoid()
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.relu(x)
-        x = self.fc2(x)
-        x = self.relu(x)
-        x = self.fc3(x)
-        x = self.sigmoid(x)
-        return x
 
 
 class AestheticPredictor(nn.Module):
@@ -71,13 +48,16 @@ class AestheticScorer:
     cfg: DictConfig
 
     def __post_init__(self):
+        if self.cfg.scorer_method == "laion":
+            self.scorer_model_name = "laion-sac-logos-ava-v2.safetensors"
+        elif self.cfg.scorer_method == "chad":
+            self.scorer_model_name = "ava+logos-l14-linearMSE.pth"
         self.model_path = Path(
             self.cfg.scorer_model_dir,
-            self.cfg.scorer_model_name,
+            self.scorer_model_name,
         )
         self.get_model()
-        if not self.cfg.scorer_method.startswith("cafe"):
-            self.load_model()
+        self.load_model()
 
         if self.cfg.scorer_method == "manual":
             self.cfg.save_imgs = True
@@ -88,14 +68,6 @@ class AestheticScorer:
                 self.imgs_dir.mkdir()
 
     def get_model(self) -> None:
-        if self.cfg.scorer_method.startswith("cafe"):
-            print("Creating scoring pipeline")
-            self.judge = pipeline(
-                "image-classification",
-                model=f"cafeai/{self.cfg.scorer_method}",
-            )
-            return
-
         if self.model_path.is_file():
             return
 
@@ -104,10 +76,8 @@ class AestheticScorer:
             url = CHAD_URL
         elif self.cfg.scorer_method == "laion":
             url = LAION_URL
-        elif self.cfg.scorer_method == "aes":
-            url = AES_URL
 
-        url += f"{self.cfg.scorer_model_name}?raw=true"
+        url += f"{self.scorer_model_name}?raw=true"
 
         r = requests.get(url)
         r.raise_for_status()
@@ -120,12 +90,10 @@ class AestheticScorer:
         # return in manual mode
         if self.cfg.scorer_method == "manual":
             return
-        print(f"Loading {self.cfg.scorer_model_name}")
+        print(f"Loading {self.scorer_model_name}")
 
         if self.cfg.scorer_method in ["chad", "laion"]:
             self.model = AestheticPredictor(768).to(self.cfg.device).eval()
-        elif self.cfg.scorer_method in ["aes"]:
-            self.model = AestheticClassifier(512, 256, 1).to(self.cfg.device).eval()
 
         if self.model_path.suffix == ".safetensors":
             self.model.load_state_dict(
@@ -147,8 +115,6 @@ class AestheticScorer:
     def load_clip(self) -> None:
         if self.cfg.scorer_method in ["chad", "laion"]:
             self.clip_model_name = "ViT-L/14"
-        elif self.cfg.scorer_method in ["aes"]:
-            self.clip_model_name = "openai/clip-vit-base-patch32"
 
         print(f"Loading {self.clip_model_name}")
 
@@ -157,13 +123,6 @@ class AestheticScorer:
                 self.clip_model_name,
                 device=self.cfg.device,
             )
-        elif self.cfg.scorer_method in ["aes"]:
-            self.clip_model = (
-                CLIPModel.from_pretrained(self.clip_model_name)
-                .to(self.cfg.device)
-                .eval()
-            )
-            self.clip_preprocess = CLIPProcessor.from_pretrained(self.clip_model_name)
 
     def get_image_features(self, image: Image.Image) -> torch.Tensor:
         if self.cfg.scorer_method in ["chad", "laion"]:
@@ -173,25 +132,8 @@ class AestheticScorer:
                 image_features /= image_features.norm(dim=-1, keepdim=True)
             image_features = image_features.cpu().detach().numpy()
             return image_features
-        elif self.cfg.scorer_method in ["aes"]:
-            inputs = self.clip_preprocess(images=image, return_tensors="pt")[
-                "pixel_values"
-            ].to(self.cfg.device)
-            result = (
-                self.clip_model.get_image_features(pixel_values=inputs)
-                .cpu()
-                .detach()
-                .numpy()
-            )
-            return (result / np.linalg.norm(result)).squeeze(axis=0)
 
     def score(self, image: Image.Image) -> float:
-        if self.cfg.scorer_method.startswith("cafe"):
-            # TODO: this returns also a 'label', what can we do with it?
-            # TODO: does it make sense to use top_k != 1?
-            data = self.judge(image, top_k=1)
-            return data[0]["score"]
-
         image_features = self.get_image_features(image)
         score = self.model(
             torch.from_numpy(image_features).to(self.cfg.device).float(),
