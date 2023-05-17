@@ -149,6 +149,7 @@ class AestheticScorer:
         it: int,
     ) -> List[float]:
         scores = []
+        norm = []
         for i, (img, name, payload) in enumerate(zip(images, payload_names, payloads)):
             # in manual mode, we save a temp image first then request user input
             if self.cfg.scorer_method == "manual":
@@ -162,12 +163,18 @@ class AestheticScorer:
                 print(f"{name}-{i} {score:4.3f}")
             if self.cfg.save_imgs:
                 self.save_img(img, name, score, it, i, payload)
+
+            if "score_weight" in payload:
+                score *= payload["score_weight"]
+                norm.append(payload["score_weight"])
+            else:
+                norm.append(1.0)
             scores.append(score)
 
-        return scores
+        return scores, norm
 
-    def average_score(self, scores: List[float]) -> float:
-        return sum(scores) / len(scores)
+    def average_score(self, scores: List[float], norm: List[float]) -> float:
+        return sum(scores) / sum(norm)
 
     def image_path(self, name: str, score: float, it: int, batch_n: int) -> Path:
         return Path(
