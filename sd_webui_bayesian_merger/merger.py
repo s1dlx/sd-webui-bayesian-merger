@@ -8,7 +8,7 @@ import safetensors.torch
 import torch
 from omegaconf import DictConfig
 from sd_meh import merge_methods
-from sd_meh.merge import load_sd_model, merge_models
+from sd_meh.merge import merge_models
 
 NUM_INPUT_BLOCKS = 12
 NUM_MID_BLOCK = 1
