@@ -1,5 +1,5 @@
-import sys
 import inspect
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
@@ -7,8 +7,8 @@ from typing import Dict
 import safetensors.torch
 import torch
 from omegaconf import DictConfig
-from sd_meh.merge import merge_models
 from sd_meh import merge_methods
+from sd_meh.merge import load_sd_model, merge_models
 
 NUM_INPUT_BLOCKS = 12
 NUM_MID_BLOCK = 1
@@ -20,6 +20,7 @@ NUM_MODELS_NEEDED = {
     name: 3 if "c" in inspect.getfullargspec(fn)[0] else 2
     for name, fn in MERGE_METHODS.items()
 }
+
 
 @dataclass
 class Merger:
@@ -104,9 +105,11 @@ class Merger:
         bases: Dict,
         best: bool = False,
     ) -> None:
-        thetas = {k: self.load_sd_model(m) for k, m in self.models.items()}
+        thetas = {k: load_sd_model(m) for k, m in self.models.items()}
 
-        thetas['model_a'] = merge_models(thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision)
+        thetas["model_a"] = merge_models(
+            thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision
+        )
 
         if best:
             print(f"Saving {self.best_output_file}")
