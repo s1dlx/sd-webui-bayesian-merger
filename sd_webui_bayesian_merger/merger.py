@@ -105,7 +105,7 @@ class Merger:
         bases: Dict,
         best: bool = False,
     ) -> None:
-        thetas = self.models
+        thetas = dict(self.models.items())
 
         thetas["model_a"] = merge_models(
             thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision
