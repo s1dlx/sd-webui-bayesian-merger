@@ -34,7 +34,7 @@ class BayesOptimiser(Optimiser):
             scaled_samples = qmc.scale(samples, l_bounds, u_bounds)
 
             for sample in scaled_samples.tolist():
-                params = {p: s for p, s in zip(pbounds, sample)}
+                params = dict(zip(pbounds, sample))
                 self.optimizer.probe(params=params, lazy=True)
 
             init_points = 0

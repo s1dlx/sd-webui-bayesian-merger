@@ -105,7 +105,7 @@ class Merger:
         bases: Dict,
         best: bool = False,
     ) -> None:
-        thetas = {k: load_sd_model(m) for k, m in self.models.items()}
+        thetas = self.models
 
         thetas["model_a"] = merge_models(
             thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision
