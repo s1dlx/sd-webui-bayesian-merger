@@ -78,12 +78,13 @@ class Prompter:
                 payload,
             )
 
-    def render_payloads(self) -> List[Dict]:
+    def render_payloads(self, batch_size: int = 0) -> List[Dict]:
         payloads = []
         paths = []
         for p_name, p in self.raw_payloads.items():
-            rendered_payload = p.copy()
-            rendered_payload["prompt"] = self.dealer.replace_wildcards(p["prompt"])
-            paths.append(p_name)
-            payloads.append(rendered_payload)
+            for _ in range(batch_size):
+                rendered_payload = p.copy()
+                rendered_payload["prompt"] = self.dealer.replace_wildcards(p["prompt"])
+                paths.append(p_name)
+                payloads.append(rendered_payload)
         return payloads, paths

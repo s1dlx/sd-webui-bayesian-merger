@@ -138,6 +138,7 @@ dmypy.json
 
 # images
 **/*.png
+**/*.jpg
 
 # wildcards and payloads
 **/*.yaml
@@ -158,3 +159,9 @@ dmypy.json
 
 # notebooks
 **/*.ipynb
+
+# make
+Makefile
+
+# debugging files
+scorer_demo.py

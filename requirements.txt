@@ -14,3 +14,5 @@ transformers
 numpy
 hydra-core
 sd-meh
+lightgbm 
+scikit-learn
