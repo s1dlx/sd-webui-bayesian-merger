@@ -2,6 +2,7 @@
 
 ## NEWS
 
+- 2023/05/30 introducing [`meh`](https://github.com/s1dlx/meh) engine
 - 2023/05/17 add `scorer_device`; remove `aes` and `cafe_*` scorers; add `score_weight` to payload `.yaml`
 - 2023/05/16 `latin-hypercube-sampling` for `bayes` optimiser
 - 2023/05/15 `adaptive-tpe` optimiser
