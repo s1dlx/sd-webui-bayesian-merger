@@ -16,10 +16,10 @@ NUM_OUTPUT_BLOCKS = 12
 NUM_TOTAL_BLOCKS = NUM_INPUT_BLOCKS + NUM_MID_BLOCK + NUM_OUTPUT_BLOCKS
 
 MERGE_METHODS = dict(inspect.getmembers(merge_methods, inspect.isfunction))
-NUM_MODELS_NEEDED = [
-    3 if "c" in inspect.getfullargspec(fn)[0] else 2
+NUM_MODELS_NEEDED = {
+    name: 3 if "c" in inspect.getfullargspec(fn)[0] else 2
     for name, fn in MERGE_METHODS.items()
-]
+}
 
 @dataclass
 class Merger:
