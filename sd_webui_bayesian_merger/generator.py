@@ -28,11 +28,6 @@ class Generator:
             for img in images
         ]
 
-    def batch_generate(self, payload: Dict) -> List[Image.Image]:
-        return [
-            image for _ in range(self.batch_size) for image in self.generate(payload)
-        ]
-
     def switch_model(self, ckpt: str) -> None:
         self.refresh_models()
         title = self.find_title(Path(ckpt).stem)

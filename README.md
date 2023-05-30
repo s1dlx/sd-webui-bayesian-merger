@@ -2,7 +2,10 @@
 
 ## NEWS
 
-- 2023/05/12 introducing [`meh`](https://github.com/s1dlx/meh) engine
+- 2023/05/30 introducing [`meh`](https://github.com/s1dlx/meh) engine
+- 2023/05/17 add `scorer_device`; remove `aes` and `cafe_*` scorers; add `score_weight` to payload `.yaml`
+- 2023/05/16 `latin-hypercube-sampling` for `bayes` optimiser
+- 2023/05/15 `adaptive-tpe` optimiser
 - 2023/05/03 `tensor_sum` merging method
 - 2023/04/25 `weighted_subtraction` merging method
 - 2023/04/22 `manual` scoring method
@@ -29,14 +32,6 @@ At the end of the exploitation phase, the set of weights scoring the highest sco
 ## OK, How Do I Use It In Practice?
 
 Head to the [wiki](https://github.com/s1dlx/sd-webui-bayesian-merger/wiki/Home) for all the instructions to get you started.
-
-### FAQ
-
-- Why opinionated? Because we use webui API and lots of config files to run the show. No GUI. 
-Embrace your inner touch-typist and leave the browser for the CLI.
-- Why rely on webui API? It's a very popular platform. Chances are that if you already have a working webui, you do not need to do much to run this library.
-- How many iterations and payloads? What about the batch size? I'd suggest `--init_points 10 --n_iters 10 --batch_size 10` and at least 5 different payloads.
-Depending on your GPU this may take 2-3hrs to run on basic config.
 
 ## With the help of
 
