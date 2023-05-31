@@ -61,6 +61,7 @@ class Merger:
             "tensor_sum",
             "triple_sum",
             "weighted_subtraction",
+            "similarity_add_difference",
         ]:
             self.greek_letters.append("beta")
         self.model_name_suffix = f"bbwm-{'-'.join(self.model_real_names)}"
