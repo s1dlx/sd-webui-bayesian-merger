@@ -16,3 +16,4 @@ hydra-core
 sd-meh
 lightgbm 
 scikit-learn
+openai-clip
