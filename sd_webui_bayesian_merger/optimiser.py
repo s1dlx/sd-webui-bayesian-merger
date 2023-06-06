@@ -183,13 +183,13 @@ class Optimiser:
             figname=unet_path,
         )
 
-        if self.cfg.save_best:
-            print(f"Saving best merge: {self.merger.best_output_file}")
-            self.merger.merge(
-                best_weights,
-                best_bases,
-                best=True,
-            )
+        # if self.cfg.save_best:
+        #     print(f"Saving best merge: {self.merger.best_output_file}")
+        #     self.merger.merge(
+        #         best_weights,
+        #         best_bases,
+        #         best=True,
+        #     )
 
     @staticmethod
     def save_best_log(bases: Dict, weights_strings: Dict) -> None:
