@@ -111,7 +111,7 @@ class Merger:
         thetas = dict(self.models.items())
 
         thetas["model_a"] = merge_models(
-            thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision
+            thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision, device=self.cfg.device,
         )
 
         if best:
