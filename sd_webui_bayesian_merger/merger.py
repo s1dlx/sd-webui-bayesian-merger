@@ -32,7 +32,6 @@ NUM_MODELS_NEEDED = {
 
 @dataclass
 class Merger:
-    url: str
     cfg: DictConfig
 
     def __post_init__(self):
@@ -113,7 +112,7 @@ class Merger:
 
         print("Merging models")
         r = requests.post(
-            url=f"{self.url}/bbwm/merge-models",
+            url=f"{self.cfg.url}/bbwm/merge-models",
             json=option_payload,
         )
         r.raise_for_status()

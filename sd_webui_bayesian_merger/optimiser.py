@@ -28,16 +28,12 @@ class Optimiser:
     def __post_init__(self) -> None:
         self.bounds_initialiser = Bounds()
         self.generator = Generator(self.cfg.url, self.cfg.batch_size)
-        self.merger = Merger(self.cfg.url, self.cfg)
+        self.merger = Merger(self.cfg)
         self.start_logging()
         self.scorer = AestheticScorer(self.cfg)
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
         self._clean = True
-
-    def cleanup(self) -> None:
-        if not self._clean:
-            self._clean = True
 
     def start_logging(self) -> None:
         run_name = "-".join(self.merger.output_file.stem.split("-")[:-1])
@@ -93,7 +89,6 @@ class Optimiser:
             else None,
         )
         self.merger.merge(weights, bases)
-        self.cleanup()
 
         images, gen_paths, payloads = self.generate_images()
         scores, norm = self.score_images(images, gen_paths, payloads)
@@ -180,7 +175,7 @@ class Optimiser:
 
         # if self.cfg.save_best:
         #     print(f"Saving best merge: {self.merger.best_output_file}")
-        #     self.merger.merge(
+        #     self.merger.save_best(
         #         best_weights,
         #         best_bases,
         #         best=True,
