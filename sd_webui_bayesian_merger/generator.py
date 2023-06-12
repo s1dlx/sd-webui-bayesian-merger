@@ -26,13 +26,6 @@ class Generator:
             for img in images
         ]
 
-    def unload_model(self) -> None:
-        print("Unloading webui checkpoint")
-        r = requests.post(
-            url=f"{self.url}/sdapi/v1/unload-checkpoint",
-        )
-        r.raise_for_status()
-
     def refresh_models(self) -> None:
         r = requests.post(url=f"{self.url}/sdapi/v1/refresh-checkpoints")
         r.raise_for_status()
