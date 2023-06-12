@@ -25,9 +25,3 @@ class Generator:
             Image.open(io.BytesIO(base64.b64decode(img.split(",", 1)[0])))
             for img in images
         ]
-
-    def list_models(self) -> List[Tuple[str, str]]:
-        r = requests.get(url=f"{self.url}/sdapi/v1/sd-models")
-        r.raise_for_status()
-
-        return [(m["title"], m["model_name"]) for m in r.json()]
