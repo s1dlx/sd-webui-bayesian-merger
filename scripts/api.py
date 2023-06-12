@@ -26,7 +26,3 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
 
 
 script_callbacks.on_app_started(on_app_started)
-
-
-def align_offset(offset: int) -> int:
-    return offset + (8 - offset % 8) % 8
