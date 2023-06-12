@@ -26,10 +26,6 @@ class Generator:
             for img in images
         ]
 
-    def refresh_models(self) -> None:
-        r = requests.post(url=f"{self.url}/sdapi/v1/refresh-checkpoints")
-        r.raise_for_status()
-
     def list_models(self) -> List[Tuple[str, str]]:
         r = requests.get(url=f"{self.url}/sdapi/v1/sd-models")
         r.raise_for_status()
