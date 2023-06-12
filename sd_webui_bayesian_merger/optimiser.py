@@ -28,7 +28,7 @@ class Optimiser:
     def __post_init__(self) -> None:
         self.bounds_initialiser = Bounds()
         self.generator = Generator(self.cfg.url, self.cfg.batch_size)
-        self.merger = Merger(self.cfg)
+        self.merger = Merger(self.cfg.url, self.cfg)
         self.start_logging()
         self.scorer = AestheticScorer(self.cfg)
         self.prompter = Prompter(self.cfg)
@@ -92,8 +92,8 @@ class Optimiser:
             if self.cfg.guided_optimisation
             else None,
         )
-        self.merger.create_model_out_name(self.iteration)
-        self.merge_and_upload(weights, bases)
+        self.merger.merge(weights, bases)
+        self.cleanup()
 
         images, gen_paths, payloads = self.generate_images()
         scores, norm = self.score_images(images, gen_paths, payloads)
@@ -101,11 +101,6 @@ class Optimiser:
         self.update_best_score(bases, weights, avg_score)
 
         return avg_score
-
-    def merge_and_upload(self, weights, bases):
-        self.cleanup()
-        merged = self.merger.merge(weights, bases)
-        self.generator.upload_model(merged, self.merger.model_a)
 
     def generate_images(self) -> Tuple[List, List, List]:
         images = []

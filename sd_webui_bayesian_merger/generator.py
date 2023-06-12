@@ -1,11 +1,9 @@
-from sd_webui_bayesian_merger.sharer import ModelSharer
 import base64
 import io
 from dataclasses import dataclass
 from typing import Dict, List, Tuple
 import requests
 from PIL import Image
-from tqdm import tqdm
 
 
 @dataclass
@@ -34,26 +32,6 @@ class Generator:
             url=f"{self.url}/sdapi/v1/unload-checkpoint",
         )
         r.raise_for_status()
-
-    def upload_model(self, theta: Dict, model_a: str) -> None:
-        shapes = {}
-        with ModelSharer(theta, owner=True) as sharer:
-            for k, v in tqdm(list(theta.items()), desc="move model to shared memory"):
-                shapes[k] = v.shape, str(v.dtype)[str(v.dtype).find('.') + 1:]
-                sharer.serialize(k)
-                del theta[k], v
-
-            option_payload = {
-                "model_shapes": shapes,
-                "model_a": str(model_a),
-            }
-
-            print("Loading merged model")
-            r = requests.post(
-                url=f"{self.url}/bbwm/load-shared-model",
-                json=option_payload,
-            )
-            r.raise_for_status()
 
     def refresh_models(self) -> None:
         r = requests.post(url=f"{self.url}/sdapi/v1/refresh-checkpoints")

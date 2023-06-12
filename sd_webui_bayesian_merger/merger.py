@@ -8,7 +8,7 @@ import safetensors.torch
 import torch
 from omegaconf import DictConfig
 from sd_meh import merge_methods
-from sd_meh.merge import merge_models
+import requests
 
 
 BETA_METHODS = [
@@ -32,6 +32,7 @@ NUM_MODELS_NEEDED = {
 
 @dataclass
 class Merger:
+    url: str
     cfg: DictConfig
 
     def __post_init__(self):
@@ -99,17 +100,24 @@ class Merger:
         self,
         weights: Dict,
         bases: Dict,
-    ) -> Dict:
-        thetas = dict(self.models.items())
+    ) -> None:
+        bases = {f"base_{k}": v for k, v in bases.items()}
+        option_payload = {
+            "merge_method": self.cfg.merge_mode,
+            **{k: str(v) for k, v in self.models.items()},
+            **bases,
+            **weights,
+            "precision": self.cfg.best_precision,
+            "device": self.cfg.device,
+            "work_device": self.cfg.work_device,
+        }
 
-        merged = merge_models(
-            thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision,
-            device=self.cfg.device,
-            work_device=self.cfg.work_device,
-            prune=True,
+        print("Merging models")
+        r = requests.post(
+            url=f"{self.url}/bbwm/merge-models",
+            json=option_payload,
         )
-
-        return merged if type(merged) == dict else merged.to_dict()
+        r.raise_for_status()
 
     def save_best(self, theta):
         print(f"Saving {self.best_output_file}")
