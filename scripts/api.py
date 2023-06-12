@@ -10,25 +10,27 @@ import torch
 
 
 def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
-    @api.post("/bbwm/upload-model")
+    @api.post("/bbwm/load-shm-model")
     async def detect(
-        model: dict = fastapi.Body(title="serialized theta"),
+        shapes: dict = fastapi.Body(title="serialized theta"),
         model_a: str = fastapi.Body(None, title="path to reference checkpoint. used for VAE fallback and the like"),
     ):
         if model_a is None:
             model_a = shared.opts.data['sd_model_checkpoint']
 
         key_memories = {}
+        theta = {}
         try:
-            for k, shape in list(model.items()):
+            for k, (shape, dtype) in list(shapes.items()):
+                dtype = getattr(torch, dtype)
                 key_memories[k] = shared_memory.SharedMemory(create=False, name=f"bbwm-{k}")
-                model[k] = torch.frombuffer(
+                theta[k] = torch.frombuffer(
                     buffer=key_memories[k].buf,
                     count=reduce(operator.mul, shape, 1),
-                    dtype=torch.float,
+                    dtype=dtype,
                 ).reshape(shape)
 
-            load_model_weights(model, model_a)
+            load_model_weights(theta, model_a)
 
         finally:
             for mem in key_memories.values():

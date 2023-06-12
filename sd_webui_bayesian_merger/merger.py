@@ -103,7 +103,10 @@ class Merger:
         thetas = dict(self.models.items())
 
         merged = merge_models(
-            thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision, device=self.cfg.device, work_device=self.cfg.work_device,
+            thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision,
+            device=self.cfg.device,
+            work_device=self.cfg.work_device,
+            prune=True,
         )
 
         return merged if type(merged) == dict else merged.to_dict()

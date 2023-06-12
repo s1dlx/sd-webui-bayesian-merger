@@ -5,7 +5,6 @@ from multiprocessing import shared_memory
 from typing import Dict, List, Tuple
 
 import requests
-import safetensors.torch
 from PIL import Image
 from tqdm import tqdm
 
@@ -42,11 +41,9 @@ class Generator:
         payload_model = {}
         try:
             for k, v in tqdm(list(theta.items()), desc="move model to shared memory"):
-                theta[k] = v.detach().flatten().numpy().tobytes()
-                mem = shared_memory.SharedMemory(create=True, name=f"bbwm-{k}", size=len(theta[k]))
-                mem.buf[:] = theta[k]
-                memories[k] = mem
-                payload_model[k] = v.shape, v.dtype
+                memories[k] = shared_memory.SharedMemory(create=True, name=f"bbwm-{k}", size=v.untyped_storage().nbytes())
+                memories[k].buf[:] = v.numpy(force=True).tobytes()
+                payload_model[k] = v.shape, str(v.dtype)[str(v.dtype).find('.') + 1:]
                 del theta[k]
 
             option_payload = {
@@ -56,13 +53,13 @@ class Generator:
 
             print("Loading merged model")
             r = requests.post(
-                url=f"{self.url}/bbwm/upload-model",
+                url=f"{self.url}/bbwm/load-shm-model",
                 json=option_payload,
             )
             r.raise_for_status()
 
         finally:
-            for mem, _ in memories.values():
+            for mem in memories.values():
                 mem.close()
                 mem.unlink()
 
