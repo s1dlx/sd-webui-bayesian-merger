@@ -8,6 +8,7 @@ import safetensors.torch
 import torch
 from omegaconf import DictConfig
 from sd_meh import merge_methods
+from sd_meh.merge import merge_models
 import requests
 
 
@@ -90,11 +91,6 @@ class Merger:
         model_out_name += f".{self.cfg.best_format}"
         self.best_output_file = Path(self.model_a.parent, model_out_name)
 
-    def keep_best_ckpt(self) -> None:
-        if self.best_output_file.exists():
-            self.best_output_file.unlink()
-        self.output_file.rename(self.best_output_file)
-
     def merge(
         self,
         weights: Dict,
@@ -117,13 +113,22 @@ class Merger:
         )
         r.raise_for_status()
 
-    def save_best(self, theta):
-        print(f"Saving {self.best_output_file}")
+    def save_best(self, weights, bases):
+        print("Merging best model")
+        merged = merge_models(
+            models={k: str(v) for k, v in self.models.items()},
+            weights=weights,
+            bases=bases,
+            merge_mode=self.cfg.merge_mode,
+            precision=self.cfg.best_precision,
+            device=self.cfg.device,
+        )
+        print(f"Saving {self.best_output_file}.{self.cfg.best_format}")
         if self.cfg.best_format == "safetensors":
             safetensors.torch.save_file(
-                theta,
+                merged,
                 self.best_output_file,
                 metadata={"format": "pt"},
             )
         else:
-            torch.save({"state_dict": theta}, self.best_output_file)
+            torch.save({"state_dict": merged}, self.best_output_file)

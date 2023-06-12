@@ -124,7 +124,6 @@ class Optimiser:
             print("Saving best model merge")
             self.best_rolling_score = avg_score
             Optimiser.save_best_log(bases, weights_strings)
-            self.merger.keep_best_ckpt()
 
     @abstractmethod
     def optimise(self) -> None:
@@ -171,13 +170,12 @@ class Optimiser:
             figname=unet_path,
         )
 
-        # if self.cfg.save_best:
-        #     print(f"Saving best merge: {self.merger.best_output_file}")
-        #     self.merger.save_best(
-        #         best_weights,
-        #         best_bases,
-        #         best=True,
-        #     )
+        if self.cfg.save_best:
+            self.merger.save_best(
+                best_weights,
+                best_bases,
+                best=True,
+            )
 
     @staticmethod
     def save_best_log(bases: Dict, weights_strings: Dict) -> None:
