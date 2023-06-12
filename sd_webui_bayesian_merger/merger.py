@@ -109,7 +109,6 @@ class Merger:
             **weights,
             "precision": self.cfg.best_precision,
             "device": self.cfg.device,
-            "work_device": self.cfg.work_device,
         }
 
         print("Merging models")

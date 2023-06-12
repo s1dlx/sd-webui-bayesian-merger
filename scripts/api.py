@@ -23,7 +23,6 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
         re_basin: bool = fastapi.Body(False, title="Git re-basin"),
         re_basin_iterations: int = fastapi.Body(1, title="Git re-basin iterations"),
         device: str = fastapi.Body("cpu", title="Device used to load models"),
-        work_device: str = fastapi.Body("cpu", title="Device used to merge models"),
         prune: bool = fastapi.Body(False, title="Prune model during merge")
     ):
         if not alpha:
@@ -52,7 +51,6 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             re_basin=re_basin,
             iterations=re_basin_iterations,
             device=device,
-            work_device=work_device,
             prune=prune,
         ).to_dict()
 
