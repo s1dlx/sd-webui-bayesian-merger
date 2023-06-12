@@ -36,9 +36,7 @@ class Optimiser:
         self._clean = True
 
     def cleanup(self) -> None:
-        if self._clean:
-            self.merger.remove_previous_ckpt(self.iteration)
-        else:
+        if not self._clean:
             self._clean = True
 
     def start_logging(self) -> None:
@@ -95,10 +93,7 @@ class Optimiser:
             else None,
         )
         self.merger.create_model_out_name(self.iteration)
-        self.merger.merge(weights, bases)
-        self.cleanup()
-
-        self.generator.switch_model(self.merger.model_out_name)
+        self.merge_and_upload(weights, bases)
 
         images, gen_paths, payloads = self.generate_images()
         scores, norm = self.score_images(images, gen_paths, payloads)
@@ -107,7 +102,12 @@ class Optimiser:
 
         return avg_score
 
-    def generate_images(self) -> Tuple[List, List]:
+    def merge_and_upload(self, weights, bases):
+        self.cleanup()
+        merged = self.merger.merge(weights, bases)
+        self.generator.upload_model(merged, self.merger.model_a)
+
+    def generate_images(self) -> Tuple[List, List, List]:
         images = []
         gen_paths = []
         payloads, paths = self.prompter.render_payloads(self.cfg.batch_size)
