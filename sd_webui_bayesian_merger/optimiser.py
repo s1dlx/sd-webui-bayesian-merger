@@ -33,7 +33,6 @@ class Optimiser:
         self.scorer = AestheticScorer(self.cfg)
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
-        self._clean = True
 
     def start_logging(self) -> None:
         run_name = "-".join(self.merger.output_file.stem.split("-")[:-1])
@@ -126,7 +125,6 @@ class Optimiser:
             self.best_rolling_score = avg_score
             Optimiser.save_best_log(bases, weights_strings)
             self.merger.keep_best_ckpt()
-            self._clean = False
 
     @abstractmethod
     def optimise(self) -> None:
