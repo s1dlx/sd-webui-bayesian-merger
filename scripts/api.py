@@ -3,7 +3,7 @@ from typing import Optional, List
 import fastapi
 import gradio as gr
 from pathlib import Path
-from sd_meh.merge import merge_models
+from sd_meh.merge import merge_models, NUM_TOTAL_BLOCKS
 
 
 def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
@@ -25,9 +25,9 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
         prune: bool = fastapi.Body(False, title="Prune model during merge"),
     ):
         if not alpha:
-            alpha = [base_alpha] * 25
+            alpha = [base_alpha] * NUM_TOTAL_BLOCKS
         if not beta:
-            beta = [base_beta] * 25
+            beta = [base_beta] * NUM_TOTAL_BLOCKS
 
         sd_models.unload_model_weights()
         merged = merge_models(
