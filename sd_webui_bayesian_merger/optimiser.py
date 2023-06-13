@@ -102,7 +102,7 @@ class Optimiser:
         payloads, paths = self.prompter.render_payloads(self.cfg.batch_size)
         for i, payload in tqdm(enumerate(payloads), desc="Batches generation"):
             images.extend(self.generator.generate(payload))
-            gen_paths.extend([paths[i]] * payload["batch_size"])
+            gen_paths.extend([paths[i]] * payload["batch_size"] * payload["n_iter"])
         return images, gen_paths, payloads
 
     def score_images(self, images, gen_paths, payloads) -> List[float]:
@@ -121,7 +121,6 @@ class Optimiser:
 
         if avg_score > self.best_rolling_score:
             print("\n NEW BEST!")
-            print("Saving best model merge")
             self.best_rolling_score = avg_score
             Optimiser.save_best_log(bases, weights_strings)
 
@@ -174,7 +173,6 @@ class Optimiser:
             self.merger.save_best(
                 best_weights,
                 best_bases,
-                best=True,
             )
 
     @staticmethod

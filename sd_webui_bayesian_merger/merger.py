@@ -122,7 +122,7 @@ class Merger:
             merge_mode=self.cfg.merge_mode,
             precision=self.cfg.best_precision,
             device=self.cfg.device,
-        )
+        ).to_dict()
         print(f"Saving {self.best_output_file}.{self.cfg.best_format}")
         if self.cfg.best_format == "safetensors":
             safetensors.torch.save_file(
