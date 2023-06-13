@@ -4,11 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
 
-import safetensors.torch
-import torch
 from omegaconf import DictConfig
 from sd_meh import merge_methods
-from sd_meh.merge import merge_models
 import requests
 
 
@@ -117,8 +114,4 @@ class Merger:
             url=f"{self.cfg.url}/bbwm/merge-models",
             json=option_payload,
         )
-        r.raise_for_status()
-
-    def reset_model(self) -> None:
-        r = requests.post(url=f"{self.cfg.url}/sdapi/v1/reload-checkpoint")
         r.raise_for_status()

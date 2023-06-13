@@ -34,9 +34,6 @@ class Optimiser:
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
 
-    def cleanup(self) -> None:
-        self.merger.reset_model()
-
     def start_logging(self) -> None:
         run_name = "-".join(self.merger.output_file.stem.split("-")[:-1])
         self.log_name = f"{run_name}-{self.cfg.optimiser}"

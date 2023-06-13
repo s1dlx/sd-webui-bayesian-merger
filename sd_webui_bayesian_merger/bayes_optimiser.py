@@ -44,8 +44,6 @@ class BayesOptimiser(Optimiser):
             n_iter=self.cfg.n_iters,
         )
 
-        self.cleanup()
-
     def postprocess(self) -> None:
         print("\nRecap!")
         for i, res in enumerate(self.optimizer.res):

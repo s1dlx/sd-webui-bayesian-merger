@@ -27,8 +27,6 @@ class ATPEOptimiser(Optimiser):
             max_evals=self.cfg.init_points + self.cfg.n_iters,
         )
 
-        self.cleanup()
-
     def postprocess(self) -> None:
         print("\nRecap!")
         scores = []

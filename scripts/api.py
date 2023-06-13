@@ -1,19 +1,31 @@
-import torch
-from fastapi import HTTPException
-from sd_meh.merge import merge_models, NUM_TOTAL_BLOCKS
-from modules import script_callbacks, sd_models, shared
-from typing import Optional, List, Dict
 import fastapi
-import safetensors.torch
 import gradio as gr
+import inspect
+import re
+import safetensors.torch
+import torch
+from modules import script_callbacks, sd_models, shared
+from sd_meh.merge import merge_methods, merge_models, NUM_TOTAL_BLOCKS
 from pathlib import Path
+from typing import Dict, List, Optional
 
 
 def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
     @api.post("/bbwm/merge-models")
     async def merge_models_api(
-        destination: str = fastapi.Body(title="Destination to save the merge result. Pass 'load' to load it in memory instead"),
-        unload_before: bool = fastapi.Body(False, title="Unload current model before merging to save memory"),
+        destination: str = fastapi.Body(
+            title="Destination",
+            description=format_multiline_description("""
+                Path to save the merge result.
+                If relative, the merge result will be saved in the directory of model A.
+                Pass 'load' to load it in memory instead.
+            """),
+        ),
+        unload_before: bool = fastapi.Body(
+            False,
+            title="Unload before merging",
+            description="Unload current model before merging to save memory",
+        ),
         merge_method: str = fastapi.Body(title="Merge method"),
         model_a: str = fastapi.Body(title="Path to model A"),
         model_b: str = fastapi.Body(title="Path to model B"),
@@ -29,62 +41,105 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
         device: str = fastapi.Body("cpu", title="Device used to load models"),
         work_device: str = fastapi.Body(None, title="Device used to merge models"),
         prune: bool = fastapi.Body(False, title="Prune model during merge"),
-        threads: bool = fastapi.Body(1, title="Number of keys to merge simultaneously. Only useful on cpu device")
+        threads: bool = fastapi.Body(
+            1,
+            title="Number of threads",
+            description="Number of keys to merge simultaneously. Only useful with device='cpu'",
+        ),
     ):
-        if not alpha:
-            alpha = [base_alpha] * NUM_TOTAL_BLOCKS
-        if not beta:
-            beta = [base_beta] * NUM_TOTAL_BLOCKS
+        validate_merge_method(merge_method)
+        alpha, beta, input_models, weights, bases = normalize_merge_args(
+            base_alpha, base_beta,
+            alpha, beta,
+            model_a, model_b, model_c,
+        )
 
-        checkpoint_info = sd_models.checkpoint_alisases[Path(model_a).name]
+        model_a_info = get_checkpoint_info(Path(model_a))
         if destination != "load":
-            destination = Path(destination)
-            if not destination.is_absolute():
-                destination = destination.relative_to(checkpoint_info.filename)
-            if not destination.parent.exists():
-                raise HTTPException(422, "Destination directory does not exist")
+            destination = normalize_destination(destination, model_a_info)
 
         if unload_before or destination == "load":
             sd_models.unload_model_weights()
 
-        merged = merge_models(
-            models={
-                "model_a": model_a,
-                "model_b": model_b,
-                **({"model_c": model_c} if model_c else {}),
-            },
-            weights={
-                "alpha": alpha,
-                "beta": beta,
-            },
-            bases={
-                "alpha": base_alpha,
-                "beta": base_beta,
-            },
-            merge_mode=merge_method,
-            precision=precision,
-            weights_clip=weights_clip,
-            re_basin=re_basin,
-            iterations=re_basin_iterations,
-            device=device,
-            work_device=work_device,
-            prune=prune,
-            threads=threads,
-        )
-        if not isinstance(merged, dict):
-            merged = merged.to_dict()
+        try:
+            merged = merge_models(
+                models=input_models,
+                weights=weights,
+                bases=bases,
+                merge_mode=merge_method,
+                precision=precision,
+                weights_clip=weights_clip,
+                re_basin=re_basin,
+                iterations=re_basin_iterations,
+                device=device,
+                work_device=work_device,
+                prune=prune,
+                threads=threads,
+            )
+            if not isinstance(merged, dict):
+                merged = merged.to_dict()
 
-        if destination == "load":
-            sd_models.load_model(checkpoint_info, merged)
-            return
+            if destination == "load":
+                sd_models.load_model(model_a_info, merged)
+            else:
+                save_model(merged, destination)
+                shared.refresh_checkpoints()
 
-        save_model(merged, destination)
-        shared.refresh_checkpoints()
-        if unload_before:
-            sd_models.load_model()
+        finally:
+            if unload_before and shared.sd_model is None:
+                sd_models.load_model()
 
 
 script_callbacks.on_app_started(on_app_started)
+
+
+def validate_merge_method(merge_method: str) -> None:
+    if merge_method not in dict(inspect.getmembers(merge_methods, inspect.isfunction)).keys():
+        raise fastapi.HTTPException(422, "Merge method is not defined")
+
+
+def normalize_merge_args(base_alpha, base_beta, alpha, beta, model_a, model_b, model_c):
+    if not alpha:
+        alpha = [base_alpha] * NUM_TOTAL_BLOCKS
+    if not beta:
+        beta = [base_beta] * NUM_TOTAL_BLOCKS
+
+    input_models = {
+        "model_a": model_a,
+        "model_b": model_b,
+        **({"model_c": model_c} if model_c else {}),
+    }
+    weights = {
+        "alpha": alpha,
+        "beta": beta,
+    }
+    bases = {
+        "alpha": base_alpha,
+        "beta": base_beta,
+    }
+
+    return alpha, beta, input_models, weights, bases
+
+
+def get_checkpoint_info(path: Path) -> sd_models.CheckpointInfo:
+    checkpoint_info = sd_models.checkpoint_alisases.get(path.name, None)
+    if checkpoint_info is None:
+        raise fastapi.HTTPException(422, "path to model A does not exist")
+
+    return checkpoint_info
+
+
+def normalize_destination(
+    destination: str,
+    checkpoint_info: sd_models.CheckpointInfo,
+) -> Path:
+    destination = Path(destination)
+    if not destination.is_absolute():
+        destination = destination.relative_to(checkpoint_info.filename)
+    if not destination.parent.exists():
+        raise fastapi.HTTPException(422, "Destination parent directory does not exist")
+
+    return destination
 
 
 def save_model(merged: Dict, path: Path):
@@ -98,3 +153,7 @@ def save_model(merged: Dict, path: Path):
         )
     else:
         torch.save({"state_dict": merged}, path.with_suffix(""))
+
+
+def format_multiline_description(description: str) -> str:
+    return re.sub(r"\s{2,}", " ", description).strip()
