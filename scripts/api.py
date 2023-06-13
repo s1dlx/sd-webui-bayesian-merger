@@ -51,7 +51,9 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             iterations=re_basin_iterations,
             device=device,
             prune=prune,
-        ).to_dict()
+        )
+        if not isinstance(merged, dict):
+            merged = merged.to_dict()
 
         checkpoint_info = sd_models.checkpoint_alisases[Path(model_a).stem]
         sd_models.load_model(checkpoint_info, merged)
