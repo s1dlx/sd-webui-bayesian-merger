@@ -8,7 +8,7 @@ from sd_meh.merge import merge_models
 
 def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
     @api.post("/bbwm/merge-models")
-    async def detect(
+    async def merge_models_api(
         merge_method: str = fastapi.Body(title="Merge method"),
         model_a: str = fastapi.Body(title="Path to model A"),
         model_b: str = fastapi.Body(title="Path to model B"),
@@ -55,7 +55,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
         if not isinstance(merged, dict):
             merged = merged.to_dict()
 
-        checkpoint_info = sd_models.checkpoint_alisases[Path(model_a).stem]
+        checkpoint_info = sd_models.checkpoint_alisases[Path(model_a).name]
         sd_models.load_model(checkpoint_info, merged)
 
 

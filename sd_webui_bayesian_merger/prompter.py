@@ -78,7 +78,7 @@ class Prompter:
                 payload,
             )
 
-    def render_payloads(self, batch_size: int = 0) -> List[Dict]:
+    def render_payloads(self, batch_size: int = 0) -> Tuple[List[Dict], List[str]]:
         payloads = []
         paths = []
         for p_name, p in self.raw_payloads.items():
