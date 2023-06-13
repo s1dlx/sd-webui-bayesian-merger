@@ -18,7 +18,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             description=format_multiline_description("""
                 Path to save the merge result.
                 If relative, the merge result will be saved in the directory of model A.
-                Pass 'load' to load it in memory instead.
+                Pass "load" to load it in memory instead.
             """),
         ),
         unload_before: bool = fastapi.Body(
