@@ -48,6 +48,17 @@ class AestheticScorer:
     cfg: DictConfig
 
     def __post_init__(self):
+        if self.cfg.scorer_method == "manual":
+            self.cfg.save_imgs = True
+
+        if self.cfg.save_imgs:
+            self.imgs_dir = Path(HydraConfig.get().runtime.output_dir, "imgs")
+            if not self.imgs_dir.exists():
+                self.imgs_dir.mkdir()
+
+        if self.cfg.scorer_method == "manual":
+            return
+
         if self.cfg.scorer_method == "laion":
             self.scorer_model_name = "laion-sac-logos-ava-v2.safetensors"
         elif self.cfg.scorer_method == "chad":
@@ -58,14 +69,6 @@ class AestheticScorer:
         )
         self.get_model()
         self.load_model()
-
-        if self.cfg.scorer_method == "manual":
-            self.cfg.save_imgs = True
-
-        if self.cfg.save_imgs:
-            self.imgs_dir = Path(HydraConfig.get().runtime.output_dir, "imgs")
-            if not self.imgs_dir.exists():
-                self.imgs_dir.mkdir()
 
     def get_model(self) -> None:
         if self.model_path.is_file():
