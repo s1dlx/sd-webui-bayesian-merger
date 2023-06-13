@@ -5,8 +5,8 @@ import re
 import safetensors.torch
 import torch
 from modules import script_callbacks, sd_models, shared
-from sd_meh.merge import merge_methods, merge_models, NUM_TOTAL_BLOCKS
 from pathlib import Path
+from sd_meh.merge import merge_methods, merge_models, NUM_TOTAL_BLOCKS
 from typing import Dict, List, Optional
 
 
