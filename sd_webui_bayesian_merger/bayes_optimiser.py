@@ -44,6 +44,8 @@ class BayesOptimiser(Optimiser):
             n_iter=self.cfg.n_iters,
         )
 
+        self.cleanup()
+
     def postprocess(self) -> None:
         print("\nRecap!")
         for i, res in enumerate(self.optimizer.res):
@@ -67,7 +69,6 @@ class BayesOptimiser(Optimiser):
             best_weights,
             minimise=False,
         )
-        self.merger.reset_model()
 
 
 def parse_scores(iterations: List[Dict]) -> List[float]:

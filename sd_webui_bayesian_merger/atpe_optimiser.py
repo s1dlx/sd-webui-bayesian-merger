@@ -27,6 +27,8 @@ class ATPEOptimiser(Optimiser):
             max_evals=self.cfg.init_points + self.cfg.n_iters,
         )
 
+        self.cleanup()
+
     def postprocess(self) -> None:
         print("\nRecap!")
         scores = []
@@ -52,4 +54,3 @@ class ATPEOptimiser(Optimiser):
             best_weights,
             minimise=True,
         )
-        self.merger.reset_model()

@@ -105,7 +105,11 @@ class Merger:
             **weights,
             "precision": self.cfg.best_precision,
             "device": self.cfg.device,
-            "destination": f"{self.best_output_file}.{self.cfg.best_format}" if save_best else "load",
+            "work_device": self.cfg.work_device,
+            "prune": self.cfg.prune,
+            "threads": self.cfg.threads,
+            "destination": str(self.best_output_file) if save_best else "load",
+            "unload_before": True,
         }
 
         print("Merging models")

@@ -13,6 +13,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
     @api.post("/bbwm/merge-models")
     async def merge_models_api(
         destination: str = fastapi.Body(title="Destination to save the merge result. Pass 'load' to load it in memory instead"),
+        unload_before: bool = fastapi.Body(False, title="Unload current model before merging to save memory"),
         merge_method: str = fastapi.Body(title="Merge method"),
         model_a: str = fastapi.Body(title="Path to model A"),
         model_b: str = fastapi.Body(title="Path to model B"),
@@ -26,19 +27,26 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
         re_basin: bool = fastapi.Body(False, title="Git re-basin"),
         re_basin_iterations: int = fastapi.Body(1, title="Git re-basin iterations"),
         device: str = fastapi.Body("cpu", title="Device used to load models"),
+        work_device: str = fastapi.Body(None, title="Device used to merge models"),
         prune: bool = fastapi.Body(False, title="Prune model during merge"),
+        threads: bool = fastapi.Body(1, title="Number of keys to merge simultaneously. Only useful on cpu device")
     ):
         if not alpha:
             alpha = [base_alpha] * NUM_TOTAL_BLOCKS
         if not beta:
             beta = [base_beta] * NUM_TOTAL_BLOCKS
 
+        checkpoint_info = sd_models.checkpoint_alisases[Path(model_a).name]
         if destination != "load":
             destination = Path(destination)
-            if not destination.is_absolute() or not destination.exists():
-                raise HTTPException(422, "Destination path must be an absolute path")
+            if not destination.is_absolute():
+                destination = destination.relative_to(checkpoint_info.filename)
+            if not destination.parent.exists():
+                raise HTTPException(422, "Destination directory does not exist")
 
-        sd_models.unload_model_weights()
+        if unload_before or destination == "load":
+            sd_models.unload_model_weights()
+
         merged = merge_models(
             models={
                 "model_a": model_a,
@@ -59,25 +67,29 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             re_basin=re_basin,
             iterations=re_basin_iterations,
             device=device,
+            work_device=work_device,
             prune=prune,
+            threads=threads,
         )
         if not isinstance(merged, dict):
             merged = merged.to_dict()
 
         if destination == "load":
-            checkpoint_info = sd_models.checkpoint_alisases[Path(model_a).name]
             sd_models.load_model(checkpoint_info, merged)
             return
 
         save_model(merged, destination)
         shared.refresh_checkpoints()
+        if unload_before:
+            sd_models.load_model()
 
 
 script_callbacks.on_app_started(on_app_started)
 
 
 def save_model(merged: Dict, path: Path):
-    print(f"Saving {path}")
+    print(f"Saving merge to {path}")
+    path.unlink(missing_ok=True)
     if path.suffix == ".safetensors":
         safetensors.torch.save_file(
             merged,
