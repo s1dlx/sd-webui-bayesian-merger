@@ -95,6 +95,7 @@ class Merger:
         self,
         weights: Dict,
         bases: Dict,
+        save_best: bool = False,
     ) -> None:
         bases = {f"base_{k}": v for k, v in bases.items()}
         option_payload = {
@@ -104,6 +105,7 @@ class Merger:
             **weights,
             "precision": self.cfg.best_precision,
             "device": self.cfg.device,
+            "destination": f"{self.best_output_file}.{self.cfg.best_format}" if save_best else "load",
         }
 
         print("Merging models")
@@ -113,22 +115,6 @@ class Merger:
         )
         r.raise_for_status()
 
-    def save_best(self, weights, bases):
-        print("Merging best model")
-        merged = merge_models(
-            models={k: str(v) for k, v in self.models.items()},
-            weights=weights,
-            bases=bases,
-            merge_mode=self.cfg.merge_mode,
-            precision=self.cfg.best_precision,
-            device=self.cfg.device,
-        ).to_dict()
-        print(f"Saving {self.best_output_file}.{self.cfg.best_format}")
-        if self.cfg.best_format == "safetensors":
-            safetensors.torch.save_file(
-                merged,
-                self.best_output_file,
-                metadata={"format": "pt"},
-            )
-        else:
-            torch.save({"state_dict": merged}, self.best_output_file)
+    def reset_model(self) -> None:
+        r = requests.post(url=f"{self.cfg.url}/sdapi/v1/reload-checkpoint")
+        r.raise_for_status()

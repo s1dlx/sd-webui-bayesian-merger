@@ -67,6 +67,7 @@ class BayesOptimiser(Optimiser):
             best_weights,
             minimise=False,
         )
+        self.merger.reset_model()
 
 
 def parse_scores(iterations: List[Dict]) -> List[float]:

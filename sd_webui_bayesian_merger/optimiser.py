@@ -172,10 +172,8 @@ class Optimiser:
         )
 
         if self.cfg.save_best:
-            self.merger.save_best(
-                best_weights,
-                best_bases,
-            )
+            print("Merging best model")
+            self.merger.merge(best_weights, best_bases, save_best=True)
 
     @staticmethod
     def save_best_log(bases: Dict, weights_strings: Dict) -> None:

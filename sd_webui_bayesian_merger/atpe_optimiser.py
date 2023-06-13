@@ -52,3 +52,4 @@ class ATPEOptimiser(Optimiser):
             best_weights,
             minimise=True,
         )
+        self.merger.reset_model()

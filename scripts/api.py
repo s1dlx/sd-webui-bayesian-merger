@@ -1,14 +1,18 @@
-from modules import script_callbacks, sd_models
-from typing import Optional, List
+import torch
+from fastapi import HTTPException
+from sd_meh.merge import merge_models, NUM_TOTAL_BLOCKS
+from modules import script_callbacks, sd_models, shared
+from typing import Optional, List, Dict
 import fastapi
+import safetensors.torch
 import gradio as gr
 from pathlib import Path
-from sd_meh.merge import merge_models, NUM_TOTAL_BLOCKS
 
 
 def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
     @api.post("/bbwm/merge-models")
     async def merge_models_api(
+        destination: str = fastapi.Body(title="Destination to save the merge result. Pass 'load' to load it in memory instead"),
         merge_method: str = fastapi.Body(title="Merge method"),
         model_a: str = fastapi.Body(title="Path to model A"),
         model_b: str = fastapi.Body(title="Path to model B"),
@@ -28,6 +32,11 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             alpha = [base_alpha] * NUM_TOTAL_BLOCKS
         if not beta:
             beta = [base_beta] * NUM_TOTAL_BLOCKS
+
+        if destination != "load":
+            destination = Path(destination)
+            if not destination.is_absolute() or not destination.exists():
+                raise HTTPException(422, "Destination path must be an absolute path")
 
         sd_models.unload_model_weights()
         merged = merge_models(
@@ -55,8 +64,25 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
         if not isinstance(merged, dict):
             merged = merged.to_dict()
 
-        checkpoint_info = sd_models.checkpoint_alisases[Path(model_a).name]
-        sd_models.load_model(checkpoint_info, merged)
+        if destination == "load":
+            checkpoint_info = sd_models.checkpoint_alisases[Path(model_a).name]
+            sd_models.load_model(checkpoint_info, merged)
+            return
+
+        save_model(merged, destination)
+        shared.refresh_checkpoints()
 
 
 script_callbacks.on_app_started(on_app_started)
+
+
+def save_model(merged: Dict, path: Path):
+    print(f"Saving {path}")
+    if path.suffix == ".safetensors":
+        safetensors.torch.save_file(
+            merged,
+            path.with_suffix(""),
+            metadata={"format": "pt"},
+        )
+    else:
+        torch.save({"state_dict": merged}, path.with_suffix(""))
