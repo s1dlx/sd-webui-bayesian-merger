@@ -10,7 +10,6 @@ from omegaconf import DictConfig
 from sd_meh import merge_methods
 from sd_meh.merge import merge_models
 
-
 BETA_METHODS = [
     name
     for name, fn in dict(inspect.getmembers(merge_methods, inspect.isfunction)).items()
@@ -111,23 +110,45 @@ class Merger:
         thetas = dict(self.models.items())
 
         thetas["model_a"] = merge_models(
-            thetas, weights, bases, self.cfg.merge_mode, self.cfg.best_precision, device=self.cfg.device,
+            thetas,
+            weights,
+            bases,
+            self.cfg.merge_mode,
+            self.cfg.best_precision,
+            device=self.cfg.device,
+            work_device=self.cfg.work_device,
+            prune=self.cfg.prune,
+            threads=self.cfg.threads,
+            weights_clip=self.cfg.weights_clip,
+            re_basin=self.cfg.rebasin,
+            iterations=self.cfg.rebasin_iterations,
         )
 
         if best:
             print(f"Saving {self.best_output_file}")
             if self.cfg.best_format == "safetensors":
                 safetensors.torch.save_file(
-                    thetas["model_a"] if type(thetas["model_a"]) == dict else thetas["model_a"].to_dict(),
+                    thetas["model_a"]
+                    if type(thetas["model_a"]) == dict
+                    else thetas["model_a"].to_dict(),
                     self.best_output_file,
                     metadata={"format": "pt"},
                 )
             else:
-                torch.save({"state_dict": thetas["model_a"] if type(thetas["model_a"]) == dict else thetas["model_a"].to_dict()}, self.best_output_file)
+                torch.save(
+                    {
+                        "state_dict": thetas["model_a"]
+                        if type(thetas["model_a"]) == dict
+                        else thetas["model_a"].to_dict()
+                    },
+                    self.best_output_file,
+                )
         else:
             print(f"Saving {self.output_file}")
             safetensors.torch.save_file(
-                thetas["model_a"] if type(thetas["model_a"]) == dict else thetas["model_a"].to_dict(),
+                thetas["model_a"]
+                if type(thetas["model_a"]) == dict
+                else thetas["model_a"].to_dict(),
                 self.output_file,
                 metadata={"format": "pt", "precision": "fp16"},
             )
