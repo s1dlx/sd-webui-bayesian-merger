@@ -127,7 +127,11 @@ def normalize_merge_args(base_alpha, base_beta, alpha, beta, model_a, model_b, m
 
 
 def get_checkpoint_info(path: Path) -> sd_models.CheckpointInfo:
-    checkpoint_info = sd_models.checkpoint_alisases.get(path.name, None)
+    checkpoint_aliases = getattr(sd_models, "checkpoint_alisases", None)
+    if checkpoint_aliases is None: # we are on vlad webui
+        checkpoint_aliases = getattr(sd_models, "checkpoint_aliases")
+
+    checkpoint_info = checkpoint_aliases.get(path.name, None)
     if checkpoint_info is None:
         raise fastapi.HTTPException(422, "Could not find checkpoint alias for model A")
 
