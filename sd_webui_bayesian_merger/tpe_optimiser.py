@@ -29,12 +29,6 @@ class TPEOptimiser(Optimiser):
             max_evals=self.cfg.init_points + self.cfg.n_iters,
         )
 
-        # clean up and remove the last merge
-        try:
-            self.cleanup()
-        except FileNotFoundError:
-            return
-
     def postprocess(self) -> None:
         print("\nRecap!")
         scores = []

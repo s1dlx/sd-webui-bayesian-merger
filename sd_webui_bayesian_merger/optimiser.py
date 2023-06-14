@@ -33,13 +33,6 @@ class Optimiser:
         self.scorer = AestheticScorer(self.cfg)
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
-        self._clean = True
-
-    def cleanup(self) -> None:
-        if self._clean:
-            self.merger.remove_previous_ckpt(self.iteration)
-        else:
-            self._clean = True
 
     def start_logging(self) -> None:
         run_name = "-".join(self.merger.output_file.stem.split("-")[:-1])
@@ -94,11 +87,7 @@ class Optimiser:
             if self.cfg.guided_optimisation
             else None,
         )
-        self.merger.create_model_out_name(self.iteration)
         self.merger.merge(weights, bases)
-        self.cleanup()
-
-        self.generator.switch_model(self.merger.model_out_name)
 
         images, gen_paths, payloads = self.generate_images()
         scores, norm = self.score_images(images, gen_paths, payloads)
@@ -107,13 +96,15 @@ class Optimiser:
 
         return avg_score
 
-    def generate_images(self) -> Tuple[List, List]:
+    def generate_images(self) -> Tuple[List, List, List]:
         images = []
         gen_paths = []
         payloads, paths = self.prompter.render_payloads(self.cfg.batch_size)
-        for i, payload in tqdm(enumerate(payloads), desc="Batches generation"):
-            images.extend(self.generator.generate(payload))
-            gen_paths.extend([paths[i]] * payload["batch_size"])
+        for i, payload in tqdm(enumerate(list(payloads)), desc="Batches generation"):
+            generated_images = self.generator.generate(payload)
+            images.extend(generated_images)
+            gen_paths.extend([paths[i]] * len(generated_images))
+            payloads[i:i+1] = [payloads[i]] * len(generated_images)
         return images, gen_paths, payloads
 
     def score_images(self, images, gen_paths, payloads) -> List[float]:
@@ -132,11 +123,8 @@ class Optimiser:
 
         if avg_score > self.best_rolling_score:
             print("\n NEW BEST!")
-            print("Saving best model merge")
             self.best_rolling_score = avg_score
             Optimiser.save_best_log(bases, weights_strings)
-            self.merger.keep_best_ckpt()
-            self._clean = False
 
     @abstractmethod
     def optimise(self) -> None:
@@ -183,13 +171,9 @@ class Optimiser:
             figname=unet_path,
         )
 
-        # if self.cfg.save_best:
-        #     print(f"Saving best merge: {self.merger.best_output_file}")
-        #     self.merger.merge(
-        #         best_weights,
-        #         best_bases,
-        #         best=True,
-        #     )
+        if self.cfg.save_best:
+            print("Merging best model")
+            self.merger.merge(best_weights, best_bases, save_best=True)
 
     @staticmethod
     def save_best_log(bases: Dict, weights_strings: Dict) -> None:
