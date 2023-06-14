@@ -10,15 +10,18 @@ from sd_meh.merge import merge_methods, merge_models, NUM_TOTAL_BLOCKS
 from typing import Dict, List, Optional
 
 
+MEMORY_DESTINATION = "memory"
+
+
 def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
     @api.post("/bbwm/merge-models")
     async def merge_models_api(
         destination: str = fastapi.Body(
             title="Destination",
-            description=format_multiline_description("""
+            description=format_multiline_description(f"""
                 Path to save the merge result.
                 If relative, the merge result will be saved in the directory of model A.
-                Pass "load" to load it in memory instead.
+                Pass "{MEMORY_DESTINATION}" to load it in memory instead
             """),
         ),
         unload_before: bool = fastapi.Body(
@@ -55,10 +58,12 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
         )
 
         model_a_info = get_checkpoint_info(Path(model_a))
-        if destination != "load":
+        load_in_memory = destination == MEMORY_DESTINATION
+        if not load_in_memory:
             destination = normalize_destination(destination, model_a_info)
 
-        if unload_before or destination == "load":
+        unload_before = (unload_before or load_in_memory) and shared.sd_model is not None
+        if unload_before:
             sd_models.unload_model_weights()
 
         try:
@@ -79,15 +84,15 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             if not isinstance(merged, dict):
                 merged = merged.to_dict()
 
-            if destination == "load":
+            if load_in_memory:
                 sd_models.load_model(model_a_info, merged)
             else:
                 save_model(merged, destination)
                 shared.refresh_checkpoints()
 
         finally:
-            if unload_before and shared.sd_model is None:
-                sd_models.load_model()
+            if unload_before and not load_in_memory:
+                sd_models.reload_model_weights()
 
 
 script_callbacks.on_app_started(on_app_started)
@@ -148,11 +153,11 @@ def save_model(merged: Dict, path: Path):
     if path.suffix == ".safetensors":
         safetensors.torch.save_file(
             merged,
-            path.with_suffix(""),
+            path,
             metadata={"format": "pt"},
         )
     else:
-        torch.save({"state_dict": merged}, path.with_suffix(""))
+        torch.save({"state_dict": merged}, path)
 
 
 def format_multiline_description(description: str) -> str:
