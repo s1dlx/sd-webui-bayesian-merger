@@ -105,7 +105,7 @@ class Merger:
             "work_device": self.cfg.work_device,
             "prune": self.cfg.prune,
             "threads": self.cfg.threads,
-            "destination": str(self.best_output_file) if save_best else "load",
+            "destination": str(self.best_output_file) if save_best else "memory",
             "unload_before": True,
         }
 
