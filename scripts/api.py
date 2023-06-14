@@ -91,7 +91,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
                 shared.refresh_checkpoints()
 
         finally:
-            if unload_before and not load_in_memory:
+            if unload_before and (not load_in_memory or shared.sd_model is None):
                 sd_models.reload_model_weights()
 
 
