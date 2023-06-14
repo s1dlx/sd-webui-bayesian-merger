@@ -4,11 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
 
-import safetensors.torch
-import torch
 from omegaconf import DictConfig
 from sd_meh import merge_methods
-from sd_meh.merge import merge_models
+import requests
 
 BETA_METHODS = [
     name
@@ -89,66 +87,32 @@ class Merger:
         model_out_name += f".{self.cfg.best_format}"
         self.best_output_file = Path(self.model_a.parent, model_out_name)
 
-    def remove_previous_ckpt(self, current_it: int) -> None:
-        if current_it > 1 and self.output_file.exists():
-            self.create_model_out_name(current_it - 1)
-            print(f"Removing {self.output_file}")
-            self.output_file.unlink()
-        self.create_model_out_name(current_it)
-
-    def keep_best_ckpt(self) -> None:
-        if self.best_output_file.exists():
-            self.best_output_file.unlink()
-        self.output_file.rename(self.best_output_file)
-
     def merge(
         self,
         weights: Dict,
         bases: Dict,
-        best: bool = False,
+        save_best: bool = False,
     ) -> None:
-        thetas = dict(self.models.items())
+        bases = {f"base_{k}": v for k, v in bases.items()}
+        option_payload = {
+            "merge_method": self.cfg.merge_mode,
+            **{k: str(v) for k, v in self.models.items()},
+            **bases,
+            **weights,
+            "precision": self.cfg.best_precision,
+            "device": self.cfg.device,
+            "work_device": self.cfg.work_device,
+            "prune": self.cfg.prune,
+            "threads": self.cfg.threads,
+            "destination": str(self.best_output_file) if save_best else "memory",
+            "unload_before": True,
+            "re_basin": self.cfg.rebasin,
+            "re_basin_iterations": self.cfg.rebasin_iterations,
+        }
 
-        thetas["model_a"] = merge_models(
-            thetas,
-            weights,
-            bases,
-            self.cfg.merge_mode,
-            self.cfg.best_precision,
-            device=self.cfg.device,
-            work_device=self.cfg.work_device,
-            prune=self.cfg.prune,
-            threads=self.cfg.threads,
-            weights_clip=self.cfg.weights_clip,
-            re_basin=self.cfg.rebasin,
-            iterations=self.cfg.rebasin_iterations,
+        print("Merging models")
+        r = requests.post(
+            url=f"{self.cfg.url}/bbwm/merge-models",
+            json=option_payload,
         )
-
-        if best:
-            print(f"Saving {self.best_output_file}")
-            if self.cfg.best_format == "safetensors":
-                safetensors.torch.save_file(
-                    thetas["model_a"]
-                    if type(thetas["model_a"]) == dict
-                    else thetas["model_a"].to_dict(),
-                    self.best_output_file,
-                    metadata={"format": "pt"},
-                )
-            else:
-                torch.save(
-                    {
-                        "state_dict": thetas["model_a"]
-                        if type(thetas["model_a"]) == dict
-                        else thetas["model_a"].to_dict()
-                    },
-                    self.best_output_file,
-                )
-        else:
-            print(f"Saving {self.output_file}")
-            safetensors.torch.save_file(
-                thetas["model_a"]
-                if type(thetas["model_a"]) == dict
-                else thetas["model_a"].to_dict(),
-                self.output_file,
-                metadata={"format": "pt", "precision": "fp16"},
-            )
+        r.raise_for_status()
