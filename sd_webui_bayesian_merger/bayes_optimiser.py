@@ -44,12 +44,6 @@ class BayesOptimiser(Optimiser):
             n_iter=self.cfg.n_iters,
         )
 
-        # clean up and remove the last merge
-        try:
-            self.cleanup()
-        except FileNotFoundError:
-            return
-
     def postprocess(self) -> None:
         print("\nRecap!")
         for i, res in enumerate(self.optimizer.res):
