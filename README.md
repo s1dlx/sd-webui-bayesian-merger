@@ -1,7 +1,10 @@
 # sd-webui-bayesian-merger
 
+[![](https://dcbadge.vercel.app/api/server/EZJuBfNVHh)](https://discord.gg/EZJuBfNVHh)
+
 ## NEWS
 
+- 2023/06/14 lots of new things, I lost track...join the discord server for discussion and future updates
 - 2023/05/30 introducing [`meh`](https://github.com/s1dlx/meh) engine
 - 2023/05/17 add `scorer_device`; remove `aes` and `cafe_*` scorers; add `score_weight` to payload `.yaml`
 - 2023/05/16 `latin-hypercube-sampling` for `bayes` optimiser
