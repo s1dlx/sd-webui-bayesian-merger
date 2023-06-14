@@ -8,7 +8,6 @@ from omegaconf import DictConfig
 from sd_meh import merge_methods
 import requests
 
-
 BETA_METHODS = [
     name
     for name, fn in dict(inspect.getmembers(merge_methods, inspect.isfunction)).items()
@@ -107,6 +106,8 @@ class Merger:
             "threads": self.cfg.threads,
             "destination": str(self.best_output_file) if save_best else "memory",
             "unload_before": True,
+            "re_basin": self.cfg.rebasin,
+            "re_basin_iterations": self.cfg.rebasin_iterations,
         }
 
         print("Merging models")
