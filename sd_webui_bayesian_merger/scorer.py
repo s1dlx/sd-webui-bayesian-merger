@@ -6,7 +6,7 @@ from typing import Dict, List
 
 import clip
 import requests
-import safetensors
+import safetensors.torch
 import torch
 import torch.nn as nn
 from hydra.core.hydra_config import HydraConfig
