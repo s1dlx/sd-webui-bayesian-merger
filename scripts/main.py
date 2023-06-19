@@ -1,11 +1,11 @@
-from modules import script_callbacks
 import gradio as gr
-import bayesian_merger
-from hydra import compose, initialize
-from pathlib import Path
+import pathlib
+import subprocess
+import sys
+from modules import script_callbacks
 
 
-relative_conf_path = Path("..") / "conf"
+main_path = pathlib.Path(__file__).parent.parent / "bayesian_merger.py"
 
 
 def on_ui_tabs():
@@ -23,6 +23,9 @@ script_callbacks.on_ui_tabs(on_ui_tabs)
 
 
 def launch_optimizer():
-    initialize(config_path=str(relative_conf_path), version_base=None)
-    cfg = compose(config_name="config")
-    bayesian_merger.start_optimize(cfg)
+    args = [
+        sys.executable,
+        str(main_path),
+    ]
+    print(f"Starting bayesian merger using command: {' '.join(args)}")
+    subprocess.Popen(args=args, cwd=str(main_path.parent))

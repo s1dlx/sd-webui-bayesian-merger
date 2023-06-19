@@ -9,10 +9,6 @@ from sd_webui_bayesian_merger.artist import draw_unet
 
 @hydra.main(version_base=None, config_path="conf", config_name="config")
 def main(cfg: DictConfig) -> None:
-    start_optimize(cfg)
-
-
-def start_optimize(cfg: DictConfig) -> None:
     if cfg["draw_unet_weights"] and cfg["draw_unet_base_alpha"]:
         weights = list(map(float, cfg["draw_unet_weights"].split(",")))
         draw_unet(
