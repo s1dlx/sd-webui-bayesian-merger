@@ -10,7 +10,7 @@ main_path = pathlib.Path(__file__).parent.parent / "bayesian_merger.py"
 
 def on_ui_tabs():
     with gr.Blocks() as root:
-        generate_button = gr.Button(title="Optimize!")
+        generate_button = gr.Button(value="Optimize!", variant="primary")
 
         generate_button.click(
             fn=launch_optimizer
@@ -28,4 +28,7 @@ def launch_optimizer():
         str(main_path),
     ]
     print(f"Starting bayesian merger using command: {' '.join(args)}")
-    subprocess.Popen(args=args, cwd=str(main_path.parent))
+    subprocess.Popen(
+        args=args,
+        cwd=str(main_path.parent),
+    )
