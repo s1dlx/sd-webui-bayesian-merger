@@ -1,3 +1,5 @@
+import os
+
 import gradio as gr
 import pathlib
 import subprocess
@@ -55,8 +57,6 @@ def launch_optimizer():
         args=args,
         cwd=str(MAIN_PATH.parent),
         stdin=subprocess.PIPE,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
     )
 
     return [gr.Button.update(interactive=True)] * TOTAL_MANUAL_SCORE_BUTTONS
@@ -64,6 +64,6 @@ def launch_optimizer():
 
 def send_manual_score(score):
     global pipe
-    stdout = pipe.communicate(input=str(score).encode('ascii'))
-    print(stdout[0].decode())
-    print(stdout[1].decode(), file=sys.stderr)
+    print(score)
+    pipe.stdin.write(f"{score}{os.linesep}".encode("utf-8"))
+    pipe.stdin.flush()
