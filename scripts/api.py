@@ -131,7 +131,14 @@ def get_checkpoint_info(path: Path) -> sd_models.CheckpointInfo:
     if checkpoint_aliases is None: # we are on vlad webui
         checkpoint_aliases = getattr(sd_models, "checkpoint_aliases")
 
-    checkpoint_info = checkpoint_aliases.get(path.name, None)
+    checkpoint_info = None
+    path_parts_len = len(path.parts)
+    for i in range(path_parts_len):
+        sub_path = Path(*path.parts[path_parts_len-1-i:])
+        checkpoint_info = checkpoint_aliases.get(str(sub_path), None)
+        if checkpoint_info is not None:
+            break
+
     if checkpoint_info is None:
         raise fastapi.HTTPException(422, "Could not find checkpoint alias for model A")
 
