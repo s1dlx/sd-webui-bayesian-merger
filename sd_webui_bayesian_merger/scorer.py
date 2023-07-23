@@ -1,5 +1,6 @@
 import platform
 import subprocess
+import yaml
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
@@ -148,7 +149,7 @@ class AestheticScorer:
         self,
         images: List[Image.Image],
         payload_names: List[str],
-        payloads: Dict,
+        payloads: List[Dict],
         it: int,
     ) -> List[float]:
         scores = []
@@ -159,7 +160,7 @@ class AestheticScorer:
                 tmp_path = Path(Path.cwd(), "tmp.png")
                 img.save(tmp_path)
                 self.open_image(tmp_path)
-                score = AestheticScorer.get_user_score()
+                score = AestheticScorer.get_user_score(payload)
                 tmp_path.unlink()  # remove temporary image
             else:
                 score = self.score(img)
@@ -226,9 +227,11 @@ class AestheticScorer:
             )
 
     @staticmethod
-    def get_user_score() -> float:
+    def get_user_score(payload: Dict) -> float:
         while True:
             try:
+                print(f"generation settings:\n{yaml.dump(payload)}")
+
                 score = float(
                     input(
                         f"\n\tPlease enter the score for the shown image (a number between 0 and 10)\n\t> "
