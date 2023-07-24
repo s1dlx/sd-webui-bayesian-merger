@@ -13,7 +13,7 @@ pytest
 transformers
 numpy
 hydra-core
-sd-meh==0.9.0
+sd-meh==0.9.3
 lightgbm 
 scikit-learn
 openai-clip
