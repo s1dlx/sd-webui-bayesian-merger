@@ -104,7 +104,7 @@ class Optimiser:
             generated_images = self.generator.generate(payload)
             images.extend(generated_images)
             gen_paths.extend([paths[i]] * len(generated_images))
-            payloads[i:i+1] = [payloads[i]] * len(generated_images)
+            payloads[i : i + 1] = [payloads[i]] * len(generated_images)
         return images, gen_paths, payloads
 
     def score_images(self, images, gen_paths, payloads) -> List[float]:

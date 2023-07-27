@@ -1,14 +1,14 @@
-import fastapi
-import gradio as gr
 import inspect
 import re
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import fastapi
+import gradio as gr
 import safetensors.torch
 import torch
 from modules import script_callbacks, sd_models, shared
-from pathlib import Path
-from sd_meh.merge import merge_methods, merge_models, NUM_TOTAL_BLOCKS
-from typing import Dict, List, Optional
-
+from sd_meh.merge import NUM_TOTAL_BLOCKS, merge_methods, merge_models
 
 MEMORY_DESTINATION = "memory"
 
@@ -18,11 +18,13 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
     async def merge_models_api(
         destination: str = fastapi.Body(
             title="Destination",
-            description=format_multiline_description(f"""
+            description=format_multiline_description(
+                f"""
                 Path to save the merge result.
                 If relative, the merge result will be saved in the directory of model A.
                 Pass "{MEMORY_DESTINATION}" to load it in memory instead
-            """),
+            """
+            ),
         ),
         unload_before: bool = fastapi.Body(
             False,
@@ -52,9 +54,13 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
     ):
         validate_merge_method(merge_method)
         alpha, beta, input_models, weights, bases = normalize_merge_args(
-            base_alpha, base_beta,
-            alpha, beta,
-            model_a, model_b, model_c,
+            base_alpha,
+            base_beta,
+            alpha,
+            beta,
+            model_a,
+            model_b,
+            model_c,
         )
 
         model_a_info = get_checkpoint_info(Path(model_a))
@@ -62,7 +68,9 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
         if not load_in_memory:
             destination = normalize_destination(destination, model_a_info)
 
-        unload_before = (unload_before or load_in_memory) and shared.sd_model is not None
+        unload_before = (
+            unload_before or load_in_memory
+        ) and shared.sd_model is not None
         if unload_before:
             sd_models.unload_model_weights()
 
@@ -99,7 +107,10 @@ script_callbacks.on_app_started(on_app_started)
 
 
 def validate_merge_method(merge_method: str) -> None:
-    if merge_method not in dict(inspect.getmembers(merge_methods, inspect.isfunction)).keys():
+    if (
+        merge_method
+        not in dict(inspect.getmembers(merge_methods, inspect.isfunction)).keys()
+    ):
         raise fastapi.HTTPException(422, "Merge method is not defined")
 
 
@@ -128,13 +139,13 @@ def normalize_merge_args(base_alpha, base_beta, alpha, beta, model_a, model_b, m
 
 def get_checkpoint_info(path: Path) -> sd_models.CheckpointInfo:
     checkpoint_aliases = getattr(sd_models, "checkpoint_alisases", None)
-    if checkpoint_aliases is None: # we are on vlad webui
+    if checkpoint_aliases is None:  # we are on vlad webui
         checkpoint_aliases = getattr(sd_models, "checkpoint_aliases")
 
     checkpoint_info = None
     path_parts_len = len(path.parts)
     for i in range(path_parts_len):
-        sub_path = Path(*path.parts[path_parts_len-1-i:])
+        sub_path = Path(*path.parts[path_parts_len - 1 - i :])
         checkpoint_info = checkpoint_aliases.get(str(sub_path), None)
         if checkpoint_info is not None:
             break

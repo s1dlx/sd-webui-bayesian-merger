@@ -1,7 +1,8 @@
 import base64
 import io
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List
+
 import requests
 from PIL import Image
 

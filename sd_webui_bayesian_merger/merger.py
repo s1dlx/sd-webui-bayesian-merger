@@ -4,9 +4,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict
 
+import requests
 from omegaconf import DictConfig
 from sd_meh import merge_methods
-import requests
 
 BETA_METHODS = [
     name
