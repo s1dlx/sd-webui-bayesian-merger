@@ -153,16 +153,16 @@ class AestheticScorer:
     def load_models(self) -> None:
         if "aes" in self.cfg.scorer_method:
             print(f"Loading {self.scorer_model_name['aes']['laion']}")
-            self.model['aes']['laion'] = AES(self.model_path['clip'], 'cuda')
-            state_dict = torch.load(self.model_path['aes']['laion'], map_location='cuda')
+            self.model['aes']['laion'] = AES(self.model_path['clip'], self.cfg.scorer_device)
+            state_dict = torch.load(self.model_path['aes']['laion'], map_location=self.cfg.scorer_device)
             self.model['aes']['laion'].mlp.load_state_dict(state_dict, strict=False)
-            self.model['aes']['laion'].mlp.to('cuda')
+            self.model['aes']['laion'].mlp.to(self.cfg.scorer_device)
 
             print(f"Loading {self.scorer_model_name['aes']['chad']}")
-            self.model['aes']['chad'] = AES(self.model_path['clip'], 'cuda')
-            state_dict = torch.load(self.model_path['aes']['chad'], map_location='cuda')
+            self.model['aes']['chad'] = AES(self.model_path['clip'], self.cfg.scorer_device)
+            state_dict = torch.load(self.model_path['aes']['chad'], map_location=self.cfg.scorer_device)
             self.model['aes']['chad'].mlp.load_state_dict(state_dict, strict=False)
-            self.model['aes']['chad'].mlp.to('cuda')
+            self.model['aes']['chad'].mlp.to(self.cfg.scorer_device)
 
         if "ir" in self.cfg.scorer_method:
             print(f"Loading {self.scorer_model_name['ir']}")
@@ -170,13 +170,13 @@ class AestheticScorer:
                 self.cfg.scorer_model_dir,
                 "med_config.json"
             )
-            self.model['ir'] = IMGR(med_config, 'cuda').to('cuda')
-            state_dict = torch.load(self.model_path['ir'], map_location='cuda')
+            self.model['ir'] = IMGR(med_config, 'cuda').to(self.cfg.scorer_device)
+            state_dict = torch.load(self.model_path['ir'], map_location=self.cfg.scorer_device)
             self.model['ir'].load_state_dict(state_dict, strict=False)
 
         if "clip" in self.cfg.scorer_method:
             print(f"Loading {self.scorer_model_name['clip']}")
-            self.model['clip'] = CLP(self.model_path['clip'], 'cuda')
+            self.model['clip'] = CLP(self.model_path['clip'], self.cfg.scorer_device)
 
         if "blip" in self.cfg.scorer_method:
             print(f"Loading {self.scorer_model_name['blip']}")
@@ -184,8 +184,8 @@ class AestheticScorer:
                 self.cfg.scorer_model_dir,
                 "med_config.json"
             )
-            self.model['blip'] = BLP(med_config, 'cuda').to('cuda')
-            state_dict = torch.load(self.model_path['blip'], map_location='cuda')
+            self.model['blip'] = BLP(med_config, 'cuda').to(self.cfg.scorer_device)
+            state_dict = torch.load(self.model_path['blip'], map_location=self.cfg.scorer_device)
             self.model['blip'].load_state_dict(state_dict, strict=False)
 
     def score(self, image: Image.Image, prompt) -> float:
