@@ -36,7 +36,7 @@ n_iters: 1
 save_imgs: False
 
 scorer_device: cpu # cuda
-scorer_method: chad # chad, laion, manual
+scorer_method: [aes, ir, clip, blip] # aes, ir, clip, blip, manual
 
 save_best: False
 best_format: safetensors # ckpt
