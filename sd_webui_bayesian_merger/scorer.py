@@ -12,43 +12,36 @@ import torch.nn as nn
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 from PIL import Image, PngImagePlugin
+from sd_webui_bayesian_merger.models.AestheticScore import AestheticScore as AES
+from sd_webui_bayesian_merger.models.ImageReward import ImageReward as IMGR
+from sd_webui_bayesian_merger.models.CLIPScore import CLIPScore as CLP
+from sd_webui_bayesian_merger.models.BLIPScore import BLIPScore as BLP
 
-LAION_URL = (
-    "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
+AES_URL = (
+    "https://github.com/grexzen/SD-Chad/blob/main/"
 )
-
-CHAD_URL = (
-    "https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/"
+IR_URL = (
+    "https://huggingface.co/THUDM/ImageReward/resolve/main/"
+)
+CLIP_URL = (
+    "https://openaipublic.azureedge.net/clip/models/b8cca3fd41ae0c99ba7e8951adf17d267cdb84cd88be6f7c2e0eca1737a03836/"
+)
+BLIP_URL = (
+    "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/"
 )
 
 printWSLFlag = 0
 
 
-class AestheticPredictor(nn.Module):
-    def __init__(self, input_size):
-        super().__init__()
-        self.input_size = input_size
-        self.layers = nn.Sequential(
-            nn.Linear(self.input_size, 1024),
-            nn.Dropout(0.2),
-            nn.Linear(1024, 128),
-            nn.Dropout(0.2),
-            nn.Linear(128, 64),
-            nn.Dropout(0.1),
-            nn.Linear(64, 16),
-            nn.Linear(16, 1),
-        )
-
-    def forward(self, x):
-        return self.layers(x)
-
-
 @dataclass
 class AestheticScorer:
     cfg: DictConfig
+    scorer_model_name: Dict
+    model_path: Dict
+    model: Dict
 
     def __post_init__(self):
-        if self.cfg.scorer_method == "manual":
+        if "manual" in self.cfg.scorer_method:
             self.cfg.save_imgs = True
 
         if self.cfg.save_imgs:
@@ -56,100 +49,172 @@ class AestheticScorer:
             if not self.imgs_dir.exists():
                 self.imgs_dir.mkdir()
 
-        if self.cfg.scorer_method == "manual":
-            return
-
-        if self.cfg.scorer_method == "laion":
-            self.scorer_model_name = "laion-sac-logos-ava-v2.safetensors"
-        elif self.cfg.scorer_method == "chad":
-            self.scorer_model_name = "ava+logos-l14-linearMSE.pth"
-        self.model_path = Path(
-            self.cfg.scorer_model_dir,
-            self.scorer_model_name,
-        )
-        self.get_model()
-        self.load_model()
-
-    def get_model(self) -> None:
-        if self.model_path.is_file():
-            return
-
-        print("You do not have an aesthetic model ckpt, let me download that for you")
-        if self.cfg.scorer_method == "chad":
-            url = CHAD_URL
-        elif self.cfg.scorer_method == "laion":
-            url = LAION_URL
-
-        url += f"{self.scorer_model_name}?raw=true"
-
-        r = requests.get(url)
-        r.raise_for_status()
-
-        with open(self.model_path.absolute(), "wb") as f:
-            print(f"saved into {self.model_path}")
-            f.write(r.content)
-
-    def load_model(self) -> None:
-        # return in manual mode
-        if self.cfg.scorer_method == "manual":
-            return
-        print(f"Loading {self.scorer_model_name}")
-
-        if self.cfg.scorer_method in ["chad", "laion"]:
-            self.model = AestheticPredictor(768).to(self.cfg.scorer_device).eval()
-
-        if self.model_path.suffix == ".safetensors":
-            self.model.load_state_dict(
-                safetensors.torch.load_file(
-                    self.model_path,
-                )
+        self.scorer_model_name['aes'] = {}
+        self.model_path['aes'] = {}
+        self.model['aes'] = {}
+        if "aes" in self.cfg.scorer_method:
+            self.scorer_model_name['aes']['laion'] = "sac+logos+ava1-l14-linearMSE.pth"
+            self.model_path['aes']['laion'] = Path(
+                self.cfg.scorer_model_dir,
+                self.scorer_model_name['aes']['laion'],
             )
-            self.model.to(self.cfg.scorer_device)
-        else:
-            self.model.load_state_dict(
-                torch.load(
-                    self.model_path,
-                    map_location=self.cfg.scorer_device,
-                )
+            self.scorer_model_name['aes']['chad'] = "chadscorer.pth"
+            self.model_path['aes']['chad'] = Path(
+                self.cfg.scorer_model_dir,
+                self.scorer_model_name['aes']['chad'],
             )
-        self.model.eval()
-        self.load_clip()
-
-    def load_clip(self) -> None:
-        if self.cfg.scorer_method in ["chad", "laion"]:
-            self.clip_model_name = "ViT-L/14"
-
-        print(f"Loading {self.clip_model_name}")
-
-        if self.cfg.scorer_method in ["chad", "laion"]:
-            self.clip_model, self.clip_preprocess = clip.load(
-                self.clip_model_name,
-                device=self.cfg.scorer_device,
+        if "ir" in self.cfg.scorer_method:
+            self.scorer_model_name['ir'] = "ImageReward.pt"
+            self.model_path['ir'] = Path(
+                self.cfg.scorer_model_dir,
+                self.scorer_model_name['ir'],
             )
+        if "clip" in self.cfg.scorer_method:
+            self.scorer_model_name['clip'] = "ViT-L-14.pt"
+            self.model_path['clip'] = Path(
+                self.cfg.scorer_model_dir,
+                self.scorer_model_name['clip'],
+            )
+        if "blip" in self.cfg.scorer_method:
+            self.scorer_model_name['blip'] = "model_large.pth"
+            self.model_path['blip'] = Path(
+                self.cfg.scorer_model_dir,
+                self.scorer_model_name['blip'],
+            )
+        self.get_models()
+        self.load_models()
 
-    def get_image_features(self, image: Image.Image) -> torch.Tensor:
-        if self.cfg.scorer_method in ["chad", "laion"]:
-            image = self.clip_preprocess(image).unsqueeze(0).to(self.cfg.scorer_device)
-            with torch.no_grad():
-                image_features = self.clip_model.encode_image(image)
-                image_features /= image_features.norm(dim=-1, keepdim=True)
-            image_features = image_features.cpu().detach().numpy()
-            return image_features
+    def get_models(self) -> None:
+        if "aes" in self.cfg.scorer_method and not self.model_path['aes']['laion'].is_file():
+            print("You do not have the laion aesthetic model, let me download that for you")
+            url = AES_URL
 
-    def score(self, image: Image.Image) -> float:
-        image_features = self.get_image_features(image)
-        score = self.model(
-            torch.from_numpy(image_features).to(self.cfg.scorer_device).float(),
-        )
+            url += f"{self.scorer_model_name['aes']['laion']}?raw=true"
 
-        return score.item()
+            r = requests.get(url)
+            r.raise_for_status()
+
+            with open(self.model_path['aes']['laion'].absolute(), "wb") as f:
+                print(f"saved into {self.model_path['aes']['laion']}")
+                f.write(r.content)
+
+        if "aes" in self.cfg.scorer_method and not self.model_path['aes']['chad'].is_file():
+            print("You do not have the chad aesthetic model, let me download that for you")
+            url = AES_URL
+
+            url += f"{self.scorer_model_name['aes']['chad']}?raw=true"
+
+            r = requests.get(url)
+            r.raise_for_status()
+
+            with open(self.model_path['aes']['chad'].absolute(), "wb") as f:
+                print(f"saved into {self.model_path['aes']['chad']}")
+                f.write(r.content)
+
+        if "ir" in self.cfg.scorer_method and not self.model_path['ir'].is_file():
+            print("You do not have the image reward model, let me download that for you")
+            url = IR_URL
+
+            url += f"{self.scorer_model_name['ir']}?download=true"
+
+            r = requests.get(url)
+            r.raise_for_status()
+
+            with open(self.model_path['ir'].absolute(), "wb") as f:
+                print(f"saved into {self.model_path['ir']}")
+                f.write(r.content)
+
+        if not self.model_path['clip'].is_file():
+            print("You do not have the clip model, let me download that for you")
+            url = CLIP_URL
+
+            url += f"{self.scorer_model_name['clip']}?raw=true"
+
+            r = requests.get(url)
+            r.raise_for_status()
+
+            with open(self.model_path['clip'].absolute(), "wb") as f:
+                print(f"saved into {self.model_path['clip']}")
+                f.write(r.content)
+
+        if "blip" in self.cfg.scorer_method and not self.model_path['blip'].is_file():
+            print("You do not have the blip model, let me download that for you")
+            url = BLIP_URL
+
+            url += f"{self.scorer_model_name['blip']}?raw=true"
+
+            r = requests.get(url)
+            r.raise_for_status()
+
+            with open(self.model_path['blip'].absolute(), "wb") as f:
+                print(f"saved into {self.model_path['blip']}")
+                f.write(r.content)
+
+    def load_models(self) -> None:
+        if "aes" in self.cfg.scorer_method:
+            print(f"Loading {self.scorer_model_name['aes']['laion']}")
+            self.model['aes']['laion'] = AES(self.model_path['clip'], 'cuda')
+            state_dict = torch.load(self.model_path['aes']['laion'], map_location='cuda')
+            self.model['aes']['laion'].mlp.load_state_dict(state_dict, strict=False)
+            self.model['aes']['laion'].mlp.to('cuda')
+
+            print(f"Loading {self.scorer_model_name['aes']['chad']}")
+            self.model['aes']['chad'] = AES(self.model_path['clip'], 'cuda')
+            state_dict = torch.load(self.model_path['aes']['chad'], map_location='cuda')
+            self.model['aes']['chad'].mlp.load_state_dict(state_dict, strict=False)
+            self.model['aes']['chad'].mlp.to('cuda')
+
+        if "ir" in self.cfg.scorer_method:
+            print(f"Loading {self.scorer_model_name['ir']}")
+            med_config = Path(
+                self.cfg.scorer_model_dir,
+                "med_config.json"
+            )
+            self.model['ir'] = IMGR(med_config, 'cuda').to('cuda')
+            state_dict = torch.load(self.model_path['ir'], map_location='cuda')
+            self.model['ir'].load_state_dict(state_dict, strict=False)
+
+        if "clip" in self.cfg.scorer_method:
+            print(f"Loading {self.scorer_model_name['clip']}")
+            self.model['clip'] = CLP(self.model_path['clip'], 'cuda')
+
+        if "blip" in self.cfg.scorer_method:
+            print(f"Loading {self.scorer_model_name['blip']}")
+            med_config = Path(
+                self.cfg.scorer_model_dir,
+                "med_config.json"
+            )
+            self.model['blip'] = BLP(med_config, 'cuda').to('cuda')
+            state_dict = torch.load(self.model_path['blip'], map_location='cuda')
+            self.model['blip'].load_state_dict(state_dict, strict=False)
+
+    def score(self, image: Image.Image, prompt) -> float:
+        score = 0
+        nr = 0
+        for eval in self.model:
+            if eval == 'aes':
+                #print(f"{eval}: {(self.model[eval]['laion'].score(prompt, image) + self.model[eval]['laion'].score(prompt, image)) / 2}")
+                score += (self.model[eval]['laion'].score(prompt, image) + self.model[eval]['laion'].score(prompt, image)) / 2
+            elif eval == 'ir' or eval == 'blip':
+                tmp = (self.model[eval].score(prompt, image) + 2.5) * 2
+                if tmp < 0:
+                    tmp = 0
+                if tmp > 10:
+                    tmp = 10
+                #print(f"{eval}: {tmp}")
+                score += tmp
+            elif eval == 'clip':
+                #print(f"{eval}: {(self.model[eval].score(prompt, image) + 1) * 5}")
+                score += (self.model[eval].score(prompt, image) + 1) * 5
+            nr += 1
+        return score / nr
 
     def batch_score(
-        self,
-        images: List[Image.Image],
-        payload_names: List[str],
-        payloads: Dict,
-        it: int,
+            self,
+            images: List[Image.Image],
+            payload_names: List[str],
+            payloads: Dict,
+            it: int,
     ) -> List[float]:
         scores = []
         norm = []
@@ -162,7 +227,7 @@ class AestheticScorer:
                 score = AestheticScorer.get_user_score()
                 tmp_path.unlink()  # remove temporary image
             else:
-                score = self.score(img)
+                score = self.score(img, payload["prompt"])
             if self.cfg.save_imgs:
                 self.save_img(img, name, score, it, i, payload)
 
@@ -189,13 +254,13 @@ class AestheticScorer:
         )
 
     def save_img(
-        self,
-        image: Image.Image,
-        name: str,
-        score: float,
-        it: int,
-        batch_n: int,
-        payload: Dict,
+            self,
+            image: Image.Image,
+            name: str,
+            score: float,
+            it: int,
+            batch_n: int,
+            payload: Dict,
     ) -> Path:
         img_path = self.image_path(name, score, it, batch_n)
         pnginfo = PngImagePlugin.PngInfo()

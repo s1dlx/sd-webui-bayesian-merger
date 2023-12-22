@@ -30,7 +30,7 @@ class Optimiser:
         self.generator = Generator(self.cfg.url, self.cfg.batch_size)
         self.merger = Merger(self.cfg)
         self.start_logging()
-        self.scorer = AestheticScorer(self.cfg)
+        self.scorer = AestheticScorer(self.cfg, {}, {}, {})
         self.prompter = Prompter(self.cfg)
         self.iteration = 0
 
