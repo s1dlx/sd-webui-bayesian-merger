@@ -85,6 +85,27 @@ class AestheticScorer:
         self.load_models()
 
     def get_models(self) -> None:
+        blip_config = Path(
+            self.cfg.scorer_model_dir,
+            'med_config.json',
+        )
+        if not blip_config.is_file():
+            url = IR_URL
+
+            url += f"med_config.json?download=true"
+
+            r = requests.get(url)
+            r.raise_for_status()
+
+            blip_config = Path(
+                    self.cfg.scorer_model_dir,
+                    'med_config.json',
+            )
+
+            with open(blip_config.absolute(), "wb") as f:
+                print(f"saved into {blip_config}")
+                f.write(r.content)
+
         if "aes" in self.cfg.scorer_method and not self.model_path['aes']['laion'].is_file():
             print("You do not have the laion aesthetic model, let me download that for you")
             url = AES_URL

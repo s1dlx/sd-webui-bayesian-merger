@@ -167,3 +167,4 @@ Makefile
 scorer_demo.py
 models/ViT-L-14.pt
 models/ImageReward.pt
+models/med_config.json
