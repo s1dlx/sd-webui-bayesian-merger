@@ -171,7 +171,7 @@ class AestheticScorer:
             else:
                 values.append(self.model[evaluator].score(prompt, image))
 
-            print(f"{evaluator}:{values[-1]}")
+            #print(f"{evaluator}:{values[-1]}")
 
         score = self.average_calc(values, weights, self.cfg.scorer_average_type)
         return score
