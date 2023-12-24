@@ -72,7 +72,7 @@ class ImageReward(nn.Module):
     def __init__(self, med_config, device='cpu'):
         super().__init__()
         self.device = device
-        
+
         self.blip = BLIP_Pretrain(image_size=224, vit='large', med_config=med_config)
         self.preprocess = _transform(224)
         self.mlp = MLP(768)
@@ -133,8 +133,15 @@ class ImageReward(nn.Module):
         txt_features = text_output.last_hidden_state[:,0,:].float() # (feature_dim)
         rewards = self.mlp(txt_features)
         rewards = (rewards - self.mean) / self.std
-        
-        return rewards.detach().cpu().numpy().item()
+
+        score = rewards.detach().cpu().numpy().item()
+        score += 2.5
+        score *= 2
+        if score < 0:
+            score = 0
+        if score > 10:
+            score = 10
+        return score
 
 
     def inference_rank(self, prompt, generations_list):

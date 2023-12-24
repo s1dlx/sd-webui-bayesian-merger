@@ -34,9 +34,28 @@ init_points: 1
 n_iters: 1
 
 save_imgs: False
+img_average_type: arithmetic # arithmetic, geometric, exponential
 
-scorer_device: cpu # cuda
-scorer_method: [aes, ir, clip, blip] # aes, ir, clip, blip, manual
+scorer_method: [laion, chad, clip, hpsv2, pick, blip, ir] # laion, chad, clip, hpsv2, pick, blip, ir, manual
+scorer_average_type: arithmetic # arithmetic, geometric, exponential
+scorer_weights:
+  "laion": 1
+  "chad": 1
+  "clip": 1
+  "hpsv2": 1
+  "pick": 1
+  "blip": 1
+  "ir": 1
+  "manual": 1
+scorer_device:
+  "laion": cpu # cuda
+  "chad": cpu # cuda
+  "clip": cpu # cuda
+  "hpsv2": cpu # cuda
+  "pick": cpu # cuda
+  "blip": cpu # cuda
+  "ir": cpu # cuda
+
 
 save_best: False
 best_format: safetensors # ckpt

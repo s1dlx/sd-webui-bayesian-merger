@@ -53,7 +53,10 @@ class CLIPScore(nn.Module):
         # score
         rewards = torch.sum(torch.mul(txt_features, image_features), dim=1, keepdim=True)
 
-        return rewards.detach().cpu().numpy().item()
+        score = rewards.detach().cpu().numpy().item()
+        score += 1
+        score *= 5
+        return score
 
     def inference_rank(self, prompt, generations_list):
 

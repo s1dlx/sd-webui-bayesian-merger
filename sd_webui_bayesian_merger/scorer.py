@@ -4,11 +4,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
 
-import clip
 import requests
-import safetensors.torch
 import torch
-import torch.nn as nn
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 from PIL import Image, PngImagePlugin
@@ -16,18 +13,49 @@ from sd_webui_bayesian_merger.models.AestheticScore import AestheticScore as AES
 from sd_webui_bayesian_merger.models.ImageReward import ImageReward as IMGR
 from sd_webui_bayesian_merger.models.CLIPScore import CLIPScore as CLP
 from sd_webui_bayesian_merger.models.BLIPScore import BLIPScore as BLP
+from sd_webui_bayesian_merger.models.OPENCLIPScore import OPENCLIPScore as OPS
 
-AES_URL = (
-    "https://github.com/grexzen/SD-Chad/blob/main/"
+LAION_URL = (
+    "https://github.com/grexzen/SD-Chad/blob/main/sac+logos+ava1-l14-linearMSE.pth?raw=true"
+)
+CHAD_URL = (
+    "https://github.com/grexzen/SD-Chad/blob/main/chadscorer.pth?raw=true"
 )
 IR_URL = (
-    "https://huggingface.co/THUDM/ImageReward/resolve/main/"
+    "https://huggingface.co/THUDM/ImageReward/resolve/main/ImageReward.pt?download=true"
 )
 CLIP_URL = (
-    "https://openaipublic.azureedge.net/clip/models/b8cca3fd41ae0c99ba7e8951adf17d267cdb84cd88be6f7c2e0eca1737a03836/"
+    "https://openaipublic.azureedge.net/clip/models/b8cca3fd41ae0c99ba7e8951adf17d267cdb84cd88be6f7c2e0eca1737a03836/ViT-L-14.pt?raw=true"
 )
 BLIP_URL = (
-    "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/"
+    "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_large.pth?raw=true"
+)
+HPSV2_URL = (
+    "https://huggingface.co/spaces/xswu/HPSv2/resolve/main/HPS_v2_compressed.pt?download=true"
+)
+PICK_URL = (
+    "https://huggingface.co/yuvalkirstain/PickScore_v1/resolve/main/model.safetensors?download=true"
+)
+LAION_MODEL = (
+    "sac+logos+ava1-l14-linearMSE.pth"
+)
+CHAD_MODEL = (
+    "chadscorer.pth"
+)
+IR_MODEL = (
+    "ImageReward.pt"
+)
+CLIP_MODEL = (
+    "ViT-L-14.pt"
+)
+BLIP_MODEL = (
+    "model_large.pth"
+)
+HPSV2_MODEL = (
+    "HPS_v2_compressed.pt"
+)
+PICK_MODEL = (
+    "model.safetensors"
 )
 
 printWSLFlag = 0
@@ -49,38 +77,18 @@ class AestheticScorer:
             if not self.imgs_dir.exists():
                 self.imgs_dir.mkdir()
 
-        self.scorer_model_name['aes'] = {}
-        self.model_path['aes'] = {}
-        self.model['aes'] = {}
-        if "aes" in self.cfg.scorer_method:
-            self.scorer_model_name['aes']['laion'] = "sac+logos+ava1-l14-linearMSE.pth"
-            self.model_path['aes']['laion'] = Path(
+        for evaluator in self.cfg.scorer_method:
+            self.scorer_model_name[evaluator] = eval(f"{evaluator.upper() + '_MODEL'}")
+            self.model_path[evaluator] = Path(
                 self.cfg.scorer_model_dir,
-                self.scorer_model_name['aes']['laion'],
+                self.scorer_model_name[evaluator],
             )
-            self.scorer_model_name['aes']['chad'] = "chadscorer.pth"
-            self.model_path['aes']['chad'] = Path(
-                self.cfg.scorer_model_dir,
-                self.scorer_model_name['aes']['chad'],
-            )
-        if "ir" in self.cfg.scorer_method:
-            self.scorer_model_name['ir'] = "ImageReward.pt"
-            self.model_path['ir'] = Path(
-                self.cfg.scorer_model_dir,
-                self.scorer_model_name['ir'],
-            )
-        if "clip" in self.cfg.scorer_method:
-            self.scorer_model_name['clip'] = "ViT-L-14.pt"
+        if bool(self.model_path['clip']):
             self.model_path['clip'] = Path(
                 self.cfg.scorer_model_dir,
-                self.scorer_model_name['clip'],
+                CLIP_MODEL,
             )
-        if "blip" in self.cfg.scorer_method:
-            self.scorer_model_name['blip'] = "model_large.pth"
-            self.model_path['blip'] = Path(
-                self.cfg.scorer_model_dir,
-                self.scorer_model_name['blip'],
-            )
+
         self.get_models()
         self.load_models()
 
@@ -90,66 +98,29 @@ class AestheticScorer:
             'med_config.json',
         )
         if not blip_config.is_file():
-            url = IR_URL
-
-            url += f"med_config.json?download=true"
+            url = "https://huggingface.co/THUDM/ImageReward/resolve/main/med_config.json?download=true"
 
             r = requests.get(url)
             r.raise_for_status()
-
-            blip_config = Path(
-                    self.cfg.scorer_model_dir,
-                    'med_config.json',
-            )
 
             with open(blip_config.absolute(), "wb") as f:
                 print(f"saved into {blip_config}")
                 f.write(r.content)
 
-        if "aes" in self.cfg.scorer_method and not self.model_path['aes']['laion'].is_file():
-            print("You do not have the laion aesthetic model, let me download that for you")
-            url = AES_URL
+        for evaluator in self.cfg.scorer_method:
+            if not self.model_path[evaluator].is_file():
+                print(f"You do not have the {evaluator.upper()} model, let me download that for you")
+                url = eval(f"{evaluator.upper() + '_URL'}")
 
-            url += f"{self.scorer_model_name['aes']['laion']}?raw=true"
+                r = requests.get(url)
+                r.raise_for_status()
 
-            r = requests.get(url)
-            r.raise_for_status()
-
-            with open(self.model_path['aes']['laion'].absolute(), "wb") as f:
-                print(f"saved into {self.model_path['aes']['laion']}")
-                f.write(r.content)
-
-        if "aes" in self.cfg.scorer_method and not self.model_path['aes']['chad'].is_file():
-            print("You do not have the chad aesthetic model, let me download that for you")
-            url = AES_URL
-
-            url += f"{self.scorer_model_name['aes']['chad']}?raw=true"
-
-            r = requests.get(url)
-            r.raise_for_status()
-
-            with open(self.model_path['aes']['chad'].absolute(), "wb") as f:
-                print(f"saved into {self.model_path['aes']['chad']}")
-                f.write(r.content)
-
-        if "ir" in self.cfg.scorer_method and not self.model_path['ir'].is_file():
-            print("You do not have the image reward model, let me download that for you")
-            url = IR_URL
-
-            url += f"{self.scorer_model_name['ir']}?download=true"
-
-            r = requests.get(url)
-            r.raise_for_status()
-
-            with open(self.model_path['ir'].absolute(), "wb") as f:
-                print(f"saved into {self.model_path['ir']}")
-                f.write(r.content)
-
+                with open(self.model_path[evaluator].absolute(), "wb") as f:
+                    print(f"saved into {self.model_path[evaluator]}")
+                    f.write(r.content)
         if not self.model_path['clip'].is_file():
-            print("You do not have the clip model, let me download that for you")
+            print(f"You do not have the CLIP(which you need) model, let me download that for you")
             url = CLIP_URL
-
-            url += f"{self.scorer_model_name['clip']}?raw=true"
 
             r = requests.get(url)
             r.raise_for_status()
@@ -158,77 +129,52 @@ class AestheticScorer:
                 print(f"saved into {self.model_path['clip']}")
                 f.write(r.content)
 
-        if "blip" in self.cfg.scorer_method and not self.model_path['blip'].is_file():
-            print("You do not have the blip model, let me download that for you")
-            url = BLIP_URL
-
-            url += f"{self.scorer_model_name['blip']}?raw=true"
-
-            r = requests.get(url)
-            r.raise_for_status()
-
-            with open(self.model_path['blip'].absolute(), "wb") as f:
-                print(f"saved into {self.model_path['blip']}")
-                f.write(r.content)
-
     def load_models(self) -> None:
-        if "aes" in self.cfg.scorer_method:
-            print(f"Loading {self.scorer_model_name['aes']['laion']}")
-            self.model['aes']['laion'] = AES(self.model_path['clip'], self.cfg.scorer_device)
-            state_dict = torch.load(self.model_path['aes']['laion'], map_location=self.cfg.scorer_device)
-            self.model['aes']['laion'].mlp.load_state_dict(state_dict, strict=False)
-            self.model['aes']['laion'].mlp.to(self.cfg.scorer_device)
 
-            print(f"Loading {self.scorer_model_name['aes']['chad']}")
-            self.model['aes']['chad'] = AES(self.model_path['clip'], self.cfg.scorer_device)
-            state_dict = torch.load(self.model_path['aes']['chad'], map_location=self.cfg.scorer_device)
-            self.model['aes']['chad'].mlp.load_state_dict(state_dict, strict=False)
-            self.model['aes']['chad'].mlp.to(self.cfg.scorer_device)
-
-        if "ir" in self.cfg.scorer_method:
-            print(f"Loading {self.scorer_model_name['ir']}")
-            med_config = Path(
-                self.cfg.scorer_model_dir,
-                "med_config.json"
-            )
-            self.model['ir'] = IMGR(med_config, 'cuda').to(self.cfg.scorer_device)
-            state_dict = torch.load(self.model_path['ir'], map_location=self.cfg.scorer_device)
-            self.model['ir'].load_state_dict(state_dict, strict=False)
-
-        if "clip" in self.cfg.scorer_method:
-            print(f"Loading {self.scorer_model_name['clip']}")
-            self.model['clip'] = CLP(self.model_path['clip'], self.cfg.scorer_device)
-
-        if "blip" in self.cfg.scorer_method:
-            print(f"Loading {self.scorer_model_name['blip']}")
-            med_config = Path(
-                self.cfg.scorer_model_dir,
-                "med_config.json"
-            )
-            self.model['blip'] = BLP(med_config, 'cuda').to(self.cfg.scorer_device)
-            state_dict = torch.load(self.model_path['blip'], map_location=self.cfg.scorer_device)
-            self.model['blip'].load_state_dict(state_dict, strict=False)
+        for evaluator in self.cfg.scorer_method:
+            print(f"Loading {self.scorer_model_name[evaluator]}")
+            if evaluator == 'blip' or evaluator == 'ir':
+                med_config = Path(
+                    self.cfg.scorer_model_dir,
+                    "med_config.json"
+                )
+                if evaluator == 'blip':
+                    self.model[evaluator] = BLP(med_config, self.cfg.scorer_device[evaluator]).to(
+                        self.cfg.scorer_device[evaluator])
+                elif evaluator == 'ir':
+                    self.model[evaluator] = IMGR(med_config, self.cfg.scorer_device[evaluator]).to(
+                        self.cfg.scorer_device[evaluator])
+                state_dict = torch.load(self.model_path[evaluator], map_location='cpu')
+                self.model[evaluator].load_state_dict(state_dict, strict=False)
+            elif evaluator == 'laion' or evaluator == 'chad':
+                self.model[evaluator] = AES(self.model_path['clip'], self.cfg.scorer_device[evaluator])
+                state_dict = torch.load(self.model_path[evaluator], map_location='cpu')
+                self.model[evaluator].mlp.load_state_dict(state_dict, strict=False)
+                self.model[evaluator].mlp.to(self.cfg.scorer_device[evaluator])
+            elif evaluator == 'clip':
+                self.model[evaluator] = CLP(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'hpsv2' or evaluator == 'pick':
+                self.model[evaluator] = OPS(self.model_path[evaluator], self.cfg.scorer_device[evaluator], evaluator)
 
     def score(self, image: Image.Image, prompt) -> float:
-        score = 0
-        nr = 0
-        for eval in self.model:
-            if eval == 'aes':
-                #print(f"{eval}: {(self.model[eval]['laion'].score(prompt, image) + self.model[eval]['laion'].score(prompt, image)) / 2}")
-                score += (self.model[eval]['laion'].score(prompt, image) + self.model[eval]['laion'].score(prompt, image)) / 2
-            elif eval == 'ir' or eval == 'blip':
-                tmp = (self.model[eval].score(prompt, image) + 2.5) * 2
-                if tmp < 0:
-                    tmp = 0
-                if tmp > 10:
-                    tmp = 10
-                #print(f"{eval}: {tmp}")
-                score += tmp
-            elif eval == 'clip':
-                #print(f"{eval}: {(self.model[eval].score(prompt, image) + 1) * 5}")
-                score += (self.model[eval].score(prompt, image) + 1) * 5
-            nr += 1
-        return score / nr
+        values = []
+        weights = []
+        for evaluator in self.model:
+            weights.append(int(self.cfg.scorer_weights[evaluator]))
+            if evaluator == 'manual':
+                # in manual mode, we save a temp image first then request user input
+                tmp_path = Path(Path.cwd(), "tmp.png")
+                image.save(tmp_path)
+                self.open_image(tmp_path)
+                values.append(self.get_user_score())
+                tmp_path.unlink()  # remove temporary image
+            else:
+                values.append(self.model[evaluator].score(prompt, image))
+
+            print(f"{evaluator}:{values[-1]}")
+
+        score = self.average_calc(values, weights, self.cfg.scorer_average_type)
+        return score
 
     def batch_score(
             self,
@@ -240,20 +186,11 @@ class AestheticScorer:
         scores = []
         norm = []
         for i, (img, name, payload) in enumerate(zip(images, payload_names, payloads)):
-            # in manual mode, we save a temp image first then request user input
-            if self.cfg.scorer_method == "manual":
-                tmp_path = Path(Path.cwd(), "tmp.png")
-                img.save(tmp_path)
-                self.open_image(tmp_path)
-                score = AestheticScorer.get_user_score()
-                tmp_path.unlink()  # remove temporary image
-            else:
-                score = self.score(img, payload["prompt"])
+            score = self.score(img, payload["prompt"])
             if self.cfg.save_imgs:
                 self.save_img(img, name, score, it, i, payload)
 
             if "score_weight" in payload:
-                score *= payload["score_weight"]
                 norm.append(payload["score_weight"])
             else:
                 norm.append(1.0)
@@ -263,10 +200,31 @@ class AestheticScorer:
 
         return scores, norm
 
-    def average_score(self, scores: List[float], norm: List[float]) -> float:
-        num = sum(scores)
-        den = sum(norm)
-        return 0.0 if den == 0.0 else num / den
+    def average_calc(self, values: List[float], weights: List[float], average_type: str) -> float:
+        norm = 0
+        for weight in weights:
+            norm += weight
+        avg = 0
+        if average_type == 'geometric':
+            avg = 1
+        elif average_type == 'arithmetic' or average_type == 'exponential':
+            avg = 0
+
+        for value, weight in zip(values, weights):
+            if average_type == 'arithmetic':
+                avg += value * weight
+            elif average_type == 'geometric':
+                avg *= value ** weight
+            elif average_type == 'exponential':
+                avg += (value ** norm) * weight
+
+        if average_type == 'arithmetic':
+            avg = avg / norm
+        elif self.cfg.scorer_average_type == 'geometric':
+            avg = avg ** (1 / norm)
+        elif self.cfg.scorer_average_type == 'exponential':
+            avg = (avg / norm) ** (1 / norm)
+        return avg
 
     def image_path(self, name: str, score: float, it: int, batch_n: int) -> Path:
         return Path(

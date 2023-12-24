@@ -4,6 +4,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List, Tuple
+import torch
 
 from bayes_opt.logger import JSONLogger
 from hydra.core.hydra_config import HydraConfig
@@ -91,7 +92,7 @@ class Optimiser:
 
         images, gen_paths, payloads = self.generate_images()
         scores, norm = self.score_images(images, gen_paths, payloads)
-        avg_score = self.scorer.average_score(scores, norm)
+        avg_score = self.scorer.average_calc(scores, norm, self.cfg.image_average_type)
         self.update_best_score(bases, weights, avg_score)
 
         return avg_score

@@ -46,7 +46,6 @@ class BLIPScore(nn.Module):
         self.preprocess = _transform(224)
         self.blip = BLIP_Pretrain(image_size=224, vit='large', med_config=med_config)
 
-
     def score(self, prompt, image):
         
         if (type(image).__name__=='list'):
@@ -70,8 +69,15 @@ class BLIPScore(nn.Module):
         
         # score
         rewards = torch.sum(torch.mul(txt_feature, image_features), dim=1, keepdim=True)
-        
-        return rewards.detach().cpu().numpy().item()
+
+        score = rewards.detach().cpu().numpy().item()
+        score += 2.5
+        score *= 2
+        if score < 0:
+            score = 0
+        if score > 10:
+            score = 10
+        return score
 
 
     def inference_rank(self, prompt, generations_list):

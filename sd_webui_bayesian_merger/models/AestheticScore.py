@@ -1,4 +1,4 @@
-'''
+"""
 @File       :   AestheticScore.py
 @Time       :   2023/02/12 14:54:00
 @Auther     :   Jiazheng Xu
@@ -6,7 +6,7 @@
 @Description:   AestheticScore.
 * Based on improved-aesthetic-predictor code base
 * https://github.com/christophschuhmann/improved-aesthetic-predictor
-'''
+"""
 
 import os
 import torch
