@@ -39,14 +39,14 @@ img_average_type: arithmetic # arithmetic, geometric, exponential
 scorer_method: [laion, chad, clip, hpsv2, pick, blip, ir] # laion, chad, clip, hpsv2, pick, blip, ir, manual
 scorer_average_type: arithmetic # arithmetic, geometric, exponential
 scorer_weights:
-  "laion": 1
-  "chad": 1
+  "laion": 0.5
+  "chad": 0.5
   "clip": 1
   "hpsv2": 1
   "pick": 1
   "blip": 1
   "ir": 1
-  "manual": 1
+  "manual": 0
 scorer_device:
   "laion": cpu # cuda
   "chad": cpu # cuda
