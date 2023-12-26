@@ -83,3 +83,20 @@ class CLIPScore(nn.Module):
         indices = indices + 1
 
         return indices.detach().cpu().numpy().tolist(), rewards.detach().cpu().numpy().tolist()
+
+    def features(self, prompt, image, aes_type='v2'):
+
+        # text encode
+        text = clip.tokenize(prompt, truncate=True).to(self.device)
+        txt_features = F.normalize(self.clip_model.encode_text(text))
+
+        # image encode
+        if isinstance(image, Image.Image):
+            pil_image = image
+        elif isinstance(image, str):
+            if os.path.isfile(image):
+                pil_image = Image.open(image)
+        image = self.preprocess(pil_image).unsqueeze(0).to(self.device)
+        image_features = F.normalize(self.clip_model.encode_image(image))
+
+        return txt_features, image_features

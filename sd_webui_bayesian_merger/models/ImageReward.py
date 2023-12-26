@@ -69,13 +69,17 @@ class MLP(nn.Module):
 
 
 class ImageReward(nn.Module):
-    def __init__(self, med_config, device='cpu'):
+    def __init__(self, pathname, med_config, device='cpu'):
         super().__init__()
         self.device = device
 
         self.blip = BLIP_Pretrain(image_size=224, vit='large', med_config=med_config)
         self.preprocess = _transform(224)
         self.mlp = MLP(768)
+
+        state_dict = torch.load(pathname, map_location='cpu')
+        self.load_state_dict(state_dict, strict=False)
+        self.to(self.device)
         
         self.mean = 0.16717362830052426
         self.std = 1.0333394966054072

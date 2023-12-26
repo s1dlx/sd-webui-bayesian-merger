@@ -39,12 +39,16 @@ def _transform(n_px):
 
 
 class BLIPScore(nn.Module):
-    def __init__(self, med_config, device='cpu'):
+    def __init__(self, pathname, med_config, device='cpu'):
         super().__init__()
         self.device = device
         
         self.preprocess = _transform(224)
         self.blip = BLIP_Pretrain(image_size=224, vit='large', med_config=med_config)
+
+        state_dict = torch.load(pathname, map_location='cpu')
+        self.load_state_dict(state_dict, strict=False)
+        self.to(self.device)
 
     def score(self, prompt, image):
         

@@ -9,17 +9,27 @@ import torch
 from hydra.core.hydra_config import HydraConfig
 from omegaconf import DictConfig
 from PIL import Image, PngImagePlugin
-from sd_webui_bayesian_merger.models.AestheticScore import AestheticScore as AES
+from sd_webui_bayesian_merger.models.Laion import Laion as AES
 from sd_webui_bayesian_merger.models.ImageReward import ImageReward as IMGR
 from sd_webui_bayesian_merger.models.CLIPScore import CLIPScore as CLP
 from sd_webui_bayesian_merger.models.BLIPScore import BLIPScore as BLP
-from sd_webui_bayesian_merger.models.OPENCLIPScore import OPENCLIPScore as OPS
+from sd_webui_bayesian_merger.models.HPSv2 import HPSv2 as HPS
+from sd_webui_bayesian_merger.models.PickScore import PickScore as PICK
+from sd_webui_bayesian_merger.models.WDAes import WDAes as WDA
+from sd_webui_bayesian_merger.models.ShadowScore import ShadowScore as SS
+from sd_webui_bayesian_merger.models.CafeScore import CafeScore as CAFE
 
-LAION_URL = (
+LAIONV1_URL = (
+    "https://github.com/LAION-AI/aesthetic-predictor/blob/main/sa_0_4_vit_l_14_linear.pth?raw=true"
+)
+LAIONV2_URL = (
     "https://github.com/grexzen/SD-Chad/blob/main/sac+logos+ava1-l14-linearMSE.pth?raw=true"
 )
 CHAD_URL = (
     "https://github.com/grexzen/SD-Chad/blob/main/chadscorer.pth?raw=true"
+)
+WDAES_URL = (
+    "https://huggingface.co/hakurei/waifu-diffusion-v1-4/resolve/main/models/aes-B32-v0.pth?download=true"
 )
 IR_URL = (
     "https://huggingface.co/THUDM/ImageReward/resolve/main/ImageReward.pt?download=true"
@@ -31,31 +41,50 @@ BLIP_URL = (
     "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_large.pth?raw=true"
 )
 HPSV2_URL = (
-    "https://huggingface.co/spaces/xswu/HPSv2/resolve/main/HPS_v2_compressed.pt?download=true"
+    "https://huggingface.co/xswu/HPSv2/resolve/main/HPS_v2.1_compressed.pt?download=true"
 )
 PICK_URL = (
     "https://huggingface.co/yuvalkirstain/PickScore_v1/resolve/main/model.safetensors?download=true"
 )
-LAION_MODEL = (
-    "sac+logos+ava1-l14-linearMSE.pth"
+SHADOW_URL = (
+    "https://huggingface.co/shadowlilac/aesthetic-shadow/resolve/main/model.safetensors?download=true"
+)
+CAFE_URL = (
+    "https://huggingface.co/cafeai/cafe_aesthetic/resolve/3bca27c5c0b6021056b1e84e5a18cf1db9fe5d4c/model.safetensors?download=true"
+)
+
+LAIONV1_MODEL = (
+    "Laionv1.pth"
+)
+LAIONV2_MODEL = (
+    "Laionv2.pth"
 )
 CHAD_MODEL = (
-    "chadscorer.pth"
+    "Chad.pth"
+)
+WDAES_MODEL = (
+    "WD_Aes.pth"
 )
 IR_MODEL = (
     "ImageReward.pt"
 )
 CLIP_MODEL = (
-    "ViT-L-14.pt"
+    "CLIP-ViT-L-14.pt"
 )
 BLIP_MODEL = (
-    "model_large.pth"
+    "BLIP_Large.pth"
 )
 HPSV2_MODEL = (
-    "HPS_v2_compressed.pt"
+    "HPS_v2.1.pt"
 )
 PICK_MODEL = (
-    "model.safetensors"
+    "Pick-A-Pic.safetensors"
+)
+SHADOW_MODEL = (
+    "Shadow.safetensors"
+)
+CAFE_MODEL = (
+    "Cafe.safetensors"
 )
 
 printWSLFlag = 0
@@ -84,7 +113,8 @@ class AestheticScorer:
                     self.cfg.scorer_model_dir,
                     self.scorer_model_name[evaluator],
                 )
-        if 'clip' not in self.cfg.scorer_method:
+        if 'clip' not in self.cfg.scorer_method and any(
+                x in ['laionv1', 'laionv2', 'chad'] for x in self.cfg.scorer_method):
             self.model_path['clip'] = Path(
                 self.cfg.scorer_model_dir,
                 CLIP_MODEL,
@@ -120,48 +150,81 @@ class AestheticScorer:
                     with open(self.model_path[evaluator].absolute(), "wb") as f:
                         print(f"saved into {self.model_path[evaluator]}")
                         f.write(r.content)
-        if not self.model_path['clip'].is_file():
-            print(f"You do not have the CLIP(which you need) model, let me download that for you")
-            url = CLIP_URL
 
-            r = requests.get(url)
-            r.raise_for_status()
+                if evaluator == 'wdaes':
+                    clip_vit_b_32 = Path(
+                        self.cfg.scorer_model_dir,
+                        "CLIP-ViT-B-32.safetensors",
+                    )
+                    if not clip_vit_b_32.is_file():
+                        print(f"You do not have the CLIP-ViT-B-32 necessary for the wdaes model, let me download that for you")
+                        url = "https://huggingface.co/openai/clip-vit-base-patch32/resolve/b527df4b30e5cc18bde1cc712833a741d2d8c362/model.safetensors?download=true"
 
-            with open(self.model_path['clip'].absolute(), "wb") as f:
-                print(f"saved into {self.model_path['clip']}")
-                f.write(r.content)
+                        r = requests.get(url)
+                        r.raise_for_status()
+
+                        with open(clip_vit_b_32.absolute(), "wb") as f:
+                            print(f"saved into {clip_vit_b_32}")
+                            f.write(r.content)
+
+        if ('clip' not in self.cfg.scorer_method and
+                any(x in ['laionv1', 'laionv2', 'chad'] for x in self.cfg.scorer_method)):
+            if not self.model_path['clip'].is_file():
+                print(f"You do not have the CLIP(which you need) model, let me download that for you")
+                url = CLIP_URL
+
+                r = requests.get(url)
+                r.raise_for_status()
+
+                with open(self.model_path['clip'].absolute(), "wb") as f:
+                    print(f"saved into {self.model_path['clip']}")
+                    f.write(r.content)
 
     def load_models(self) -> None:
-
+        med_config = Path(
+            self.cfg.scorer_model_dir,
+            "med_config.json"
+        )
         for evaluator in self.cfg.scorer_method:
-            print(f"Loading {self.scorer_model_name[evaluator]}")
-            if evaluator == 'blip' or evaluator == 'ir':
-                med_config = Path(
+            if evaluator != 'manual':
+                print(f"Loading {self.scorer_model_name[evaluator]}")
+            if evaluator == 'wdaes':
+                clip_vit_b_32 = Path(
                     self.cfg.scorer_model_dir,
-                    "med_config.json"
+                    "CLIP-ViT-B-32.safetensors",
                 )
-                if evaluator == 'blip':
-                    self.model[evaluator] = BLP(med_config, self.cfg.scorer_device[evaluator]).to(
-                        self.cfg.scorer_device[evaluator])
-                elif evaluator == 'ir':
-                    self.model[evaluator] = IMGR(med_config, self.cfg.scorer_device[evaluator]).to(
-                        self.cfg.scorer_device[evaluator])
-                state_dict = torch.load(self.model_path[evaluator], map_location='cpu')
-                self.model[evaluator].load_state_dict(state_dict, strict=False)
-            elif evaluator == 'laion' or evaluator == 'chad':
-                self.model[evaluator] = AES(self.model_path['clip'], self.cfg.scorer_device[evaluator])
+                self.model[evaluator] = WDA(self.model_path[evaluator], clip_vit_b_32, self.cfg.scorer_device[evaluator])
+            elif evaluator == 'clip':
+                self.model[evaluator] = CLP(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'blip':
+                self.model[evaluator] = BLP(self.model_path[evaluator], med_config, self.cfg.scorer_device[evaluator])
+            elif evaluator == 'ir':
+                self.model[evaluator] = IMGR(self.model_path[evaluator], med_config, self.cfg.scorer_device[evaluator])
+            elif evaluator == 'laionv1' or evaluator == 'chad':
+                self.model[evaluator] = AES(self.model_path[evaluator], self.model_path['clip'],
+                                            self.cfg.scorer_device[evaluator], 'v1')
                 state_dict = torch.load(self.model_path[evaluator], map_location='cpu')
                 self.model[evaluator].mlp.load_state_dict(state_dict, strict=False)
                 self.model[evaluator].mlp.to(self.cfg.scorer_device[evaluator])
-            elif evaluator == 'clip':
-                self.model[evaluator] = CLP(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
-            elif evaluator == 'hpsv2' or evaluator == 'pick':
-                self.model[evaluator] = OPS(self.model_path[evaluator], self.cfg.scorer_device[evaluator], evaluator)
+            elif evaluator == 'laionv2' or evaluator == 'chad':
+                self.model[evaluator] = AES(self.model_path[evaluator], self.model_path['clip'],
+                                            self.cfg.scorer_device[evaluator], 'v2')
+                state_dict = torch.load(self.model_path[evaluator], map_location='cpu')
+                self.model[evaluator].mlp.load_state_dict(state_dict, strict=False)
+                self.model[evaluator].mlp.to(self.cfg.scorer_device[evaluator])
+            elif evaluator == 'hpsv2':
+                self.model[evaluator] = HPS(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'pick':
+                self.model[evaluator] = PICK(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'shadow':
+                self.model[evaluator] = SS(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'cafe':
+                self.model[evaluator] = CAFE(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
 
     def score(self, image: Image.Image, prompt) -> float:
         values = []
         weights = []
-        for evaluator in self.model:
+        for evaluator in self.cfg.scorer_method:
             weights.append(int(self.cfg.scorer_weights[evaluator]))
             if evaluator == 'manual':
                 # in manual mode, we save a temp image first then request user input
