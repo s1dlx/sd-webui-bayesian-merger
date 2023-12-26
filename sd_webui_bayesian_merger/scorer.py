@@ -78,12 +78,13 @@ class AestheticScorer:
                 self.imgs_dir.mkdir()
 
         for evaluator in self.cfg.scorer_method:
-            self.scorer_model_name[evaluator] = eval(f"{evaluator.upper() + '_MODEL'}")
-            self.model_path[evaluator] = Path(
-                self.cfg.scorer_model_dir,
-                self.scorer_model_name[evaluator],
-            )
-        if bool(self.model_path['clip']):
+            if evaluator != 'manual':
+                self.scorer_model_name[evaluator] = eval(f"{evaluator.upper() + '_MODEL'}")
+                self.model_path[evaluator] = Path(
+                    self.cfg.scorer_model_dir,
+                    self.scorer_model_name[evaluator],
+                )
+        if 'clip' not in self.cfg.scorer_method:
             self.model_path['clip'] = Path(
                 self.cfg.scorer_model_dir,
                 CLIP_MODEL,
@@ -108,16 +109,17 @@ class AestheticScorer:
                 f.write(r.content)
 
         for evaluator in self.cfg.scorer_method:
-            if not self.model_path[evaluator].is_file():
-                print(f"You do not have the {evaluator.upper()} model, let me download that for you")
-                url = eval(f"{evaluator.upper() + '_URL'}")
+            if evaluator != 'manual':
+                if not self.model_path[evaluator].is_file():
+                    print(f"You do not have the {evaluator.upper()} model, let me download that for you")
+                    url = eval(f"{evaluator.upper() + '_URL'}")
 
-                r = requests.get(url)
-                r.raise_for_status()
+                    r = requests.get(url)
+                    r.raise_for_status()
 
-                with open(self.model_path[evaluator].absolute(), "wb") as f:
-                    print(f"saved into {self.model_path[evaluator]}")
-                    f.write(r.content)
+                    with open(self.model_path[evaluator].absolute(), "wb") as f:
+                        print(f"saved into {self.model_path[evaluator]}")
+                        f.write(r.content)
         if not self.model_path['clip'].is_file():
             print(f"You do not have the CLIP(which you need) model, let me download that for you")
             url = CLIP_URL
@@ -171,7 +173,8 @@ class AestheticScorer:
             else:
                 values.append(self.model[evaluator].score(prompt, image))
 
-            #print(f"{evaluator}:{values[-1]}")
+            if self.cfg.scorer_print_individual:
+                print(f"{evaluator}:{values[-1]}")
 
         score = self.average_calc(values, weights, self.cfg.scorer_average_type)
         return score

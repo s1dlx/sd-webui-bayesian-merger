@@ -171,3 +171,5 @@ models/med_config.json
 models/HPS_v2_compressed.pt
 models/pytorch_model.bin
 TEST.py
+/mscoco/
+/mscoco.parquet

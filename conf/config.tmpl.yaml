@@ -55,6 +55,7 @@ scorer_device:
   "pick": cpu # cuda
   "blip": cpu # cuda
   "ir": cpu # cuda
+scorer_print_individual: False # true
 
 
 save_best: False
