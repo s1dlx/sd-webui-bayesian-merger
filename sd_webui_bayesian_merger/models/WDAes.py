@@ -42,6 +42,7 @@ class WDAes(nn.Module):
         state_dict = torch.load(pathname, map_location='cpu')
         self.mlp.load_state_dict(state_dict, strict=False)
         self.mlp = self.mlp.to('cpu')
+        self.mlp.eval()
 
         if self.device == "cpu":
             self.clip_model.float()

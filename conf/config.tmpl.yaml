@@ -46,8 +46,7 @@ img_average_type: arithmetic # arithmetic, geometric, exponential
 # !!!! NOAI AND IQA ARE NOT IMPLEMENTED YET !!!!
 #
 # Notes:
-# 1) wdaes are pretty old and not recommended(but usable/mix and match to test combos)
-# 2) recomended tested safe setup is [laion, chad, clip, blip, ir] with weights 0.5, 0.5, 1, 1, 1
+# 1) recomended tested safe setup is [laion, chad, clip, blip, ir] with weights 0.5, 0.5, 1, 1, 1
 
 scorer_method: [clip, blip, laion, chad, ir]
 scorer_average_type: arithmetic # arithmetic, geometric, exponential

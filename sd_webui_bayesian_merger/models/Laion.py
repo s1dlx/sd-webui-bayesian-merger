@@ -49,7 +49,7 @@ class Laion(nn.Module):
         self.mlp = MLP(768)
         state_dict = torch.load(pathname, map_location='cpu')
         self.mlp.load_state_dict(state_dict, strict=False)
-        self.mlp.to(self.device)
+        self.mlp = self.mlp.to(self.device)
         self.mlp.eval()
 
         if device == "cpu":
