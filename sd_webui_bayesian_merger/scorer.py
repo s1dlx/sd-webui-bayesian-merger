@@ -7,7 +7,7 @@ from typing import Dict, List
 import requests
 import torch
 from hydra.core.hydra_config import HydraConfig
-from omegaconf import DictConfig
+from omegaconf import DictConfig, open_dict
 from PIL import Image, PngImagePlugin
 from sd_webui_bayesian_merger.models.Laion import Laion as AES
 from sd_webui_bayesian_merger.models.ImageReward import ImageReward as IMGR
@@ -102,11 +102,21 @@ class AestheticScorer:
 
         for evaluator in self.cfg.scorer_method:
             if evaluator != 'manual':
-                self.scorer_model_name[evaluator] = eval(f"{evaluator.upper() + '_MODEL'}")
-                self.model_path[evaluator] = Path(
-                    self.cfg.scorer_model_dir,
-                    self.scorer_model_name[evaluator],
-                )
+                if evaluator not in self.cfg.scorer_alt_location:
+                    self.scorer_model_name[evaluator] = eval(f"{evaluator.upper() + '_MODEL'}")
+                    self.model_path[evaluator] = Path(
+                        self.cfg.scorer_model_dir,
+                        self.scorer_model_name[evaluator],
+                    )
+                else:
+                    self.scorer_model_name[evaluator] = self.cfg.scorer_alt_location[evaluator]['model_name']
+                    self.model_path[evaluator] = Path(self.cfg.scorer_alt_location[evaluator]['model_dir'])
+                if evaluator not in self.cfg.scorer_weight:
+                    with open_dict(self.cfg):
+                        self.cfg.scorer_weight[evaluator] = 1
+                if evaluator not in self.cfg.scorer_device:
+                    with open_dict(self.cfg):
+                        self.cfg.scorer_device[evaluator] = self.cfg.scorer_default_device
         if 'clip' not in self.cfg.scorer_method and any(
                 x in ['laion', 'chad'] for x in self.cfg.scorer_method):
             self.model_path['clip'] = Path(
@@ -210,7 +220,7 @@ class AestheticScorer:
         values = []
         weights = []
         for evaluator in self.cfg.scorer_method:
-            weights.append(int(self.cfg.scorer_weights[evaluator]))
+            weights.append(int(self.cfg.scorer_weight[evaluator]))
             if evaluator == 'manual':
                 # in manual mode, we save a temp image first then request user input
                 tmp_path = Path(Path.cwd(), "tmp.png")
@@ -258,7 +268,7 @@ class AestheticScorer:
         avg = 0
         if average_type == 'geometric':
             avg = 1
-        elif average_type == 'arithmetic' or average_type == 'exponential':
+        elif average_type == 'arithmetic' or average_type == 'quadratic':
             avg = 0
 
         for value, weight in zip(values, weights):
@@ -266,15 +276,15 @@ class AestheticScorer:
                 avg += value * weight
             elif average_type == 'geometric':
                 avg *= value ** weight
-            elif average_type == 'exponential':
-                avg += (value ** norm) * weight
+            elif average_type == 'quadratic':
+                avg += (value ** 2) * weight
 
         if average_type == 'arithmetic':
             avg = avg / norm
-        elif self.cfg.scorer_average_type == 'geometric':
+        elif average_type == 'geometric':
             avg = avg ** (1 / norm)
-        elif self.cfg.scorer_average_type == 'exponential':
-            avg = (avg / norm) ** (1 / norm)
+        elif average_type == 'quadratic':
+            avg = (avg / norm) ** (1 / 2)
         return avg
 
     def image_path(self, name: str, score: float, it: int, batch_n: int) -> Path:
