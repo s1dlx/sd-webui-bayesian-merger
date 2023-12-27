@@ -55,21 +55,22 @@ class WDAes(nn.Module):
             _, rewards = self.inference_rank(prompt, image)
             return rewards
 
-        # image encode
-        if isinstance(image, Image.Image):
-            pil_image = image
-        elif isinstance(image, str):
-            if os.path.isfile(image):
-                pil_image = Image.open(image)
-        image = self.preprocess(images=pil_image, return_tensors='pt')['pixel_values']
-        image = image.to(self.device)
-        image_features = self.clip_model.get_image_features(pixel_values=image).cpu().detach().numpy()
+        with torch.no_grad():
+            # image encode
+            if isinstance(image, Image.Image):
+                pil_image = image
+            elif isinstance(image, str):
+                if os.path.isfile(image):
+                    pil_image = Image.open(image)
+            image = self.preprocess(images=pil_image, return_tensors='pt')['pixel_values']
+            image = image.to(self.device)
+            image_features = self.clip_model.get_image_features(pixel_values=image).cpu().detach().numpy()
 
-        rewards = (image_features / np.linalg.norm(image_features)).squeeze(axis=0)
-        reward = self.mlp(torch.from_numpy(rewards)).float().item()
+            rewards = (image_features / np.linalg.norm(image_features)).squeeze(axis=0)
+            reward = self.mlp(torch.from_numpy(rewards)).float().item()
 
-        reward = reward * 10
-        return reward
+            reward = reward * 10
+            return reward
 
     def inference_rank(self, prompt, generations_list):
 

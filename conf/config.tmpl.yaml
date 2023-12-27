@@ -38,7 +38,7 @@ img_average_type: arithmetic # arithmetic, geometric, exponential
 
 # scorer by type:
 # Prompt-Image Alignment:               blip, clip
-# Aesthetic:                            chad, laionv2
+# Aesthetic:                            chad, laion
 # Hybrid(PIA + AES):                    ir, hpsv2, pick
 # Anime/Illustration:                   shadow, cafe, wdaes
 # Misc:                                 manual, noai, iqa
@@ -46,17 +46,16 @@ img_average_type: arithmetic # arithmetic, geometric, exponential
 # !!!! NOAI AND IQA ARE NOT IMPLEMENTED YET !!!!
 #
 # Notes:
-# 1) wdaes and laionv1 are pretty old and not recommended(but usable/mix and match to test combos)
-# 2) recomended tested safe setup is [laionv2, chad, clip, blip, ir] with weights 0.5, 0.5, 1, 1, 1
+# 1) wdaes are pretty old and not recommended(but usable/mix and match to test combos)
+# 2) recomended tested safe setup is [laion, chad, clip, blip, ir] with weights 0.5, 0.5, 1, 1, 1
 
-scorer_method: [clip, blip, laionv2, chad, ir]
+scorer_method: [clip, blip, laion, chad, ir]
 scorer_average_type: arithmetic # arithmetic, geometric, exponential
 scorer_weights:
   "blip": 1
   "clip": 1
   "chad": 0.5
-  "laionv2": 0.5
-  "laionv1": 0
+  "laion": 0.5
   "ir": 1
   "pick": 0
   "hpsv2": 0
@@ -70,8 +69,7 @@ scorer_device:
   "blip": cpu # cuda
   "clip": cpu # cuda
   "chad": cpu # cuda
-  "laionv2": cpu # cuda
-  "laionv1": cpu # cuda
+  "laion": cpu # cuda
   "ir": cpu # cuda
   "pick": cpu # cuda
   "hpsv2": cpu # cuda

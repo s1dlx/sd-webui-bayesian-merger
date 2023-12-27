@@ -19,10 +19,7 @@ from sd_webui_bayesian_merger.models.WDAes import WDAes as WDA
 from sd_webui_bayesian_merger.models.ShadowScore import ShadowScore as SS
 from sd_webui_bayesian_merger.models.CafeScore import CafeScore as CAFE
 
-LAIONV1_URL = (
-    "https://github.com/LAION-AI/aesthetic-predictor/blob/main/sa_0_4_vit_l_14_linear.pth?raw=true"
-)
-LAIONV2_URL = (
+LAION_URL = (
     "https://github.com/grexzen/SD-Chad/blob/main/sac+logos+ava1-l14-linearMSE.pth?raw=true"
 )
 CHAD_URL = (
@@ -53,11 +50,8 @@ CAFE_URL = (
     "https://huggingface.co/cafeai/cafe_aesthetic/resolve/3bca27c5c0b6021056b1e84e5a18cf1db9fe5d4c/model.safetensors?download=true"
 )
 
-LAIONV1_MODEL = (
-    "Laionv1.pth"
-)
-LAIONV2_MODEL = (
-    "Laionv2.pth"
+LAION_MODEL = (
+    "Laion.pth"
 )
 CHAD_MODEL = (
     "Chad.pth"
@@ -114,7 +108,7 @@ class AestheticScorer:
                     self.scorer_model_name[evaluator],
                 )
         if 'clip' not in self.cfg.scorer_method and any(
-                x in ['laionv1', 'laionv2', 'chad'] for x in self.cfg.scorer_method):
+                x in ['laion', 'chad'] for x in self.cfg.scorer_method):
             self.model_path['clip'] = Path(
                 self.cfg.scorer_model_dir,
                 CLIP_MODEL,
@@ -168,7 +162,7 @@ class AestheticScorer:
                             f.write(r.content)
 
         if ('clip' not in self.cfg.scorer_method and
-                any(x in ['laionv1', 'laionv2', 'chad'] for x in self.cfg.scorer_method)):
+                any(x in ['laion', 'chad'] for x in self.cfg.scorer_method)):
             if not self.model_path['clip'].is_file():
                 print(f"You do not have the CLIP(which you need) model, let me download that for you")
                 url = CLIP_URL
@@ -200,18 +194,9 @@ class AestheticScorer:
                 self.model[evaluator] = BLP(self.model_path[evaluator], med_config, self.cfg.scorer_device[evaluator])
             elif evaluator == 'ir':
                 self.model[evaluator] = IMGR(self.model_path[evaluator], med_config, self.cfg.scorer_device[evaluator])
-            elif evaluator == 'laionv1':
+            elif evaluator == 'laion' or evaluator == 'chad':
                 self.model[evaluator] = AES(self.model_path[evaluator], self.model_path['clip'],
-                                            self.cfg.scorer_device[evaluator], 'v1')
-                state_dict = torch.load(self.model_path[evaluator], map_location='cpu')
-                self.model[evaluator].mlp.load_state_dict(state_dict, strict=False)
-                self.model[evaluator].mlp.to(self.cfg.scorer_device[evaluator])
-            elif evaluator == 'laionv2' or evaluator == 'chad':
-                self.model[evaluator] = AES(self.model_path[evaluator], self.model_path['clip'],
-                                            self.cfg.scorer_device[evaluator], 'v2')
-                state_dict = torch.load(self.model_path[evaluator], map_location='cpu')
-                self.model[evaluator].mlp.load_state_dict(state_dict, strict=False)
-                self.model[evaluator].mlp.to(self.cfg.scorer_device[evaluator])
+                                            self.cfg.scorer_device[evaluator])
             elif evaluator == 'hpsv2':
                 self.model[evaluator] = HPS(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
             elif evaluator == 'pick':

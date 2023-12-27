@@ -8,24 +8,15 @@
 * https://github.com/christophschuhmann/improved-aesthetic-predictor
 """
 import os
+
+import open_clip
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image
 import clip
 
-
-class MLP1(nn.Module):
-    def __init__(self, input_size):
-        super().__init__()
-        self.input_size = input_size
-        self.m = nn.Linear(self.input_size, 1)
-
-    def forward(self, x):
-        return self.m(x)
-
-
-class MLP2(nn.Module):
+class MLP(nn.Module):
     def __init__(self, input_size):
         super().__init__()
         self.input_size = input_size
@@ -51,14 +42,15 @@ class MLP2(nn.Module):
 
 
 class Laion(nn.Module):
-    def __init__(self, pathname, clip_path, device='cpu', mlp_type='v2'):
+    def __init__(self, pathname, clip_path, device):
         super().__init__()
         self.device = device
         self.clip_model, self.preprocess = clip.load(clip_path, device=self.device, jit=False)
-        if mlp_type == 'v1':
-            self.mlp = MLP1(768)
-        elif mlp_type == 'v2':
-            self.mlp = MLP2(768)
+        self.mlp = MLP(768)
+        state_dict = torch.load(pathname, map_location='cpu')
+        self.mlp.load_state_dict(state_dict, strict=False)
+        self.mlp.to(self.device)
+        self.mlp.eval()
 
         if device == "cpu":
             self.clip_model.float()
@@ -74,8 +66,7 @@ class Laion(nn.Module):
         if (type(image).__name__ == 'list'):
             _, rewards = self.inference_rank(prompt, image)
             return rewards
-
-        # image encode
+            # image encode
         if isinstance(image, Image.Image):
             pil_image = image
         elif isinstance(image, str):
@@ -85,7 +76,8 @@ class Laion(nn.Module):
         image_features = F.normalize(self.clip_model.encode_image(image)).float()
 
         # score
-        rewards = self.mlp(image_features)
+        with torch.no_grad():
+            rewards = self.mlp(image_features)
 
         return rewards.detach().cpu().numpy().item()
 
