@@ -42,7 +42,7 @@ save_imgs: False
 # Anime/Illustration:                   shadow, cafe, wdaes
 # Misc:                                 manual, noai, iqa
 #
-# !!!! NOAI AND IQA ARE NOT IMPLEMENTED YET !!!!
+# !!!! IQA ARE NOT IMPLEMENTED YET !!!!
 #
 # Notes:
 # 1) recomended tested safe setup is [laion, chad, clip, blip, ir] with weights 0.5, 0.5, 1, 1, 1

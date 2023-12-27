@@ -175,3 +175,4 @@ TEST.py
 /mscoco.parquet
 models/CLIP-ViT-L-14.pt
 models/HPS_v2.1.pt
+models/Real.pt

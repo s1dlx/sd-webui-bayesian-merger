@@ -18,6 +18,7 @@ from sd_webui_bayesian_merger.models.PickScore import PickScore as PICK
 from sd_webui_bayesian_merger.models.WDAes import WDAes as WDA
 from sd_webui_bayesian_merger.models.ShadowScore import ShadowScore as SS
 from sd_webui_bayesian_merger.models.CafeScore import CafeScore as CAFE
+from sd_webui_bayesian_merger.models.NoAIScore import NoAIScore as NOAI
 
 LAION_URL = (
     "https://github.com/grexzen/SD-Chad/blob/main/sac+logos+ava1-l14-linearMSE.pth?raw=true"
@@ -48,6 +49,15 @@ SHADOW_URL = (
 )
 CAFE_URL = (
     "https://huggingface.co/cafeai/cafe_aesthetic/resolve/3bca27c5c0b6021056b1e84e5a18cf1db9fe5d4c/model.safetensors?download=true"
+)
+CLASS_URL = (
+    "https://huggingface.co/cafeai/cafe_style/resolve/d5ae1a7ac05a12ab84732c25f2ea7225d35ac81b/model.safetensors?download=true"
+)
+REAL_URL = (
+    "https://huggingface.co/Sumsub/Sumsub-ffs-synthetic-2.0/resolve/main/synthetic.pt?download=true"
+)
+ANIME_URL = (
+    "https://huggingface.co/saltacc/anime-ai-detect/resolve/e175bb6b5e19cda40bc6c9ad85b138ee7c7ce23a/model.safetensors?download=true"
 )
 
 LAION_MODEL = (
@@ -102,15 +112,32 @@ class AestheticScorer:
 
         for evaluator in self.cfg.scorer_method:
             if evaluator != 'manual':
-                if self.cfg.scorer_alt_location is not None and evaluator in self.cfg.scorer_alt_location:
-                    self.scorer_model_name[evaluator] = self.cfg.scorer_alt_location[evaluator]['model_name']
-                    self.model_path[evaluator] = Path(self.cfg.scorer_alt_location[evaluator]['model_dir'])
+                if evaluator != 'noai':
+                    if self.cfg.scorer_alt_location is not None and evaluator in self.cfg.scorer_alt_location:
+                        self.scorer_model_name[evaluator] = self.cfg.scorer_alt_location[evaluator]['model_name']
+                        self.model_path[evaluator] = Path(self.cfg.scorer_alt_location[evaluator]['model_dir'])
+                    else:
+                        self.scorer_model_name[evaluator] = eval(f"{evaluator.upper() + '_MODEL'}")
+                        self.model_path[evaluator] = Path(
+                            self.cfg.scorer_model_dir,
+                            self.scorer_model_name[evaluator],
+                        )
                 else:
-                    self.scorer_model_name[evaluator] = eval(f"{evaluator.upper() + '_MODEL'}")
-                    self.model_path[evaluator] = Path(
+                    self.scorer_model_name[evaluator] = 'NOAI pipeline'
+                    self.model_path[evaluator] = {}
+                    self.model_path[evaluator]['class'] = Path(
                         self.cfg.scorer_model_dir,
-                        self.scorer_model_name[evaluator],
+                        "Class.safetensors",
                     )
+                    self.model_path[evaluator]['real'] = Path(
+                        self.cfg.scorer_model_dir,
+                        "Real.pt",
+                    )
+                    self.model_path[evaluator]['anime'] = Path(
+                        self.cfg.scorer_model_dir,
+                        "Anime.safetensors",
+                    )
+
                 with open_dict(self.cfg):
                     if self.cfg.scorer_weight is None:
                         self.cfg.scorer_weight = {}
@@ -147,16 +174,28 @@ class AestheticScorer:
 
         for evaluator in self.cfg.scorer_method:
             if evaluator != 'manual':
-                if not self.model_path[evaluator].is_file():
-                    print(f"You do not have the {evaluator.upper()} model, let me download that for you")
-                    url = eval(f"{evaluator.upper() + '_URL'}")
+                if evaluator != 'noai':
+                    if not self.model_path[evaluator].is_file():
+                        print(f"You do not have the {evaluator.upper()} model, let me download that for you")
+                        url = eval(f"{evaluator.upper() + '_URL'}")
 
-                    r = requests.get(url)
-                    r.raise_for_status()
+                        r = requests.get(url)
+                        r.raise_for_status()
 
-                    with open(self.model_path[evaluator].absolute(), "wb") as f:
-                        print(f"saved into {self.model_path[evaluator]}")
-                        f.write(r.content)
+                        with open(self.model_path[evaluator].absolute(), "wb") as f:
+                            print(f"saved into {self.model_path[evaluator]}")
+                            f.write(r.content)
+                else:
+                    for m_path in self.model_path[evaluator]:
+                        if not self.model_path[evaluator][m_path].is_file():
+                            url = eval(f"{m_path.upper() + '_URL'}")
+
+                            r = requests.get(url)
+                            r.raise_for_status()
+
+                            with open(self.model_path[evaluator][m_path].absolute(), "wb") as f:
+                                print(f"saved into {self.model_path[evaluator][m_path]}")
+                                f.write(r.content)
 
                 if evaluator == 'wdaes':
                     clip_vit_b_32 = Path(
@@ -164,7 +203,8 @@ class AestheticScorer:
                         "CLIP-ViT-B-32.safetensors",
                     )
                     if not clip_vit_b_32.is_file():
-                        print(f"You do not have the CLIP-ViT-B-32 necessary for the wdaes model, let me download that for you")
+                        print(
+                            f"You do not have the CLIP-ViT-B-32 necessary for the wdaes model, let me download that for you")
                         url = "https://huggingface.co/openai/clip-vit-base-patch32/resolve/b527df4b30e5cc18bde1cc712833a741d2d8c362/model.safetensors?download=true"
 
                         r = requests.get(url)
@@ -200,7 +240,8 @@ class AestheticScorer:
                     self.cfg.scorer_model_dir,
                     "CLIP-ViT-B-32.safetensors",
                 )
-                self.model[evaluator] = WDA(self.model_path[evaluator], clip_vit_b_32, self.cfg.scorer_device[evaluator])
+                self.model[evaluator] = WDA(self.model_path[evaluator], clip_vit_b_32,
+                                            self.cfg.scorer_device[evaluator])
             elif evaluator == 'clip':
                 self.model[evaluator] = CLP(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
             elif evaluator == 'blip':
@@ -218,6 +259,8 @@ class AestheticScorer:
                 self.model[evaluator] = SS(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
             elif evaluator == 'cafe':
                 self.model[evaluator] = CAFE(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'noai':
+                self.model[evaluator] = NOAI(self.model_path[evaluator]['class'],  self.model_path[evaluator]['real'], self.model_path[evaluator]['anime'], device=self.cfg.scorer_device[evaluator])
 
     def score(self, image: Image.Image, prompt) -> float:
         values = []
