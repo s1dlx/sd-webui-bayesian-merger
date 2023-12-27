@@ -200,7 +200,7 @@ class AestheticScorer:
                 self.model[evaluator] = BLP(self.model_path[evaluator], med_config, self.cfg.scorer_device[evaluator])
             elif evaluator == 'ir':
                 self.model[evaluator] = IMGR(self.model_path[evaluator], med_config, self.cfg.scorer_device[evaluator])
-            elif evaluator == 'laionv1' or evaluator == 'chad':
+            elif evaluator == 'laionv1':
                 self.model[evaluator] = AES(self.model_path[evaluator], self.model_path['clip'],
                                             self.cfg.scorer_device[evaluator], 'v1')
                 state_dict = torch.load(self.model_path[evaluator], map_location='cpu')
