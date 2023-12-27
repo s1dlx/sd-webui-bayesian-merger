@@ -102,20 +102,23 @@ class AestheticScorer:
 
         for evaluator in self.cfg.scorer_method:
             if evaluator != 'manual':
-                if evaluator not in self.cfg.scorer_alt_location:
+                if self.cfg.scorer_alt_location is not None and evaluator in self.cfg.scorer_alt_location:
+                    self.scorer_model_name[evaluator] = self.cfg.scorer_alt_location[evaluator]['model_name']
+                    self.model_path[evaluator] = Path(self.cfg.scorer_alt_location[evaluator]['model_dir'])
+                else:
                     self.scorer_model_name[evaluator] = eval(f"{evaluator.upper() + '_MODEL'}")
                     self.model_path[evaluator] = Path(
                         self.cfg.scorer_model_dir,
                         self.scorer_model_name[evaluator],
                     )
-                else:
-                    self.scorer_model_name[evaluator] = self.cfg.scorer_alt_location[evaluator]['model_name']
-                    self.model_path[evaluator] = Path(self.cfg.scorer_alt_location[evaluator]['model_dir'])
-                if evaluator not in self.cfg.scorer_weight:
-                    with open_dict(self.cfg):
+                with open_dict(self.cfg):
+                    if self.cfg.scorer_weight is None:
+                        self.cfg.scorer_weight = {}
+                    if evaluator not in self.cfg.scorer_weight:
                         self.cfg.scorer_weight[evaluator] = 1
-                if evaluator not in self.cfg.scorer_device:
-                    with open_dict(self.cfg):
+                    if self.cfg.scorer_device is None:
+                        self.cfg.scorer_device = {}
+                    if evaluator not in self.cfg.scorer_device:
                         self.cfg.scorer_device[evaluator] = self.cfg.scorer_default_device
         if 'clip' not in self.cfg.scorer_method and any(
                 x in ['laion', 'chad'] for x in self.cfg.scorer_method):
