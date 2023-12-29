@@ -139,14 +139,15 @@ class AestheticScorer:
                     )
 
                 with open_dict(self.cfg):
-                    if self.cfg.scorer_weight is None:
-                        self.cfg.scorer_weight = {}
-                    if evaluator not in self.cfg.scorer_weight:
-                        self.cfg.scorer_weight[evaluator] = 1
                     if self.cfg.scorer_device is None:
                         self.cfg.scorer_device = {}
                     if evaluator not in self.cfg.scorer_device:
                         self.cfg.scorer_device[evaluator] = self.cfg.scorer_default_device
+            with open_dict(self.cfg):
+                if self.cfg.scorer_weight is None:
+                    self.cfg.scorer_weight = {}
+                if evaluator not in self.cfg.scorer_weight:
+                    self.cfg.scorer_weight[evaluator] = 1
         if 'clip' not in self.cfg.scorer_method and any(
                 x in ['laion', 'chad'] for x in self.cfg.scorer_method):
             self.model_path['clip'] = Path(
