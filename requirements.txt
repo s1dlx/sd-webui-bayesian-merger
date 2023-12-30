@@ -17,3 +17,6 @@ sd-meh==0.9.5
 lightgbm 
 scikit-learn
 openai-clip
+tensordict
+timm
+fairscale

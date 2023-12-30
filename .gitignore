@@ -165,3 +165,14 @@ Makefile
 
 # debugging files
 scorer_demo.py
+models/ViT-L-14.pt
+models/ImageReward.pt
+models/med_config.json
+models/HPS_v2_compressed.pt
+models/pytorch_model.bin
+TEST.py
+/mscoco/
+/mscoco.parquet
+models/CLIP-ViT-L-14.pt
+models/HPS_v2.1.pt
+models/Real.pt

@@ -14,7 +14,6 @@ work_device: cpu
 threads: 1
 
 wildcards_dir: path/to/wildcards/folder
-scorer_model_dir: path/to/scorer/models/folder
 
 model_a: path/to/model_a/file
 model_b: path/to/model_b/file
@@ -32,11 +31,44 @@ guided_optimisation: False
 batch_size: 1
 init_points: 1
 n_iters: 1
+img_average_type: arithmetic # geometric, arithmetic, quadratic
 
 save_imgs: False
 
-scorer_device: cpu # cuda
-scorer_method: chad # chad, laion, manual
+# scorer by type:
+# Prompt-Image Alignment:               blip, clip
+# Aesthetic:                            chad, laion
+# Hybrid(PIA + AES):                    ir, hpsv2, pick
+# Anime/Illustration:                   shadow, cafe, wdaes
+# Misc:                                 manual, noai, iqa
+#
+# !!!! IQA ARE NOT IMPLEMENTED YET !!!!
+#
+# Notes:
+# 1) recomended tested safe setup is [laion, chad, clip, blip, ir] with weights 0.5, 0.5, 1, 1, 1
+
+scorer_method: [clip, blip, laion, chad, ir]
+scorer_average_type: arithmetic # geometric, arithmetic, quadratic
+scorer_weight:
+  #blip: 0.5
+  #chad: 2
+  # example above, default is 1
+scorer_default_device: cpu # cuda
+scorer_device:
+  #blip: cpu
+  #chad: cuda
+  # example above, default is scorer default device
+scorer_model_dir: path/to/scorer/models/folder
+scorer_alt_location:
+  #blip:
+    #model_name: scorer.pth
+    #model_dir: path/to/scorer/scorer.pth
+  #chad:
+    #model_name: scorer.pt
+    #model_dir: path/to/scorer/scorer.pt
+  # example above, default downloads them in the scorer_model_dir(this option is here if you already have them downloaded somewhere else)
+scorer_print_individual: False
+
 
 save_best: False
 best_format: safetensors # ckpt

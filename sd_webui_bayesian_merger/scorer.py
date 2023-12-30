@@ -4,51 +4,105 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, List
 
-import clip
 import requests
-import safetensors.torch
 import torch
-import torch.nn as nn
 from hydra.core.hydra_config import HydraConfig
-from omegaconf import DictConfig
+from omegaconf import DictConfig, open_dict
 from PIL import Image, PngImagePlugin
+from sd_webui_bayesian_merger.models.Laion import Laion as AES
+from sd_webui_bayesian_merger.models.ImageReward import ImageReward as IMGR
+from sd_webui_bayesian_merger.models.CLIPScore import CLIPScore as CLP
+from sd_webui_bayesian_merger.models.BLIPScore import BLIPScore as BLP
+from sd_webui_bayesian_merger.models.HPSv2 import HPSv2 as HPS
+from sd_webui_bayesian_merger.models.PickScore import PickScore as PICK
+from sd_webui_bayesian_merger.models.WDAes import WDAes as WDA
+from sd_webui_bayesian_merger.models.ShadowScore import ShadowScore as SS
+from sd_webui_bayesian_merger.models.CafeScore import CafeScore as CAFE
+from sd_webui_bayesian_merger.models.NoAIScore import NoAIScore as NOAI
 
 LAION_URL = (
-    "https://github.com/Xerxemi/sdweb-auto-MBW/blob/master/scripts/classifiers/laion/"
+    "https://github.com/grexzen/SD-Chad/blob/main/sac+logos+ava1-l14-linearMSE.pth?raw=true"
+)
+CHAD_URL = (
+    "https://github.com/grexzen/SD-Chad/blob/main/chadscorer.pth?raw=true"
+)
+WDAES_URL = (
+    "https://huggingface.co/hakurei/waifu-diffusion-v1-4/resolve/main/models/aes-B32-v0.pth?download=true"
+)
+IR_URL = (
+    "https://huggingface.co/THUDM/ImageReward/resolve/main/ImageReward.pt?download=true"
+)
+CLIP_URL = (
+    "https://openaipublic.azureedge.net/clip/models/b8cca3fd41ae0c99ba7e8951adf17d267cdb84cd88be6f7c2e0eca1737a03836/ViT-L-14.pt?raw=true"
+)
+BLIP_URL = (
+    "https://storage.googleapis.com/sfr-vision-language-research/BLIP/models/model_large.pth?raw=true"
+)
+HPSV2_URL = (
+    "https://huggingface.co/xswu/HPSv2/resolve/main/HPS_v2.1_compressed.pt?download=true"
+)
+PICK_URL = (
+    "https://huggingface.co/yuvalkirstain/PickScore_v1/resolve/main/model.safetensors?download=true"
+)
+SHADOW_URL = (
+    "https://huggingface.co/shadowlilac/aesthetic-shadow/resolve/main/model.safetensors?download=true"
+)
+CAFE_URL = (
+    "https://huggingface.co/cafeai/cafe_aesthetic/resolve/3bca27c5c0b6021056b1e84e5a18cf1db9fe5d4c/model.safetensors?download=true"
+)
+CLASS_URL = (
+    "https://huggingface.co/cafeai/cafe_style/resolve/d5ae1a7ac05a12ab84732c25f2ea7225d35ac81b/model.safetensors?download=true"
+)
+REAL_URL = (
+    "https://huggingface.co/Sumsub/Sumsub-ffs-synthetic-2.0/resolve/main/synthetic.pt?download=true"
+)
+ANIME_URL = (
+    "https://huggingface.co/saltacc/anime-ai-detect/resolve/e175bb6b5e19cda40bc6c9ad85b138ee7c7ce23a/model.safetensors?download=true"
 )
 
-CHAD_URL = (
-    "https://github.com/christophschuhmann/improved-aesthetic-predictor/blob/main/"
+LAION_MODEL = (
+    "Laion.pth"
+)
+CHAD_MODEL = (
+    "Chad.pth"
+)
+WDAES_MODEL = (
+    "WD_Aes.pth"
+)
+IR_MODEL = (
+    "ImageReward.pt"
+)
+CLIP_MODEL = (
+    "CLIP-ViT-L-14.pt"
+)
+BLIP_MODEL = (
+    "BLIP_Large.pth"
+)
+HPSV2_MODEL = (
+    "HPS_v2.1.pt"
+)
+PICK_MODEL = (
+    "Pick-A-Pic.safetensors"
+)
+SHADOW_MODEL = (
+    "Shadow.safetensors"
+)
+CAFE_MODEL = (
+    "Cafe.safetensors"
 )
 
 printWSLFlag = 0
 
 
-class AestheticPredictor(nn.Module):
-    def __init__(self, input_size):
-        super().__init__()
-        self.input_size = input_size
-        self.layers = nn.Sequential(
-            nn.Linear(self.input_size, 1024),
-            nn.Dropout(0.2),
-            nn.Linear(1024, 128),
-            nn.Dropout(0.2),
-            nn.Linear(128, 64),
-            nn.Dropout(0.1),
-            nn.Linear(64, 16),
-            nn.Linear(16, 1),
-        )
-
-    def forward(self, x):
-        return self.layers(x)
-
-
 @dataclass
 class AestheticScorer:
     cfg: DictConfig
+    scorer_model_name: Dict
+    model_path: Dict
+    model: Dict
 
     def __post_init__(self):
-        if self.cfg.scorer_method == "manual":
+        if "manual" in self.cfg.scorer_method:
             self.cfg.save_imgs = True
 
         if self.cfg.save_imgs:
@@ -56,118 +110,195 @@ class AestheticScorer:
             if not self.imgs_dir.exists():
                 self.imgs_dir.mkdir()
 
-        if self.cfg.scorer_method == "manual":
-            return
+        for evaluator in self.cfg.scorer_method:
+            if evaluator != 'manual':
+                if evaluator != 'noai':
+                    if self.cfg.scorer_alt_location is not None and evaluator in self.cfg.scorer_alt_location:
+                        self.scorer_model_name[evaluator] = self.cfg.scorer_alt_location[evaluator]['model_name']
+                        self.model_path[evaluator] = Path(self.cfg.scorer_alt_location[evaluator]['model_dir'])
+                    else:
+                        self.scorer_model_name[evaluator] = eval(f"{evaluator.upper() + '_MODEL'}")
+                        self.model_path[evaluator] = Path(
+                            self.cfg.scorer_model_dir,
+                            self.scorer_model_name[evaluator],
+                        )
+                else:
+                    self.scorer_model_name[evaluator] = 'NOAI pipeline'
+                    self.model_path[evaluator] = {}
+                    self.model_path[evaluator]['class'] = Path(
+                        self.cfg.scorer_model_dir,
+                        "Class.safetensors",
+                    )
+                    self.model_path[evaluator]['real'] = Path(
+                        self.cfg.scorer_model_dir,
+                        "Real.pt",
+                    )
+                    self.model_path[evaluator]['anime'] = Path(
+                        self.cfg.scorer_model_dir,
+                        "Anime.safetensors",
+                    )
 
-        if self.cfg.scorer_method == "laion":
-            self.scorer_model_name = "laion-sac-logos-ava-v2.safetensors"
-        elif self.cfg.scorer_method == "chad":
-            self.scorer_model_name = "ava+logos-l14-linearMSE.pth"
-        self.model_path = Path(
+                with open_dict(self.cfg):
+                    if self.cfg.scorer_device is None:
+                        self.cfg.scorer_device = {}
+                    if evaluator not in self.cfg.scorer_device:
+                        self.cfg.scorer_device[evaluator] = self.cfg.scorer_default_device
+            with open_dict(self.cfg):
+                if self.cfg.scorer_weight is None:
+                    self.cfg.scorer_weight = {}
+                if evaluator not in self.cfg.scorer_weight:
+                    self.cfg.scorer_weight[evaluator] = 1
+        if 'clip' not in self.cfg.scorer_method and any(
+                x in ['laion', 'chad'] for x in self.cfg.scorer_method):
+            self.model_path['clip'] = Path(
+                self.cfg.scorer_model_dir,
+                CLIP_MODEL,
+            )
+
+        self.get_models()
+        self.load_models()
+
+    def get_models(self) -> None:
+        blip_config = Path(
             self.cfg.scorer_model_dir,
-            self.scorer_model_name,
+            'med_config.json',
         )
-        self.get_model()
-        self.load_model()
+        if not blip_config.is_file():
+            url = "https://huggingface.co/THUDM/ImageReward/resolve/main/med_config.json?download=true"
 
-    def get_model(self) -> None:
-        if self.model_path.is_file():
-            return
+            r = requests.get(url)
+            r.raise_for_status()
 
-        print("You do not have an aesthetic model ckpt, let me download that for you")
-        if self.cfg.scorer_method == "chad":
-            url = CHAD_URL
-        elif self.cfg.scorer_method == "laion":
-            url = LAION_URL
+            with open(blip_config.absolute(), "wb") as f:
+                print(f"saved into {blip_config}")
+                f.write(r.content)
 
-        url += f"{self.scorer_model_name}?raw=true"
+        for evaluator in self.cfg.scorer_method:
+            if evaluator != 'manual':
+                if evaluator != 'noai':
+                    if not self.model_path[evaluator].is_file():
+                        print(f"You do not have the {evaluator.upper()} model, let me download that for you")
+                        url = eval(f"{evaluator.upper() + '_URL'}")
 
-        r = requests.get(url)
-        r.raise_for_status()
+                        r = requests.get(url)
+                        r.raise_for_status()
 
-        with open(self.model_path.absolute(), "wb") as f:
-            print(f"saved into {self.model_path}")
-            f.write(r.content)
+                        with open(self.model_path[evaluator].absolute(), "wb") as f:
+                            print(f"saved into {self.model_path[evaluator]}")
+                            f.write(r.content)
+                else:
+                    for m_path in self.model_path[evaluator]:
+                        if not self.model_path[evaluator][m_path].is_file():
+                            url = eval(f"{m_path.upper() + '_URL'}")
 
-    def load_model(self) -> None:
-        # return in manual mode
-        if self.cfg.scorer_method == "manual":
-            return
-        print(f"Loading {self.scorer_model_name}")
+                            r = requests.get(url)
+                            r.raise_for_status()
 
-        if self.cfg.scorer_method in ["chad", "laion"]:
-            self.model = AestheticPredictor(768).to(self.cfg.scorer_device).eval()
+                            with open(self.model_path[evaluator][m_path].absolute(), "wb") as f:
+                                print(f"saved into {self.model_path[evaluator][m_path]}")
+                                f.write(r.content)
 
-        if self.model_path.suffix == ".safetensors":
-            self.model.load_state_dict(
-                safetensors.torch.load_file(
-                    self.model_path,
-                )
-            )
-            self.model.to(self.cfg.scorer_device)
-        else:
-            self.model.load_state_dict(
-                torch.load(
-                    self.model_path,
-                    map_location=self.cfg.scorer_device,
-                )
-            )
-        self.model.eval()
-        self.load_clip()
+                if evaluator == 'wdaes':
+                    clip_vit_b_32 = Path(
+                        self.cfg.scorer_model_dir,
+                        "CLIP-ViT-B-32.safetensors",
+                    )
+                    if not clip_vit_b_32.is_file():
+                        print(
+                            f"You do not have the CLIP-ViT-B-32 necessary for the wdaes model, let me download that for you")
+                        url = "https://huggingface.co/openai/clip-vit-base-patch32/resolve/b527df4b30e5cc18bde1cc712833a741d2d8c362/model.safetensors?download=true"
 
-    def load_clip(self) -> None:
-        if self.cfg.scorer_method in ["chad", "laion"]:
-            self.clip_model_name = "ViT-L/14"
+                        r = requests.get(url)
+                        r.raise_for_status()
 
-        print(f"Loading {self.clip_model_name}")
+                        with open(clip_vit_b_32.absolute(), "wb") as f:
+                            print(f"saved into {clip_vit_b_32}")
+                            f.write(r.content)
 
-        if self.cfg.scorer_method in ["chad", "laion"]:
-            self.clip_model, self.clip_preprocess = clip.load(
-                self.clip_model_name,
-                device=self.cfg.scorer_device,
-            )
+        if ('clip' not in self.cfg.scorer_method and
+                any(x in ['laion', 'chad'] for x in self.cfg.scorer_method)):
+            if not self.model_path['clip'].is_file():
+                print(f"You do not have the CLIP(which you need) model, let me download that for you")
+                url = CLIP_URL
 
-    def get_image_features(self, image: Image.Image) -> torch.Tensor:
-        if self.cfg.scorer_method in ["chad", "laion"]:
-            image = self.clip_preprocess(image).unsqueeze(0).to(self.cfg.scorer_device)
-            with torch.no_grad():
-                image_features = self.clip_model.encode_image(image)
-                image_features /= image_features.norm(dim=-1, keepdim=True)
-            image_features = image_features.cpu().detach().numpy()
-            return image_features
+                r = requests.get(url)
+                r.raise_for_status()
 
-    def score(self, image: Image.Image) -> float:
-        image_features = self.get_image_features(image)
-        score = self.model(
-            torch.from_numpy(image_features).to(self.cfg.scorer_device).float(),
+                with open(self.model_path['clip'].absolute(), "wb") as f:
+                    print(f"saved into {self.model_path['clip']}")
+                    f.write(r.content)
+
+    def load_models(self) -> None:
+        med_config = Path(
+            self.cfg.scorer_model_dir,
+            "med_config.json"
         )
+        for evaluator in self.cfg.scorer_method:
+            if evaluator != 'manual':
+                print(f"Loading {self.scorer_model_name[evaluator]}")
+            if evaluator == 'wdaes':
+                clip_vit_b_32 = Path(
+                    self.cfg.scorer_model_dir,
+                    "CLIP-ViT-B-32.safetensors",
+                )
+                self.model[evaluator] = WDA(self.model_path[evaluator], clip_vit_b_32,
+                                            self.cfg.scorer_device[evaluator])
+            elif evaluator == 'clip':
+                self.model[evaluator] = CLP(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'blip':
+                self.model[evaluator] = BLP(self.model_path[evaluator], med_config, self.cfg.scorer_device[evaluator])
+            elif evaluator == 'ir':
+                self.model[evaluator] = IMGR(self.model_path[evaluator], med_config, self.cfg.scorer_device[evaluator])
+            elif evaluator == 'laion' or evaluator == 'chad':
+                self.model[evaluator] = AES(self.model_path[evaluator], self.model_path['clip'],
+                                            self.cfg.scorer_device[evaluator])
+            elif evaluator == 'hpsv2':
+                self.model[evaluator] = HPS(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'pick':
+                self.model[evaluator] = PICK(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'shadow':
+                self.model[evaluator] = SS(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'cafe':
+                self.model[evaluator] = CAFE(self.model_path[evaluator], self.cfg.scorer_device[evaluator])
+            elif evaluator == 'noai':
+                self.model[evaluator] = NOAI(self.model_path[evaluator]['class'],  self.model_path[evaluator]['real'], self.model_path[evaluator]['anime'], device=self.cfg.scorer_device[evaluator])
 
-        return score.item()
+    def score(self, image: Image.Image, prompt) -> float:
+        values = []
+        weights = []
+        for evaluator in self.cfg.scorer_method:
+            weights.append(int(self.cfg.scorer_weight[evaluator]))
+            if evaluator == 'manual':
+                # in manual mode, we save a temp image first then request user input
+                tmp_path = Path(Path.cwd(), "tmp.png")
+                image.save(tmp_path)
+                self.open_image(tmp_path)
+                values.append(self.get_user_score())
+                tmp_path.unlink()  # remove temporary image
+            else:
+                values.append(self.model[evaluator].score(prompt, image))
+
+            if self.cfg.scorer_print_individual:
+                print(f"{evaluator}:{values[-1]}")
+
+        score = self.average_calc(values, weights, self.cfg.scorer_average_type)
+        return score
 
     def batch_score(
-        self,
-        images: List[Image.Image],
-        payload_names: List[str],
-        payloads: Dict,
-        it: int,
+            self,
+            images: List[Image.Image],
+            payload_names: List[str],
+            payloads: Dict,
+            it: int,
     ) -> List[float]:
         scores = []
         norm = []
         for i, (img, name, payload) in enumerate(zip(images, payload_names, payloads)):
-            # in manual mode, we save a temp image first then request user input
-            if self.cfg.scorer_method == "manual":
-                tmp_path = Path(Path.cwd(), "tmp.png")
-                img.save(tmp_path)
-                self.open_image(tmp_path)
-                score = AestheticScorer.get_user_score()
-                tmp_path.unlink()  # remove temporary image
-            else:
-                score = self.score(img)
+            score = self.score(img, payload["prompt"])
             if self.cfg.save_imgs:
                 self.save_img(img, name, score, it, i, payload)
 
             if "score_weight" in payload:
-                score *= payload["score_weight"]
                 norm.append(payload["score_weight"])
             else:
                 norm.append(1.0)
@@ -177,10 +308,31 @@ class AestheticScorer:
 
         return scores, norm
 
-    def average_score(self, scores: List[float], norm: List[float]) -> float:
-        num = sum(scores)
-        den = sum(norm)
-        return 0.0 if den == 0.0 else num / den
+    def average_calc(self, values: List[float], weights: List[float], average_type: str) -> float:
+        norm = 0
+        for weight in weights:
+            norm += weight
+        avg = 0
+        if average_type == 'geometric':
+            avg = 1
+        elif average_type == 'arithmetic' or average_type == 'quadratic':
+            avg = 0
+
+        for value, weight in zip(values, weights):
+            if average_type == 'arithmetic':
+                avg += value * weight
+            elif average_type == 'geometric':
+                avg *= value ** weight
+            elif average_type == 'quadratic':
+                avg += (value ** 2) * weight
+
+        if average_type == 'arithmetic':
+            avg = avg / norm
+        elif average_type == 'geometric':
+            avg = avg ** (1 / norm)
+        elif average_type == 'quadratic':
+            avg = (avg / norm) ** (1 / 2)
+        return avg
 
     def image_path(self, name: str, score: float, it: int, batch_n: int) -> Path:
         return Path(
@@ -189,13 +341,13 @@ class AestheticScorer:
         )
 
     def save_img(
-        self,
-        image: Image.Image,
-        name: str,
-        score: float,
-        it: int,
-        batch_n: int,
-        payload: Dict,
+            self,
+            image: Image.Image,
+            name: str,
+            score: float,
+            it: int,
+            batch_n: int,
+            payload: Dict,
     ) -> Path:
         img_path = self.image_path(name, score, it, batch_n)
         pnginfo = PngImagePlugin.PngInfo()
