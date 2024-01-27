@@ -11,6 +11,7 @@ from modules import script_callbacks, sd_models, shared
 from sd_meh.merge import NUM_TOTAL_BLOCKS, merge_methods, merge_models
 
 MEMORY_DESTINATION = "memory"
+persistent_cache: Optional[Dict] = None
 
 
 def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
@@ -51,6 +52,7 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             title="Number of threads",
             description="Number of keys to merge simultaneously. Only useful with device='cpu'",
         ),
+        cache: bool = fastapi.Body(False, title="Cache intermediate merge values"),
     ):
         validate_merge_method(merge_method)
         alpha, beta, input_models, weights, bases = normalize_merge_args(
@@ -62,6 +64,10 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
             model_b,
             model_c,
         )
+
+        global persistent_cache
+        if cache and persistent_cache is None:
+            persistent_cache = {}
 
         model_a_info = get_checkpoint_info(Path(model_a))
         load_in_memory = destination == MEMORY_DESTINATION
@@ -88,9 +94,9 @@ def on_app_started(_gui: Optional[gr.Blocks], api: fastapi.FastAPI):
                 work_device=work_device,
                 prune=prune,
                 threads=threads,
+                cache=persistent_cache,
             )
-            if not isinstance(merged, dict):
-                merged = merged.to_dict()
+            merged = merged.to_dict()
 
             if load_in_memory:
                 sd_models.load_model(model_a_info, merged)

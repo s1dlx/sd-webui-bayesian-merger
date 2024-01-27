@@ -108,6 +108,7 @@ class Merger:
             "unload_before": True,
             "re_basin": self.cfg.rebasin,
             "re_basin_iterations": self.cfg.rebasin_iterations,
+            "cache": self.cfg.cache_merge,
         }
 
         print("Merging models")
